@@ -4,8 +4,8 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "cross-env VITE_ROUTER_MODE=history vite",
-    "build": "cross-env VITE_ROUTER_MODE=history vue-tsc && vite build",
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "format": "prettier --write ."
   },
@@ -22,7 +22,6 @@
     "vuex-persistedstate": "^4.1.0"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
     "prettier": "^3.5.3",
     "typescript": "5.8.3",
     "unplugin-auto-import": "19.3.0",
