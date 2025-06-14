@@ -25,15 +25,6 @@ body {
   padding: 0;
 }
 
-body,
-#app,
-.gomoku-game {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
 /* Custom scrollbar styles */
 ::-webkit-scrollbar {
   width: 5px;

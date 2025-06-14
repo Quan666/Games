@@ -5,13 +5,13 @@
       <!-- 按钮组 -->
       <div class="flex gap-3">
         <button
-          @click="store.dispatch('resetGame')"
+          @click="$emit('reset-game')"
           class="flex-1 py-3 bg-white/20 backdrop-blur-sm text-gray-800 rounded-lg font-semibold hover:bg-white/30 transform hover:scale-102 transition-all duration-200 border border-gray-300"
         >
           重新开始
         </button>
         <button
-          @click="store.dispatch('undoMove')"
+          @click="$emit('undo-move')"
           :disabled="!canUndo"
           class="flex-1 py-3 bg-white/20 backdrop-blur-sm text-gray-800 rounded-lg font-semibold hover:bg-white/30 transform hover:scale-102 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300"
         >
@@ -19,7 +19,7 @@
         </button>
         <!-- AI对战AI控制按钮区域 - 只在AI对战AI模式下显示 -->
         <button
-          @click="store.dispatch('toggleAiVsAi')"
+          @click="$emit('toggle-ai-vs-ai')"
           :disabled="gameOver"
           v-if="gameMode === 'ave'"
           :class="
