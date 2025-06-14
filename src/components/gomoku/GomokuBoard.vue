@@ -156,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 // @ts-ignore
 import { useStore } from 'vuex'
 
@@ -166,11 +166,6 @@ interface Position {
   col: number
 }
 
-interface Move {
-  row: number
-  col: number
-  player: number
-}
 
 // Props
 const props = defineProps<{
