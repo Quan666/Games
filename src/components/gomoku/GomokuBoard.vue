@@ -156,7 +156,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
+// @ts-ignore
+import { useStore } from 'vuex'
 
 // 类型定义
 interface Position {
@@ -172,17 +174,20 @@ interface Move {
 
 // Props
 const props = defineProps<{
-  board: number[][]
-  boardSize: number
-  gameSettings: any
-  lastMove: Position | null
-  moveHistory: Move[]
-  winningPositions: Position[] | null
-  gameOver: boolean
-  aiBestPosition: Position | null
   windowWidth: number
   windowHeight: number
 }>()
+
+// Store
+const store = useStore()
+const boardSize = computed(() => store.state.gomoku.gameSettings.boardSize)
+const gameSettings = computed(() => store.state.gomoku.gameSettings)
+const board = computed(() => store.state.gomoku.gameState.board)
+const lastMove = computed(() => store.state.gomoku.gameState.lastMove)
+const moveHistory = computed(() => store.state.gomoku.gameState.moveHistory)
+const winningPositions = computed(() => store.state.gomoku.gameState.winningPositions)
+const gameOver = computed(() => store.state.gomoku.gameState.gameOver)
+const aiBestPosition = computed(() => store.state.gomoku.gameState.aiBestPosition)
 
 // Emits
 const emits = defineEmits<{
@@ -198,7 +203,9 @@ const isPortrait = computed(() => props.windowWidth < props.windowHeight)
 
 const boardSize_px = computed(() => {
   let size: number
-
+  if (!props.windowWidth || !props.windowHeight) {
+    return 400 // 默认棋盘像素
+  }
   if (isPortrait.value) {
     const maxWidth = props.windowWidth * 0.9
     const maxHeight = props.windowHeight * 0.7
@@ -207,8 +214,8 @@ const boardSize_px = computed(() => {
     const maxSize = Math.max(props.windowHeight * 0.8, props.windowWidth * 0.4)
     size = Math.max(maxSize, 400)
   }
-
-  return size
+  // 棋盘必须正方形
+  return Math.max(Math.min(size, props.windowWidth, props.windowHeight), 100)
 })
 
 const boardContainerStyle = computed(() => ({
@@ -218,7 +225,7 @@ const boardContainerStyle = computed(() => ({
 }))
 
 const pieceStyle = computed(() => {
-  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (props.boardSize - 1)
+  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (boardSize.value - 1)
   const pieceSize = Math.max(cellSize * 0.8, 12)
 
   return {
@@ -227,12 +234,16 @@ const pieceStyle = computed(() => {
   }
 })
 
-const starPointSize = computed(() => Math.max(boardSize_px.value / 150, 2))
+const starPointSize = computed(() => {
+  const px = boardSize_px.value
+  if (!px || isNaN(px) || px <= 0) return 2
+  return Math.max(px / 150, 2)
+})
 
 const coordinateFontSize = computed(() => Math.max(boardSize_px.value / 40, 10))
 
 const lastMoveMarkSize = computed(() => {
-  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (props.boardSize - 1)
+  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (boardSize.value - 1)
   return Math.max(cellSize * 0.15, 4)
 })
 
@@ -242,7 +253,7 @@ const lastMoveMarkStyle = computed(() => ({
 }))
 
 const aiBestMarkSize = computed(() => {
-  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (props.boardSize - 1)
+  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (boardSize.value - 1)
   return Math.max(cellSize * 0.25, 6)
 })
 
@@ -253,7 +264,7 @@ const aiBestMarkStyle = computed(() => ({
 
 // 定位点
 const starPoints = computed<Position[]>(() => {
-  const size = props.boardSize
+  const size = boardSize.value
   if (size === 13) {
     return [
       { row: 3, col: 3 },
@@ -288,9 +299,9 @@ const starPoints = computed<Position[]>(() => {
 
 // 方法
 const getIntersectionPosition = (row: number, col: number) => {
-  const left = padding_percent + (grid_area_percent / (props.boardSize - 1)) * col
-  const top = padding_percent + (grid_area_percent / (props.boardSize - 1)) * row
-  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (props.boardSize - 1)
+  const left = padding_percent + (grid_area_percent / (boardSize.value - 1)) * col
+  const top = padding_percent + (grid_area_percent / (boardSize.value - 1)) * row
+  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (boardSize.value - 1)
   const clickArea = Math.max(cellSize, 20)
 
   return {
@@ -303,13 +314,13 @@ const getIntersectionPosition = (row: number, col: number) => {
 }
 
 const getHoverClass = (row: number, col: number): string => {
-  if (props.gameOver || props.board[row][col] !== 0) return ''
+  if (gameOver.value || board.value[row][col] !== 0) return ''
   return 'hover:bg-white/30 rounded-full'
 }
 
 const getPieceClass = (row: number, col: number): string => {
   const baseClass =
-    props.board[row][col] === 1
+    board.value[row][col] === 1
       ? 'bg-gradient-radial from-gray-600 to-black'
       : 'bg-gradient-radial from-white to-gray-300'
 
@@ -321,21 +332,21 @@ const getPieceClass = (row: number, col: number): string => {
 }
 
 const isLastMove = (row: number, col: number): boolean => {
-  return props.lastMove?.row === row && props.lastMove?.col === col
+  return lastMove.value?.row === row && lastMove.value?.col === col
 }
 
 const isWinningPiece = (row: number, col: number): boolean => {
-  if (!props.winningPositions) return false
-  return props.winningPositions.some((pos: any) => pos.row === row && pos.col === col)
+  if (!winningPositions.value) return false
+  return winningPositions.value.some((pos: any) => pos.row === row && pos.col === col)
 }
 
 const getMoveOrder = (row: number, col: number): number => {
-  const moveIndex = props.moveHistory.findIndex((move: any) => move.row === row && move.col === col)
+  const moveIndex = moveHistory.value.findIndex((move: any) => move.row === row && move.col === col)
   return moveIndex >= 0 ? moveIndex + 1 : 0
 }
 
 const getMoveOrderFontStyle = () => {
-  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (props.boardSize - 1)
+  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (boardSize.value - 1)
   const fontSize = Math.max(cellSize * 0.25, 8)
   return {
     fontSize: `${fontSize}px`,

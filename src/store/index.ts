@@ -25,9 +25,9 @@ const store = createStore({
           gameSpeed: 1000, // 对战速度(毫秒)
         }, // 游戏状态
         gameState: {
-          board: Array(19)
+          board: Array(15)
             .fill(null)
-            .map(() => Array(19).fill(0)), // 棋盘状态
+            .map(() => Array(15).fill(0)), // 棋盘状态
           currentPlayer: 1, // 当前玩家
           moveCount: 0, // 步数
           gameOver: false, // 游戏是否结束
@@ -75,7 +75,20 @@ const store = createStore({
     },
     // 五子棋设置mutations
     updateGameSettings(state: any, payload: any) {
+      let oldBoardSize = state.gomoku.gameSettings.boardSize
       Object.assign(state.gomoku.gameSettings, payload)
+      // 如果棋盘大小发生变化，重新初始化棋盘
+      if (payload.boardSize && payload.boardSize !== oldBoardSize) {
+        const newSize = payload.boardSize
+        state.gomoku.gameState.board = Array(newSize)
+          .fill(null)
+          .map(() => Array(newSize).fill(0))
+        state.gomoku.gameState.moveHistory = []
+        state.gomoku.gameState.moveCount = 0
+        state.gomoku.gameState.gameOver = false
+        state.gomoku.gameState.lastMove = null
+        state.gomoku.gameState.winningPositions = null
+      }
     },
     updateGameMode(state: any, mode: string) {
       state.gomoku.gameMode = mode

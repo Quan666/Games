@@ -326,7 +326,7 @@ const aiBestPosition = ref<{ row: number; col: number } | null>(null)
 const addAILog = (type: AILog['type'], message: string) => {
   const now = new Date()
   const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-
+  // console.log(`[AI Log] ${time} [${type}] ${message}`)
   aiLogs.value.push({ time, type, message })
 
   // 限制日志数量，只保留最近100条
@@ -424,6 +424,15 @@ const toggleAiVsAi = (): void => {
   if (gameMode.value !== 'ave' || !aiInitialized || !gomokuAI || gameOver.value) {
     if (!aiInitialized || !gomokuAI) {
       addAILog('error', 'AI引擎未初始化，请刷新页面重新加载')
+      // 初始化AI引擎
+      initializeAI()
+        .then(() => {
+          addAILog('success', 'AI引擎初始化成功')
+        })
+        .catch((error) => {
+          console.error('AI引擎初始化失败:', error)
+          addAILog('error', `AI引擎初始化失败: ${error}`)
+        })
     }
     return
   }
@@ -1205,20 +1214,14 @@ onMounted(async () => {
   // 预加载AI脚本
   try {
     await loadAIScript()
-    console.log('AI script loaded successfully')
     addAILog('success', 'AI脚本加载成功')
-
     // 如果是需要AI的模式（人机对战或AI对战AI），自动初始化AI
-    if (gameMode.value === 'pve' || gameMode.value === 'ave') {
-      await initializeAI()
-
-      if (gameMode.value === 'pve') {
-        addAILog('info', '人机对战模式 - AI引擎初始化完成')
-      } else if (gameMode.value === 'ave') {
-        addAILog('info', 'AI对战AI模式 - AI引擎初始化完成')
-        // 重置AI对战AI控制状态，确保刷新后状态正确
-        aiVsAiGameRunning.value = false
-      }
+    await initializeAI()
+    console.log('AI engine initialized successfully')
+    addAILog('info', 'AI引擎初始化完成')
+    if (gameMode.value === 'ave') {
+      // 重置AI对战AI控制状态，确保刷新后状态正确
+      aiVsAiGameRunning.value = false
     }
   } catch (error) {
     console.warn('Failed to load AI script:', error)
