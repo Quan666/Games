@@ -160,7 +160,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, nextTick } from 'vue'
+import { computed } from 'vue'
 // @ts-ignore
 import { useStore } from 'vuex'
 
@@ -240,19 +240,6 @@ const starPointSize = computed(() => {
 
 const coordinateFontSize = computed(() => 'min(max(2.5vw, 8px), 22px)')
 
-const lastMoveMarkSize = computed(() => {
-  if (isPortrait.value) {
-    return '2.5vw'
-  } else {
-    return '2.5vh'
-  }
-})
-
-const lastMoveMarkStyle = computed(() => ({
-  width: lastMoveMarkSize.value,
-  height: lastMoveMarkSize.value,
-}))
-
 const aiBestMarkSize = computed(() => {
   if (isPortrait.value) {
     return '2.5vw'
@@ -268,7 +255,7 @@ const aiBestMarkStyle = computed(() => ({
   boxShadow: '0 0 12px 4px #f87171',
   border: '2.5px solid #fff',
   background: 'radial-gradient(circle, #f87171 60%, #fff 100%)',
-  pointerEvents: 'none',
+  pointerEvents: 'none' as const,
 }))
 
 // 定位点
