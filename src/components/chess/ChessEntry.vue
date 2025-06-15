@@ -38,7 +38,12 @@
           <button @click="toggleSound" class="control-btn" :class="{ active: soundEnabled }">
             {{ soundEnabled ? '🔊' : '🔇' }}
           </button>
-          <button @click="toggleVoice" class="control-btn" :class="{ active: voiceEnabled }">
+          <button
+            @click="toggleVoice"
+            class="control-btn"
+            :class="{ active: voiceEnabled, disabled: !soundEnabled }"
+            :disabled="!soundEnabled"
+          >
             {{ voiceEnabled ? '🗣️' : '🔇' }}
           </button>
           <button @click="resetGame" class="control-btn primary">重新开始</button>
@@ -94,10 +99,15 @@
                   <span class="slider"></span>
                 </div>
               </label>
-              <label class="switch-item">
+              <label class="switch-item" :class="{ disabled: !soundEnabled }">
                 <span class="switch-label">🗣️ 语音</span>
-                <div class="switch" :class="{ 'switch-on': voiceEnabled }">
-                  <input type="checkbox" :checked="voiceEnabled" @change="toggleVoice" />
+                <div class="switch" :class="{ 'switch-on': voiceEnabled, disabled: !soundEnabled }">
+                  <input
+                    type="checkbox"
+                    :checked="voiceEnabled"
+                    :disabled="!soundEnabled"
+                    @change="toggleVoice"
+                  />
                   <span class="slider"></span>
                 </div>
               </label>
@@ -163,17 +173,70 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
+// @ts-ignore
+import { useStore } from 'vuex'
 import ChessBoard from './board/ChessBoard.vue'
 import { createChessSoundGenerator } from './ChessSound'
 import { ChessGame, type ChessPiece as ChessPieceType, type Position, type Move } from './ChessGame'
 
+const store = useStore()
 const chessBoardRef = ref()
-const showMoveHistory = ref(true)
-const soundEnabled = ref(true)
-const voiceEnabled = ref(true)
 
-// 游戏实例
-const game = new ChessGame()
+// 从 store 获取设置，如果不存在则使用默认值
+const chessSettings = computed(
+  () =>
+    store.state.chess?.gameSettings || {
+      soundEnabled: true,
+      voiceEnabled: true,
+      showMoveHistory: true,
+      autoSave: true,
+      animationSpeed: 'normal',
+    },
+)
+
+const globalSettings = computed(
+  () =>
+    store.state.globalSettings || {
+      soundEnabled: true,
+      voiceEnabled: true,
+    },
+)
+
+// 使用计算属性从 store 获取设置
+const showMoveHistory = computed({
+  get: () => chessSettings.value.showMoveHistory,
+  set: (value) => store.commit('updateChessSettings', { showMoveHistory: value }),
+})
+
+const soundEnabled = computed({
+  get: () => globalSettings.value.soundEnabled && chessSettings.value.soundEnabled,
+  set: (value) => store.commit('updateChessSettings', { soundEnabled: value }),
+})
+
+const voiceEnabled = computed({
+  get: () =>
+    globalSettings.value.soundEnabled &&
+    globalSettings.value.voiceEnabled &&
+    chessSettings.value.soundEnabled &&
+    chessSettings.value.voiceEnabled,
+  set: (value) => store.commit('updateChessSettings', { voiceEnabled: value }),
+})
+
+// 游戏实例 - 从store恢复或创建新游戏
+const initializeGame = () => {
+  const savedGame = store.state.chess.gameState.currentGame
+  if (savedGame && chessSettings.value.autoSave) {
+    try {
+      return new ChessGame(savedGame)
+    } catch (error) {
+      console.warn('恢复游戏状态失败，创建新游戏:', error)
+      return new ChessGame()
+    }
+  }
+  return new ChessGame()
+}
+
+const game = initializeGame()
 const gameState = reactive(game.getState())
 const gameStatus = ref('playing')
 const currentPlayer = ref('red')
@@ -285,6 +348,7 @@ const updateGameState = () => {
 
   // 深度更新响应式状态
   Object.assign(gameState, {
+    board: newState.board.map((row) => [...row]), // 深拷贝棋盘状态
     pieces: [...newState.pieces],
     currentPlayer: newState.currentPlayer,
     gameStatus: newState.gameStatus,
@@ -295,6 +359,16 @@ const updateGameState = () => {
   gameStatus.value = newState.gameStatus
   currentPlayer.value = newState.currentPlayer
   moveHistory.value = [...newState.moveHistory]
+
+  // 自动保存完整游戏状态（包括悔棋后的状态）
+  if (chessSettings.value.autoSave) {
+    try {
+      const gameStateForSaving = game.getStateForSaving()
+      store.commit('saveChessGame', gameStateForSaving)
+    } catch (error) {
+      console.warn('保存游戏状态失败:', error)
+    }
+  }
 
   console.log('更新后存活棋子数量:', newState.pieces.filter((p) => p.alive).length)
 }
@@ -442,6 +516,9 @@ const resetGame = () => {
   availableMoves.value = []
   updateGameState()
   soundGenerator.playGameStartSound()
+
+  // 清除保存的游戏状态
+  store.commit('clearChessGame')
 }
 
 // 悔棋
@@ -505,16 +582,16 @@ const handleResize = () => {
 
 // 音效控制
 const toggleSound = () => {
-  soundEnabled.value = !soundEnabled.value
+  store.commit('toggleChessSound')
 }
 
 const toggleVoice = () => {
-  voiceEnabled.value = !voiceEnabled.value
+  store.commit('toggleChessVoice')
 }
 
 // 历史记录控制
 const toggleHistory = () => {
-  showMoveHistory.value = !showMoveHistory.value
+  store.commit('toggleChessMoveHistory')
 }
 
 // 格式化走法文本
@@ -539,6 +616,13 @@ const formatMove = (move: Move) => {
 }
 
 onMounted(() => {
+  // 显示上次游戏的基本信息（如果有的话）
+  const savedGame = store.state.chess?.gameState?.currentGame
+  if (savedGame && chessSettings.value.autoSave) {
+    console.log('上次游戏信息:', savedGame)
+    // 只显示统计信息，不恢复游戏状态
+  }
+
   updateGameState()
   window.addEventListener('resize', handleResize)
 })
@@ -1065,5 +1149,29 @@ onUnmounted(() => {
   .switch-on .slider {
     transform: translateX(16px);
   }
+}
+
+/* 禁用状态样式 */
+.control-btn.disabled,
+.control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.switch-item.disabled {
+  opacity: 0.5;
+}
+
+.switch.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.switch.disabled input {
+  cursor: not-allowed;
+}
+
+.switch.disabled .slider {
+  cursor: not-allowed;
 }
 </style>

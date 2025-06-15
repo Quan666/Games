@@ -349,8 +349,10 @@ const isPortrait = computed<boolean>(() => windowWidth.value < windowHeight.valu
 
 const canUndo = computed<boolean>(() => moveHistory.value.length > 0 && !aiThinking.value)
 
-// 音效生成器
-const soundGenerator = new SoundGenerator(() => store.state.gomoku.gameSettings.enableSound)
+// 音效生成器 - 使用全局和局部设置的组合
+const soundGenerator = new SoundGenerator(() => {
+  return store.state.globalSettings.soundEnabled && store.state.gomoku.gameSettings.enableSound
+})
 
 // 方法
 const updateWindowSize = (): void => {
@@ -1267,11 +1269,13 @@ watch(aiThinking, (newThinking, oldThinking) => {
 
 // watch声音开关，首次开启时通过公开方法恢复权限
 watch(
-  () => store.state.gomoku.gameSettings.enableSound,
-  async (val, oldVal) => {
-    if (val && !oldVal) {
-      // 播放一个声音
+  () => [store.state.globalSettings.soundEnabled, store.state.gomoku.gameSettings.enableSound],
+  async ([globalSound, localSound], [oldGlobalSound, oldLocalSound]) => {
+    const newSoundEnabled = globalSound && localSound
+    const oldSoundEnabled = oldGlobalSound && oldLocalSound
 
+    if (newSoundEnabled && !oldSoundEnabled) {
+      // 播放一个声音
       await soundGenerator.playOpenSound()
       await soundGenerator.resumeAudioContext()
     }

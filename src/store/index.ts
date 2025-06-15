@@ -6,6 +6,13 @@ const store = createStore({
   state() {
     return {
       count: 1,
+      // 全局设置
+      globalSettings: {
+        soundEnabled: true, // 全局音效开关
+        voiceEnabled: true, // 全局语音开关
+        theme: 'light', // 主题: light, dark
+        language: 'zh-CN', // 语言
+      },
       // 五子棋游戏设置
       gomoku: {
         gameSettings: {
@@ -14,6 +21,7 @@ const store = createStore({
           showCoordinates: true, // 是否显示棋盘坐标
           showStatusPanel: false, // 是否显示AI状态监控面板
           boardSize: 15, // 棋盘大小: 13, 15, 19
+          enableSound: true, // 音效开关（兼容性保留）
         },
         gameMode: 'pvp', // 游戏模式: pvp=双人对战, pve=人机对战, ave=AI对战AI
         aiPlayer: 2, // AI 执子: 1=黑棋, 2=白棋
@@ -65,6 +73,26 @@ const store = createStore({
         ui: {
           showGameSettings: false,
           showAISettings: false,
+        },
+      },
+      // 中国象棋游戏设置
+      chess: {
+        gameSettings: {
+          soundEnabled: true, // 音效开关
+          voiceEnabled: true, // 语音播报开关
+          showMoveHistory: true, // 显示移动历史
+          autoSave: true, // 自动保存游戏进度
+          animationSpeed: 'normal', // 动画速度: slow, normal, fast
+        },
+        gameState: {
+          // 当前游戏状态将动态保存
+          currentGame: null, // 当前游戏的序列化状态
+          savedGames: [], // 已保存的游戏列表
+          lastPlayTime: null, // 最后游戏时间
+        },
+        ui: {
+          showSettings: false,
+          showSaveDialog: false,
         },
       },
     }
@@ -183,6 +211,79 @@ const store = createStore({
     },
     setShowAISettings(state: any, show: boolean) {
       state.gomoku.ui.showAISettings = show
+    },
+
+    // 全局设置 mutations
+    updateGlobalSettings(state: any, payload: any) {
+      Object.assign(state.globalSettings, payload)
+    },
+    toggleGlobalSound(state: any) {
+      state.globalSettings.soundEnabled = !state.globalSettings.soundEnabled
+      // 同步更新五子棋设置以保持兼容性
+      state.gomoku.gameSettings.enableSound = state.globalSettings.soundEnabled
+      // 如果音效关闭，也关闭语音
+      if (!state.globalSettings.soundEnabled) {
+        state.globalSettings.voiceEnabled = false
+      }
+    },
+    toggleGlobalVoice(state: any) {
+      state.globalSettings.voiceEnabled = !state.globalSettings.voiceEnabled
+    },
+
+    // 中国象棋设置 mutations
+    updateChessSettings(state: any, payload: any) {
+      Object.assign(state.chess.gameSettings, payload)
+    },
+    toggleChessSound(state: any) {
+      state.chess.gameSettings.soundEnabled = !state.chess.gameSettings.soundEnabled
+      // 如果音效关闭，也关闭语音
+      if (!state.chess.gameSettings.soundEnabled) {
+        state.chess.gameSettings.voiceEnabled = false
+      }
+    },
+    toggleChessVoice(state: any) {
+      state.chess.gameSettings.voiceEnabled = !state.chess.gameSettings.voiceEnabled
+    },
+    toggleChessMoveHistory(state: any) {
+      state.chess.gameSettings.showMoveHistory = !state.chess.gameSettings.showMoveHistory
+    },
+
+    // 中国象棋游戏状态 mutations
+    saveChessGame(state: any, gameData: any) {
+      state.chess.gameState.currentGame = gameData
+      state.chess.gameState.lastPlayTime = Date.now()
+    },
+    loadChessGame(state: any, gameData: any) {
+      state.chess.gameState.currentGame = gameData
+    },
+    clearChessGame(state: any) {
+      state.chess.gameState.currentGame = null
+    },
+    addSavedChessGame(state: any, gameData: any) {
+      const savedGame = {
+        id: Date.now(),
+        name: gameData.name || `游戏 ${new Date().toLocaleString()}`,
+        data: gameData.data,
+        timestamp: Date.now(),
+      }
+      state.chess.gameState.savedGames.unshift(savedGame)
+      // 限制保存的游戏数量
+      if (state.chess.gameState.savedGames.length > 10) {
+        state.chess.gameState.savedGames = state.chess.gameState.savedGames.slice(0, 10)
+      }
+    },
+    removeSavedChessGame(state: any, gameId: number) {
+      state.chess.gameState.savedGames = state.chess.gameState.savedGames.filter(
+        (game: any) => game.id !== gameId,
+      )
+    },
+
+    // 中国象棋UI控制
+    setShowChessSettings(state: any, show: boolean) {
+      state.chess.ui.showSettings = show
+    },
+    setShowChessSaveDialog(state: any, show: boolean) {
+      state.chess.ui.showSaveDialog = show
     },
   },
   actions: {},

@@ -47,8 +47,12 @@ export interface Move {
 export class ChessGame {
   private state: GameState
 
-  constructor() {
-    this.state = this.initializeGame()
+  constructor(savedState?: GameState) {
+    if (savedState) {
+      this.state = this.restoreFromState(savedState)
+    } else {
+      this.state = this.initializeGame()
+    }
   }
 
   // 初始化游戏
@@ -274,7 +278,7 @@ export class ChessGame {
     return moves.filter((to) => !this.wouldBeInCheck(piece, to))
   }
 
-  // 帅/将的移动规则
+  // 帥/将的移动规则
   private getKingMoves(position: Position, camp: Camp): Position[] {
     const moves: Position[] = []
     const directions = [
@@ -680,8 +684,12 @@ export class ChessGame {
       return false
     }
 
-    // 恢复棋子位置
-    const piece = lastMove.piece
+    // 找到实际的棋子对象（通过ID查找）
+    const piece = this.state.pieces.find((p) => p.id === lastMove.piece.id)
+    if (!piece) {
+      console.error('找不到要悔棋的棋子:', lastMove.piece.id)
+      return false
+    }
 
     // 将棋子移回原位置
     this.state.board[lastMove.to.y][lastMove.to.x] = null
@@ -690,10 +698,12 @@ export class ChessGame {
 
     // 如果有被吃的棋子，恢复它
     if (lastMove.capturedPiece) {
-      const capturedPiece = lastMove.capturedPiece
-      capturedPiece.alive = true
-      this.state.board[lastMove.to.y][lastMove.to.x] = capturedPiece
-      console.log('恢复被吃棋子:', capturedPiece.type, '在位置:', capturedPiece.position)
+      const capturedPiece = this.state.pieces.find((p) => p.id === lastMove.capturedPiece!.id)
+      if (capturedPiece) {
+        capturedPiece.alive = true
+        this.state.board[lastMove.to.y][lastMove.to.x] = capturedPiece
+        console.log('恢复被吃棋子:', capturedPiece.type, '在位置:', capturedPiece.position)
+      }
     }
 
     // 切换回上一个玩家
@@ -726,5 +736,37 @@ export class ChessGame {
   // 重置游戏
   reset() {
     this.state = this.initializeGame()
+  }
+
+  // 从保存的状态恢复游戏
+  private restoreFromState(savedState: GameState): GameState {
+    // 深拷贝状态以避免引用问题
+    const state = JSON.parse(JSON.stringify(savedState))
+
+    // 恢复移动历史中的时间戳和棋子引用
+    if (state.moveHistory) {
+      state.moveHistory = state.moveHistory.map((move: any) => {
+        // 重新建立棋子引用关系
+        const piece = state.pieces.find((p: ChessPiece) => p.id === move.piece.id)
+        const capturedPiece = move.capturedPiece
+          ? state.pieces.find((p: ChessPiece) => p.id === move.capturedPiece.id)
+          : undefined
+
+        return {
+          from: move.from,
+          to: move.to,
+          piece: piece || move.piece,
+          capturedPiece: capturedPiece || move.capturedPiece,
+          timestamp: typeof move.timestamp === 'string' ? new Date(move.timestamp) : move.timestamp,
+        }
+      })
+    }
+
+    return state
+  }
+
+  // 获取当前状态的深拷贝（用于保存）
+  getStateForSaving(): GameState {
+    return JSON.parse(JSON.stringify(this.state))
   }
 }

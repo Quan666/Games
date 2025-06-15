@@ -17,6 +17,7 @@ declare module 'vue' {
     GameControlPanel: typeof import('./components/gomoku/GameControlPanel.vue')['default']
     GameInfoHeader: typeof import('./components/gomoku/GameInfoHeader.vue')['default']
     GameSettings: typeof import('./components/gomoku/GameSettings.vue')['default']
+    GlobalSettings: typeof import('./components/GlobalSettings.vue')['default']
     Gomoku: typeof import('./components/gomoku/Gomoku.vue')['default']
     GomokuBoard: typeof import('./components/gomoku/GomokuBoard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

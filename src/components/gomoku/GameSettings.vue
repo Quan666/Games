@@ -192,14 +192,42 @@
                 class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
               />
             </label>
+          </div>
+        </div>
+
+        <!-- 音效设置 -->
+        <div class="space-y-4 mb-6">
+          <h4 class="font-semibold text-gray-700 border-b pb-1">🔊 音效设置</h4>
+          <div class="space-y-3">
             <label class="flex items-center justify-between">
-              <span class="text-sm font-medium">开启声音</span>
+              <span class="text-sm font-medium">全局音效总开关</span>
               <input
-                v-model="gameSettings.enableSound"
+                v-model="localGlobalSettingsRef.soundEnabled"
                 type="checkbox"
                 class="w-5 h-5 text-green-600 rounded focus:ring-green-500"
               />
             </label>
+            <label class="flex items-center justify-between">
+              <span class="text-sm font-medium">五子棋音效</span>
+              <input
+                v-model="gameSettings.enableSound"
+                type="checkbox"
+                :disabled="!localGlobalSettingsRef.soundEnabled"
+                class="w-5 h-5 text-green-600 rounded focus:ring-green-500 disabled:opacity-50"
+              />
+            </label>
+            <label class="flex items-center justify-between">
+              <span class="text-sm font-medium">全局语音播报</span>
+              <input
+                v-model="localGlobalSettingsRef.voiceEnabled"
+                type="checkbox"
+                :disabled="!localGlobalSettingsRef.soundEnabled"
+                class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </label>
+            <p class="text-xs text-gray-500">
+              全局开关控制所有游戏的音效，关闭后各游戏的音效也会被禁用
+            </p>
           </div>
         </div>
 
@@ -236,7 +264,6 @@ import { useStore } from 'vuex'
 import ConfirmDialog from './ConfirmDialog.vue'
 
 const store = useStore()
-
 const show = computed(() => store.state.gomoku.ui.showGameSettings)
 const aiThinking = computed(() => store.state.gomoku.gameState.aiThinking)
 const isGameInProgress = computed(
@@ -248,6 +275,7 @@ const localGameMode = ref(store.state.gomoku.gameMode)
 const localAiPlayer = ref(store.state.gomoku.aiPlayer)
 const localGameSettings = ref({ ...store.state.gomoku.gameSettings })
 const localAiVsAiSettings = ref({ ...store.state.gomoku.aiVsAiSettings })
+const localGlobalSettings = ref({ ...store.state.globalSettings })
 
 watch(show, (val) => {
   if (val) {
@@ -255,6 +283,7 @@ watch(show, (val) => {
     localAiPlayer.value = store.state.gomoku.aiPlayer
     localGameSettings.value = { ...store.state.gomoku.gameSettings }
     localAiVsAiSettings.value = { ...store.state.gomoku.aiVsAiSettings }
+    localGlobalSettings.value = { ...store.state.globalSettings }
   }
 })
 
@@ -275,13 +304,31 @@ const aiVsAiSettings = computed({
   set: (v) => (localAiVsAiSettings.value = v),
 })
 
+const localGlobalSettingsRef = computed({
+  get: () => localGlobalSettings.value,
+  set: (v) => (localGlobalSettings.value = v),
+})
+
+// 当音效关闭时，自动关闭语音
+watch(
+  () => localGlobalSettings.value.soundEnabled,
+  (newVal) => {
+    if (!newVal) {
+      localGlobalSettings.value.voiceEnabled = false
+      localGameSettings.value.enableSound = false
+    }
+  },
+)
+
 function isDirty() {
   const s = store.state.gomoku
+  const global = store.state.globalSettings
   return (
     localGameMode.value !== s.gameMode ||
     localAiPlayer.value !== s.aiPlayer ||
     JSON.stringify(localGameSettings.value) !== JSON.stringify(s.gameSettings) ||
-    JSON.stringify(localAiVsAiSettings.value) !== JSON.stringify(s.aiVsAiSettings)
+    JSON.stringify(localAiVsAiSettings.value) !== JSON.stringify(s.aiVsAiSettings) ||
+    JSON.stringify(localGlobalSettings.value) !== JSON.stringify(global)
   )
 }
 
@@ -290,6 +337,7 @@ function handleApply() {
   store.commit('updateAiPlayer', aiPlayer.value)
   store.commit('updateGameSettings', { ...gameSettings.value })
   store.commit('updateAiVsAiSettings', { ...aiVsAiSettings.value })
+  store.commit('updateGlobalSettings', { ...localGlobalSettings.value })
   store.commit('setShowGameSettings', false)
 }
 const showConfirm = ref(false)
