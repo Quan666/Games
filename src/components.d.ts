@@ -20,6 +20,7 @@ declare module 'vue' {
     GlobalSettings: typeof import('./components/GlobalSettings.vue')['default']
     Gomoku: typeof import('./components/gomoku/Gomoku.vue')['default']
     GomokuBoard: typeof import('./components/gomoku/GomokuBoard.vue')['default']
+    HomeButton: typeof import('./components/HomeButton.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     WinDialog: typeof import('./components/gomoku/WinDialog.vue')['default']
