@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AISettings: typeof import('./components/gomoku/AISettings.vue')['default']
     AIStatusPanel: typeof import('./components/gomoku/AIStatusPanel.vue')['default']
+    ConfirmDialog: typeof import('./components/gomoku/ConfirmDialog.vue')['default']
     GameControlPanel: typeof import('./components/gomoku/GameControlPanel.vue')['default']
     GameInfoHeader: typeof import('./components/gomoku/GameInfoHeader.vue')['default']
     GameSettings: typeof import('./components/gomoku/GameSettings.vue')['default']

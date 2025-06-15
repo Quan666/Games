@@ -332,6 +332,11 @@
             应用设置
           </button>
         </div>
+
+        <ConfirmDialog :show="showConfirm" @confirm="onConfirmSave" @cancel="onCancelSave">
+          <template #title>设置未保存</template>
+          设置已更改，是否保存？
+        </ConfirmDialog>
       </div>
     </div>
   </div>
@@ -341,6 +346,7 @@
 import { computed, ref, watch } from 'vue'
 // @ts-ignore
 import { useStore } from 'vuex'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 const store = useStore()
 
@@ -378,6 +384,15 @@ const gameSettings = computed({
   set: (v) => (localGameSettings.value = v),
 })
 
+function isDirty() {
+  const s = store.state.gomoku
+  return (
+    JSON.stringify(localAiSettings.value) !== JSON.stringify(s.aiSettings) ||
+    localAiPlayer.value !== s.aiPlayer ||
+    JSON.stringify(localGameSettings.value) !== JSON.stringify(s.gameSettings)
+  )
+}
+
 function handleApply() {
   // 只在应用时写入 store
   store.commit('updateAiSettings', { ...aiSettings.value })
@@ -386,12 +401,32 @@ function handleApply() {
   store.commit('setShowAISettings', false)
 }
 function handleClose() {
+  if (isDirty()) {
+    showConfirm.value = true
+    pendingAction = () => store.commit('setShowAISettings', false)
+    return
+  }
   store.commit('setShowAISettings', false)
 }
 function handleReset() {
   // 重置本地副本为默认
   store.commit('resetAiSettings')
   localAiSettings.value = { ...store.state.gomoku.aiSettings }
+}
+
+const showConfirm = ref(false)
+let pendingAction: null | (() => void) = null
+
+function onConfirmSave() {
+  handleApply()
+  showConfirm.value = false
+  pendingAction && pendingAction()
+  pendingAction = null
+}
+function onCancelSave() {
+  showConfirm.value = false
+  pendingAction && pendingAction()
+  pendingAction = null
 }
 </script>
 

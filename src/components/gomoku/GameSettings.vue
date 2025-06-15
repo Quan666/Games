@@ -220,6 +220,12 @@
         </div>
       </div>
     </div>
+
+    <!-- 确认保存弹窗 -->
+    <ConfirmDialog :show="showConfirm" @confirm="onConfirmSave" @cancel="onCancelSave">
+      <template #title>设置未保存</template>
+      设置已更改，是否保存？
+    </ConfirmDialog>
   </div>
 </template>
 
@@ -227,6 +233,7 @@
 import { computed, ref, watch } from 'vue'
 // @ts-ignore
 import { useStore } from 'vuex'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 const store = useStore()
 
@@ -268,6 +275,16 @@ const aiVsAiSettings = computed({
   set: (v) => (localAiVsAiSettings.value = v),
 })
 
+function isDirty() {
+  const s = store.state.gomoku
+  return (
+    localGameMode.value !== s.gameMode ||
+    localAiPlayer.value !== s.aiPlayer ||
+    JSON.stringify(localGameSettings.value) !== JSON.stringify(s.gameSettings) ||
+    JSON.stringify(localAiVsAiSettings.value) !== JSON.stringify(s.aiVsAiSettings)
+  )
+}
+
 function handleApply() {
   store.commit('updateGameMode', gameMode.value)
   store.commit('updateAiPlayer', aiPlayer.value)
@@ -275,15 +292,43 @@ function handleApply() {
   store.commit('updateAiVsAiSettings', { ...aiVsAiSettings.value })
   store.commit('setShowGameSettings', false)
 }
+const showConfirm = ref(false)
+let pendingAction: null | (() => void) = null
+
+function onConfirmSave() {
+  handleApply()
+  showConfirm.value = false
+  pendingAction && pendingAction()
+  pendingAction = null
+}
+function onCancelSave() {
+  showConfirm.value = false
+  pendingAction && pendingAction()
+  pendingAction = null
+}
+
 function handleClose() {
+  if (isDirty()) {
+    showConfirm.value = true
+    pendingAction = () => store.commit('setShowGameSettings', false)
+    return
+  }
+  store.commit('setShowGameSettings', false)
+}
+function handleOpenAISettings() {
+  if (isDirty()) {
+    showConfirm.value = true
+    pendingAction = () => {
+      store.commit('setShowAISettings', true)
+      store.commit('setShowGameSettings', false)
+    }
+    return
+  }
+  store.commit('setShowAISettings', true)
   store.commit('setShowGameSettings', false)
 }
 function handleSwitchMode(mode: string) {
   gameMode.value = mode
-}
-function handleOpenAISettings() {
-  store.commit('setShowAISettings', true)
-  store.commit('setShowGameSettings', false)
 }
 </script>
 
