@@ -118,6 +118,328 @@
         >
           汉界
         </text>
+
+        <!-- 炮位直角标记 -->
+        <!-- 黑方炮位 (1,2) 和 (7,2) -->
+        <g v-for="x in [1, 7]" :key="'black-cannon-' + x">
+          <!-- 左上角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize - 12"
+              :y1="margin + 2 * cellSize - 6"
+              :x2="margin + x * cellSize - 6"
+              :y2="margin + 2 * cellSize - 6"
+              stroke="#000"
+              stroke-width="1.5"
+            />
+            <line
+              :x1="margin + x * cellSize - 6"
+              :y1="margin + 2 * cellSize - 12"
+              :x2="margin + x * cellSize - 6"
+              :y2="margin + 2 * cellSize - 6"
+              stroke="#000"
+              stroke-width="1.5"
+            />
+          </g>
+          <!-- 右上角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize + 6"
+              :y1="margin + 2 * cellSize - 6"
+              :x2="margin + x * cellSize + 12"
+              :y2="margin + 2 * cellSize - 6"
+              stroke="#000"
+              stroke-width="1.5"
+            />
+            <line
+              :x1="margin + x * cellSize + 6"
+              :y1="margin + 2 * cellSize - 12"
+              :x2="margin + x * cellSize + 6"
+              :y2="margin + 2 * cellSize - 6"
+              stroke="#000"
+              stroke-width="1.5"
+            />
+          </g>
+          <!-- 左下角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize - 12"
+              :y1="margin + 2 * cellSize + 6"
+              :x2="margin + x * cellSize - 6"
+              :y2="margin + 2 * cellSize + 6"
+              stroke="#000"
+              stroke-width="1.5"
+            />
+            <line
+              :x1="margin + x * cellSize - 6"
+              :y1="margin + 2 * cellSize + 6"
+              :x2="margin + x * cellSize - 6"
+              :y2="margin + 2 * cellSize + 12"
+              stroke="#000"
+              stroke-width="1.5"
+            />
+          </g>
+          <!-- 右下角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize + 6"
+              :y1="margin + 2 * cellSize + 6"
+              :x2="margin + x * cellSize + 12"
+              :y2="margin + 2 * cellSize + 6"
+              stroke="#000"
+              stroke-width="1.5"
+            />
+            <line
+              :x1="margin + x * cellSize + 6"
+              :y1="margin + 2 * cellSize + 6"
+              :x2="margin + x * cellSize + 6"
+              :y2="margin + 2 * cellSize + 12"
+              stroke="#000"
+              stroke-width="1.5"
+            />
+          </g>
+        </g>
+
+        <!-- 红方炮位 (1,7) 和 (7,7) -->
+        <g v-for="x in [1, 7]" :key="'red-cannon-' + x">
+          <!-- 左上角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize - 12"
+              :y1="margin + 7 * cellSize - 6"
+              :x2="margin + x * cellSize - 6"
+              :y2="margin + 7 * cellSize - 6"
+              stroke="#d32f2f"
+              stroke-width="1.5"
+            />
+            <line
+              :x1="margin + x * cellSize - 6"
+              :y1="margin + 7 * cellSize - 12"
+              :x2="margin + x * cellSize - 6"
+              :y2="margin + 7 * cellSize - 6"
+              stroke="#d32f2f"
+              stroke-width="1.5"
+            />
+          </g>
+          <!-- 右上角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize + 6"
+              :y1="margin + 7 * cellSize - 6"
+              :x2="margin + x * cellSize + 12"
+              :y2="margin + 7 * cellSize - 6"
+              stroke="#d32f2f"
+              stroke-width="1.5"
+            />
+            <line
+              :x1="margin + x * cellSize + 6"
+              :y1="margin + 7 * cellSize - 12"
+              :x2="margin + x * cellSize + 6"
+              :y2="margin + 7 * cellSize - 6"
+              stroke="#d32f2f"
+              stroke-width="1.5"
+            />
+          </g>
+          <!-- 左下角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize - 12"
+              :y1="margin + 7 * cellSize + 6"
+              :x2="margin + x * cellSize - 6"
+              :y2="margin + 7 * cellSize + 6"
+              stroke="#d32f2f"
+              stroke-width="1.5"
+            />
+            <line
+              :x1="margin + x * cellSize - 6"
+              :y1="margin + 7 * cellSize + 6"
+              :x2="margin + x * cellSize - 6"
+              :y2="margin + 7 * cellSize + 12"
+              stroke="#d32f2f"
+              stroke-width="1.5"
+            />
+          </g>
+          <!-- 右下角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize + 6"
+              :y1="margin + 7 * cellSize + 6"
+              :x2="margin + x * cellSize + 12"
+              :y2="margin + 7 * cellSize + 6"
+              stroke="#d32f2f"
+              stroke-width="1.5"
+            />
+            <line
+              :x1="margin + x * cellSize + 6"
+              :y1="margin + 7 * cellSize + 6"
+              :x2="margin + x * cellSize + 6"
+              :y2="margin + 7 * cellSize + 12"
+              stroke="#d32f2f"
+              stroke-width="1.5"
+            />
+          </g>
+        </g>
+
+        <!-- 兵卒位直角标记 -->
+        <!-- 黑方卒位 (0,3), (2,3), (4,3), (6,3), (8,3) -->
+        <g v-for="x in [0, 2, 4, 6, 8]" :key="'black-pawn-' + x">
+          <!-- 左上角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize - 10"
+              :y1="margin + 3 * cellSize - 4"
+              :x2="margin + x * cellSize - 4"
+              :y2="margin + 3 * cellSize - 4"
+              stroke="#000"
+              stroke-width="1"
+            />
+            <line
+              :x1="margin + x * cellSize - 4"
+              :y1="margin + 3 * cellSize - 10"
+              :x2="margin + x * cellSize - 4"
+              :y2="margin + 3 * cellSize - 4"
+              stroke="#000"
+              stroke-width="1"
+            />
+          </g>
+          <!-- 右上角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize + 4"
+              :y1="margin + 3 * cellSize - 4"
+              :x2="margin + x * cellSize + 10"
+              :y2="margin + 3 * cellSize - 4"
+              stroke="#000"
+              stroke-width="1"
+            />
+            <line
+              :x1="margin + x * cellSize + 4"
+              :y1="margin + 3 * cellSize - 10"
+              :x2="margin + x * cellSize + 4"
+              :y2="margin + 3 * cellSize - 4"
+              stroke="#000"
+              stroke-width="1"
+            />
+          </g>
+          <!-- 左下角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize - 10"
+              :y1="margin + 3 * cellSize + 4"
+              :x2="margin + x * cellSize - 4"
+              :y2="margin + 3 * cellSize + 4"
+              stroke="#000"
+              stroke-width="1"
+            />
+            <line
+              :x1="margin + x * cellSize - 4"
+              :y1="margin + 3 * cellSize + 4"
+              :x2="margin + x * cellSize - 4"
+              :y2="margin + 3 * cellSize + 10"
+              stroke="#000"
+              stroke-width="1"
+            />
+          </g>
+          <!-- 右下角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize + 4"
+              :y1="margin + 3 * cellSize + 4"
+              :x2="margin + x * cellSize + 10"
+              :y2="margin + 3 * cellSize + 4"
+              stroke="#000"
+              stroke-width="1"
+            />
+            <line
+              :x1="margin + x * cellSize + 4"
+              :y1="margin + 3 * cellSize + 4"
+              :x2="margin + x * cellSize + 4"
+              :y2="margin + 3 * cellSize + 10"
+              stroke="#000"
+              stroke-width="1"
+            />
+          </g>
+        </g>
+
+        <!-- 红方兵位 (0,6), (2,6), (4,6), (6,6), (8,6) -->
+        <g v-for="x in [0, 2, 4, 6, 8]" :key="'red-pawn-' + x">
+          <!-- 左上角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize - 10"
+              :y1="margin + 6 * cellSize - 4"
+              :x2="margin + x * cellSize - 4"
+              :y2="margin + 6 * cellSize - 4"
+              stroke="#d32f2f"
+              stroke-width="1"
+            />
+            <line
+              :x1="margin + x * cellSize - 4"
+              :y1="margin + 6 * cellSize - 10"
+              :x2="margin + x * cellSize - 4"
+              :y2="margin + 6 * cellSize - 4"
+              stroke="#d32f2f"
+              stroke-width="1"
+            />
+          </g>
+          <!-- 右上角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize + 4"
+              :y1="margin + 6 * cellSize - 4"
+              :x2="margin + x * cellSize + 10"
+              :y2="margin + 6 * cellSize - 4"
+              stroke="#d32f2f"
+              stroke-width="1"
+            />
+            <line
+              :x1="margin + x * cellSize + 4"
+              :y1="margin + 6 * cellSize - 10"
+              :x2="margin + x * cellSize + 4"
+              :y2="margin + 6 * cellSize - 4"
+              stroke="#d32f2f"
+              stroke-width="1"
+            />
+          </g>
+          <!-- 左下角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize - 10"
+              :y1="margin + 6 * cellSize + 4"
+              :x2="margin + x * cellSize - 4"
+              :y2="margin + 6 * cellSize + 4"
+              stroke="#d32f2f"
+              stroke-width="1"
+            />
+            <line
+              :x1="margin + x * cellSize - 4"
+              :y1="margin + 6 * cellSize + 4"
+              :x2="margin + x * cellSize - 4"
+              :y2="margin + 6 * cellSize + 10"
+              stroke="#d32f2f"
+              stroke-width="1"
+            />
+          </g>
+          <!-- 右下角 -->
+          <g>
+            <line
+              :x1="margin + x * cellSize + 4"
+              :y1="margin + 6 * cellSize + 4"
+              :x2="margin + x * cellSize + 10"
+              :y2="margin + 6 * cellSize + 4"
+              stroke="#d32f2f"
+              stroke-width="1"
+            />
+            <line
+              :x1="margin + x * cellSize + 4"
+              :y1="margin + 6 * cellSize + 4"
+              :x2="margin + x * cellSize + 4"
+              :y2="margin + 6 * cellSize + 10"
+              stroke="#d32f2f"
+              stroke-width="1"
+            />
+          </g>
+        </g>
       </svg>
 
       <!-- 棋子 -->
