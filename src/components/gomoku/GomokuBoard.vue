@@ -343,10 +343,7 @@ const getHoverClass = (row: number, col: number): string => {
 }
 
 const getPieceClass = (row: number, col: number): string => {
-  const baseClass =
-    board.value[row][col] === 1
-      ? 'bg-gradient-radial from-gray-600 to-black'
-      : 'bg-gradient-radial from-white to-gray-300'
+  const baseClass = board.value[row][col] === 1 ? 'black-piece' : 'white-piece'
 
   const winningClass = isWinningPiece(row, col) ? 'winning-outline animate-pulse' : ''
 
@@ -390,6 +387,41 @@ const handleMove = (row: number, col: number) => {
 <style scoped>
 .bg-gradient-radial {
   background: radial-gradient(circle at 30% 30%, var(--tw-gradient-from), var(--tw-gradient-to));
+}
+
+/* 黑色棋子样式 */
+.black-piece {
+  background: radial-gradient(
+    circle at 30% 30%,
+    #4a4a4a 0%,
+    #2a2a2a 40%,
+    #0f0f0f 80%,
+    #000000 100%
+  );
+  box-shadow:
+    inset 2px 2px 6px rgba(255, 255, 255, 0.15),
+    inset -2px -2px 8px rgba(0, 0, 0, 0.8),
+    0 2px 8px rgba(0, 0, 0, 0.6);
+  border: 0px solid rgba(0, 0, 0, 0.5);
+}
+
+/* 优化的白色棋子样式 - 增强3D效果 */
+.white-piece {
+  background: radial-gradient(
+    circle at 25% 25%,
+    #ffffff 0%,
+    #ffffff 15%,
+    #f8fafc 35%,
+    #e2e8f0 65%,
+    #cbd5e1 85%,
+    #94a3b8 100%
+  );
+  box-shadow:
+    inset 3px 3px 12px rgba(255, 255, 255, 1),
+    inset -4px -4px 16px rgba(0, 0, 0, 0.25),
+    0 4px 15px rgba(0, 0, 0, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.15);
+  border: 0px solid rgba(148, 163, 184, 0.6);
 }
 
 .last-move-outline {
