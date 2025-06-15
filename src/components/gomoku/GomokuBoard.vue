@@ -106,7 +106,13 @@
           v-for="(cell, colIndex) in row"
           :key="`cell-${rowIndex}-${colIndex}`"
           class="absolute cursor-pointer flex items-center justify-center transition-all duration-200"
-          :class="getHoverClass(rowIndex, colIndex)"
+          :class="[
+            getHoverClass(rowIndex, colIndex),
+            {
+              'z-100': isLastMove(rowIndex, colIndex) || isWinningPiece(rowIndex, colIndex),
+              'z-10': !isLastMove(rowIndex, colIndex),
+            },
+          ]"
           @click="handleMove(rowIndex, colIndex)"
           :style="getIntersectionPosition(rowIndex, colIndex)"
         >
@@ -118,7 +124,7 @@
           >
             <!-- 棋子本体 -->
             <div
-              class="rounded-full border-2 border-gray-800 shadow-lg relative z-10 w-full h-full"
+              class="rounded-full border-2 border-gray-800 shadow-lg relative w-full h-full"
               :class="getPieceClass(rowIndex, colIndex)"
               :style="pieceStyle"
             >
@@ -217,16 +223,25 @@ const boardContainerStyle = computed(() => {
 // pieceStyle、starPointSize、coordinateFontSize、lastMoveMarkSize、aiBestMarkSize、getIntersectionPosition、getMoveOrderFontStyle 等相关依赖全部改为用相对单位
 // 例如 pieceStyle:
 const pieceStyle = computed(() => {
+  let size = 5 // 默认值
+  if (boardSize.value === 19) {
+    size = 4
+  } else if (boardSize.value === 15) {
+    size = 5
+  } else if (boardSize.value === 13) {
+    size = 6
+  }
   if (isPortrait.value) {
+    size = size * 1.1 // 在竖屏下稍微增大棋子
     return {
-      width: '5vw',
-      height: 'calc(5vw)', // 保证棋子为正圆
+      width: `${size}vw`,
+      height: `calc(${size}vw)`, // 保证棋子为正圆
       aspectRatio: '1 / 1', // 保证棋子始终为正圆
     }
   } else {
     return {
-      width: 'calc(5vh)',
-      height: '5vh', // 保证棋子为正圆
+      width: `calc(${size}vh)`,
+      height: `${size}vh`, // 保证棋子为正圆
       aspectRatio: '1 / 1', // 保证棋子始终为正圆
     }
   }
