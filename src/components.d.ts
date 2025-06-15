@@ -10,6 +10,9 @@ declare module 'vue' {
   export interface GlobalComponents {
     AISettings: typeof import('./components/gomoku/AISettings.vue')['default']
     AIStatusPanel: typeof import('./components/gomoku/AIStatusPanel.vue')['default']
+    ChessBoard: typeof import('./components/chess/board/ChessBoard.vue')['default']
+    ChessEntry: typeof import('./components/chess/ChessEntry.vue')['default']
+    ChessPiece: typeof import('./components/chess/board/ChessPiece.vue')['default']
     ConfirmDialog: typeof import('./components/gomoku/ConfirmDialog.vue')['default']
     GameControlPanel: typeof import('./components/gomoku/GameControlPanel.vue')['default']
     GameInfoHeader: typeof import('./components/gomoku/GameInfoHeader.vue')['default']

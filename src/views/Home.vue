@@ -43,13 +43,21 @@
         </p>
       </div>
       <!-- 游戏网格 -->
-      <div class="flex justify-center max-w-6xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
         <!-- 五子棋 -->
         <div class="game-card group" @click="goToGame('/wuziqi')">
           <div class="game-icon">⚫⚪</div>
           <h3 class="game-title">五子棋</h3>
           <p class="game-description">经典策略游戏，与AI对战，考验你的逻辑思维能力</p>
           <div class="game-status available">可游玩</div>
+        </div>
+
+        <!-- 象棋 -->
+        <div class="game-card group" @click="goToGame('/chess')">
+          <div class="game-icon">♞♜</div>
+          <h3 class="game-title">中国象棋</h3>
+          <p class="game-description">千年传承的经典棋类，体验传统文化的魅力</p>
+          <div class="game-status coming-soon">开发中</div>
         </div>
       </div>
 
@@ -59,7 +67,7 @@
           class="inline-flex items-center space-x-8 bg-white/10 backdrop-blur-sm rounded-full px-8 py-4"
         >
           <div class="text-center">
-            <div class="text-2xl font-bold text-white">1</div>
+            <div class="text-2xl font-bold text-white">2</div>
             <div class="text-sm text-gray-300">游戏总数</div>
           </div>
           <div class="w-px h-8 bg-gray-400"></div>
