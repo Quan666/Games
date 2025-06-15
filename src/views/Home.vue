@@ -113,13 +113,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import GlobalSettings from '../components/GlobalSettings.vue'
 import GlobalSettings from '../components/GlobalSettings.vue'
 
 const router = useRouter()
-const showGlobalSettings = ref(false)
 const showGlobalSettings = ref(false)
 
 const goToGame = (path: string) => {
