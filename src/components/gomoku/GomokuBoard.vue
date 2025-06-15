@@ -1,7 +1,11 @@
 <template>
   <div
     ref="gameBoard"
-    class="relative bg-yellow-100 border-4 border-yellow-800 rounded-lg shadow-2xl"
+    class="relative bg-yellow-100 border-4 border-yellow-800 rounded-lg gomoku-board-container"
+    :class="{
+      'shadow-2xl': !isPortrait,
+    }"
+    style="aspect-ratio: 1/1; background-color: #d2b48c"
     :style="boardContainerStyle"
   >
     <!-- SVG网格、定位点和坐标 -->
@@ -109,28 +113,27 @@
           <!-- 棋子 -->
           <div
             v-if="cell !== 0"
-            class="rounded-full border-2 border-gray-800 shadow-lg relative z-10"
-            :class="getPieceClass(rowIndex, colIndex)"
-            :style="pieceStyle"
+            class="relative flex items-center justify-center"
+            style="width: 100%; height: 100%"
           >
-            <!-- 最后一步标记 -->
+            <!-- 棋子本体 -->
             <div
-              v-if="gameSettings.showLastMove && isLastMove(rowIndex, colIndex)"
-              class="absolute inset-0 flex items-center justify-center"
+              class="rounded-full border-2 border-gray-800 shadow-lg relative z-10 w-full h-full"
+              :class="getPieceClass(rowIndex, colIndex)"
+              :style="pieceStyle"
             >
-              <div :style="lastMoveMarkStyle" class="bg-red-500 rounded-full animate-pulse"></div>
-            </div>
-            <!-- 棋子顺序号 -->
-            <div
-              v-if="gameSettings.showMoveOrder"
-              class="absolute inset-0 flex items-center justify-center"
-            >
-              <span
-                :style="getMoveOrderFontStyle()"
-                :class="cell === 1 ? 'text-white font-bold' : 'text-black font-bold'"
+              <!-- 棋子顺序号 -->
+              <div
+                v-if="gameSettings.showMoveOrder"
+                class="absolute inset-0 flex items-center justify-center"
               >
-                {{ getMoveOrder(rowIndex, colIndex) }}
-              </span>
+                <span
+                  :style="getMoveOrderFontStyle()"
+                  :class="cell === 1 ? 'text-white font-bold' : 'text-black font-bold'"
+                >
+                  {{ getMoveOrder(rowIndex, colIndex) }}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -147,6 +150,7 @@
             <div
               :style="aiBestMarkStyle"
               class="bg-red-500 rounded-full shadow-lg border-2 border-white ai-best-mark"
+              :title="`AI建议: (${rowIndex}, ${colIndex})`"
             ></div>
           </div>
         </div>
@@ -156,7 +160,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, nextTick } from 'vue'
 // @ts-ignore
 import { useStore } from 'vuex'
 
@@ -166,11 +170,11 @@ interface Position {
   col: number
 }
 
-
 // Props
 const props = defineProps<{
   windowWidth: number
   windowHeight: number
+  aiBestPosition?: { row: number; col: number } | null
 }>()
 
 // Store
@@ -182,79 +186,89 @@ const lastMove = computed(() => store.state.gomoku.gameState.lastMove)
 const moveHistory = computed(() => store.state.gomoku.gameState.moveHistory)
 const winningPositions = computed(() => store.state.gomoku.gameState.winningPositions)
 const gameOver = computed(() => store.state.gomoku.gameState.gameOver)
-const aiBestPosition = computed(() => store.state.gomoku.gameState.aiBestPosition)
 
 // Emits
 const emits = defineEmits<{
   move: [row: number, col: number]
 }>()
+// 计算属性
+const isPortrait = computed(() => props.windowWidth < props.windowHeight)
 
 // 布局常量
 const padding_percent = 8
 const grid_area_percent = 84
 
-// 计算属性
-const isPortrait = computed(() => props.windowWidth < props.windowHeight)
+// 计算棋盘大小
 
-const boardSize_px = computed(() => {
-  let size: number
-  if (!props.windowWidth || !props.windowHeight) {
-    return 400 // 默认棋盘像素
-  }
+const boardContainerStyle = computed(() => {
   if (isPortrait.value) {
-    const maxWidth = props.windowWidth * 0.9
-    const maxHeight = props.windowHeight * 0.7
-    size = Math.min(maxWidth, maxHeight)
+    return {
+      width: '98vw',
+      height: '98vw', // 保证棋盘为正方形
+    }
   } else {
-    const maxSize = Math.max(props.windowHeight * 0.8, props.windowWidth * 0.4)
-    size = Math.max(maxSize, 400)
+    return {
+      width: '90vh',
+      height: '90vh', // 保证棋盘为正方形
+    }
   }
-  // 棋盘必须正方形
-  return Math.max(Math.min(size, props.windowWidth, props.windowHeight), 100)
 })
 
-const boardContainerStyle = computed(() => ({
-  width: `${boardSize_px.value}px`,
-  height: `${boardSize_px.value}px`,
-  backgroundColor: '#D2B48C',
-}))
-
+// pieceStyle、starPointSize、coordinateFontSize、lastMoveMarkSize、aiBestMarkSize、getIntersectionPosition、getMoveOrderFontStyle 等相关依赖全部改为用相对单位
+// 例如 pieceStyle:
 const pieceStyle = computed(() => {
-  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (boardSize.value - 1)
-  const pieceSize = Math.max(cellSize * 0.8, 12)
-
-  return {
-    width: `${pieceSize}px`,
-    height: `${pieceSize}px`,
+  if (isPortrait.value) {
+    return {
+      width: '5vw',
+      height: 'calc(5vw)', // 保证棋子为正圆
+      aspectRatio: '1 / 1', // 保证棋子始终为正圆
+    }
+  } else {
+    return {
+      width: 'calc(5vh)',
+      height: '5vh', // 保证棋子为正圆
+      aspectRatio: '1 / 1', // 保证棋子始终为正圆
+    }
   }
 })
 
 const starPointSize = computed(() => {
-  const px = boardSize_px.value
+  const px = 500 // 用默认值或用容器宽度的相对单位
   if (!px || isNaN(px) || px <= 0) return 2
   return Math.max(px / 150, 2)
 })
 
-const coordinateFontSize = computed(() => Math.max(boardSize_px.value / 40, 10))
+const coordinateFontSize = computed(() => 'min(max(2.5vw, 8px), 22px)')
 
 const lastMoveMarkSize = computed(() => {
-  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (boardSize.value - 1)
-  return Math.max(cellSize * 0.15, 4)
+  if (isPortrait.value) {
+    return '2.5vw'
+  } else {
+    return '2.5vh'
+  }
 })
 
 const lastMoveMarkStyle = computed(() => ({
-  width: `${lastMoveMarkSize.value}px`,
-  height: `${lastMoveMarkSize.value}px`,
+  width: lastMoveMarkSize.value,
+  height: lastMoveMarkSize.value,
 }))
 
 const aiBestMarkSize = computed(() => {
-  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (boardSize.value - 1)
-  return Math.max(cellSize * 0.25, 6)
+  if (isPortrait.value) {
+    return '2.5vw'
+  } else {
+    return '2.5vh'
+  }
 })
 
 const aiBestMarkStyle = computed(() => ({
-  width: `${aiBestMarkSize.value}px`,
-  height: `${aiBestMarkSize.value}px`,
+  width: aiBestMarkSize.value,
+  height: aiBestMarkSize.value,
+  opacity: 0.85,
+  boxShadow: '0 0 12px 4px #f87171',
+  border: '2.5px solid #fff',
+  background: 'radial-gradient(circle, #f87171 60%, #fff 100%)',
+  pointerEvents: 'none',
 }))
 
 // 定位点
@@ -296,14 +310,11 @@ const starPoints = computed<Position[]>(() => {
 const getIntersectionPosition = (row: number, col: number) => {
   const left = padding_percent + (grid_area_percent / (boardSize.value - 1)) * col
   const top = padding_percent + (grid_area_percent / (boardSize.value - 1)) * row
-  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (boardSize.value - 1)
-  const clickArea = Math.max(cellSize, 20)
-
   return {
     left: `${left}%`,
     top: `${top}%`,
-    width: `${clickArea}px`,
-    height: `${clickArea}px`,
+    width: '5%',
+    height: '5%',
     transform: 'translate(-50%, -50%)',
   }
 }
@@ -323,7 +334,13 @@ const getPieceClass = (row: number, col: number): string => {
     ? 'ring-4 ring-red-500 ring-opacity-70 animate-pulse'
     : ''
 
-  return `${baseClass} ${winningClass}`
+  // 最后一步加蓝色圈圈
+  const lastMoveClass =
+    gameSettings.value.showLastMove && isLastMove(row, col) && !gameOver.value
+      ? 'last-move-outline'
+      : ''
+
+  return `${baseClass} ${winningClass} ${lastMoveClass}`
 }
 
 const isLastMove = (row: number, col: number): boolean => {
@@ -341,10 +358,9 @@ const getMoveOrder = (row: number, col: number): number => {
 }
 
 const getMoveOrderFontStyle = () => {
-  const cellSize = (boardSize_px.value * (grid_area_percent / 100)) / (boardSize.value - 1)
-  const fontSize = Math.max(cellSize * 0.25, 8)
+  // 使用 clamp 限制字号范围，防止无限变大或变小
   return {
-    fontSize: `${fontSize}px`,
+    fontSize: 'clamp(8px, 2vw, 18px)',
     lineHeight: '1',
     textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
   }
@@ -358,6 +374,25 @@ const handleMove = (row: number, col: number) => {
 <style scoped>
 .bg-gradient-radial {
   background: radial-gradient(circle at 30% 30%, var(--tw-gradient-from), var(--tw-gradient-to));
+}
+
+.last-move-outline {
+  box-shadow:
+    0 0 0 0.18em #3b82f6,
+    0 0 8px 0 #3b82f6;
+  animation: lastMovePulse 1.2s infinite alternate;
+}
+@keyframes lastMovePulse {
+  0% {
+    box-shadow:
+      0 0 0 0.18em #3b82f6,
+      0 0 8px 0 #3b82f6;
+  }
+  100% {
+    box-shadow:
+      0 0 0 0.32em #60a5fa,
+      0 0 12px 2px #3b82f6;
+  }
 }
 
 @keyframes aiBestPulse {
@@ -375,5 +410,9 @@ const handleMove = (row: number, col: number) => {
 
 .ai-best-mark {
   animation: aiBestPulse 1.5s ease-in-out infinite;
+}
+
+.gomoku-board-container {
+  aspect-ratio: 1 / 1;
 }
 </style>

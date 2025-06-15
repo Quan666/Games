@@ -1,6 +1,6 @@
 <template>
   <!-- 竖屏布局控制面板 -->
-  <div v-if="isPortrait" class="bg-white/95 backdrop-blur-sm p-4 shadow-lg">
+  <div v-if="isPortrait" class="bg-white/95 backdrop-blur-sm p-4">
     <div class="space-y-3">
       <!-- 按钮组 -->
       <div class="flex gap-3">

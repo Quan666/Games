@@ -77,7 +77,7 @@
                   type="range"
                   min="1"
                   max="100"
-                  step="10"
+                  step="1"
                   class="w-full"
                 />
               </div>
@@ -90,7 +90,7 @@
                   type="range"
                   min="1"
                   max="100"
-                  step="10"
+                  step="1"
                   class="w-full"
                 />
               </div>
@@ -110,7 +110,29 @@
             </div>
           </div>
         </div>
+        <!-- AI设置快捷入口 (仅在人机模式下显示) -->
+        <div v-if="gameMode === 'pve' || gameMode === 'ave'" class="mb-6">
+          <button
+            @click="handleOpenAISettings"
+            class="w-full py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-all duration-200 mb-3"
+          >
+            ⚙️ 高级AI设置
+          </button>
 
+          <!-- AI状态监控开关 -->
+          <div class="bg-gray-50 rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-3">🧠 AI状态监控</h4>
+            <label class="flex items-center justify-between">
+              <span class="text-sm font-medium">显示AI状态监控面板</span>
+              <input
+                v-model="gameSettings.showStatusPanel"
+                type="checkbox"
+                class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+              />
+            </label>
+            <p class="text-xs text-gray-500 mt-2">开启后将显示AI实时分析数据和引擎日志</p>
+          </div>
+        </div>
         <!-- 棋盘设置 -->
         <div class="space-y-4 mb-6">
           <h4 class="font-semibold text-gray-700 border-b pb-1">🏁 棋盘设置</h4>
@@ -178,30 +200,6 @@
                 class="w-5 h-5 text-green-600 rounded focus:ring-green-500"
               />
             </label>
-          </div>
-        </div>
-
-        <!-- AI设置快捷入口 (仅在人机模式下显示) -->
-        <div v-if="gameMode === 'pve' || gameMode === 'ave'" class="mb-6">
-          <button
-            @click="handleOpenAISettings"
-            class="w-full py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-all duration-200 mb-3"
-          >
-            ⚙️ 高级AI设置
-          </button>
-
-          <!-- AI状态监控开关 -->
-          <div class="bg-gray-50 rounded-lg p-4">
-            <h4 class="font-semibold text-gray-700 mb-3">🧠 AI状态监控</h4>
-            <label class="flex items-center justify-between">
-              <span class="text-sm font-medium">显示AI状态监控面板</span>
-              <input
-                v-model="gameSettings.showStatusPanel"
-                type="checkbox"
-                class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-              />
-            </label>
-            <p class="text-xs text-gray-500 mt-2">开启后将显示AI实时分析数据和引擎日志</p>
           </div>
         </div>
 

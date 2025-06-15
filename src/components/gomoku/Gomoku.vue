@@ -39,29 +39,26 @@
       <GameInfoHeader />
 
       <!-- 棋盘区域 -->
-      <div class="flex-1 flex items-center justify-center">
-        <GomokuBoard
-          :board="board"
-          :board-size="boardSize"
-          :game-settings="gameSettings"
-          :last-move="lastMove"
-          :move-history="moveHistory"
-          :winning-positions="winningPositions"
-          :game-over="gameOver"
-          :ai-best-position="aiBestPosition"
-          :window-width="windowWidth"
-          :window-height="windowHeight"
-          @move="makeMove"
-        />
+      <div class="flex flex-col items-stretch flex-1">
+        <div class="flex justify-center">
+          <!-- 棋盘紧贴顶部 -->
+          <GomokuBoard
+            :ai-best-position="aiBestPosition"
+            :window-width="windowWidth"
+            :window-height="windowHeight"
+            @move="makeMove"
+          />
+        </div>
+        <div class="flex-1 flex flex-col justify-stretch">
+          <!-- 底部控制区紧贴棋盘 -->
+          <GameControlPanel
+            @reset-game="resetGame"
+            @undo-move="undoMove"
+            @toggle-ai-vs-ai="toggleAiVsAi"
+            :ai-vs-ai-game-running="aiVsAiGameRunning"
+          />
+        </div>
       </div>
-
-      <!-- 底部控制区 -->
-      <GameControlPanel
-        @reset-game="resetGame"
-        @undo-move="undoMove"
-        @toggle-ai-vs-ai="toggleAiVsAi"
-        :ai-vs-ai-game-running="aiVsAiGameRunning"
-      />
     </div>
 
     <!-- 横屏布局 -->
@@ -82,13 +79,6 @@
       <!-- 中间棋盘 -->
       <div class="flex-1 flex items-center justify-center">
         <GomokuBoard
-          :board="board"
-          :board-size="boardSize"
-          :game-settings="gameSettings"
-          :last-move="lastMove"
-          :move-history="moveHistory"
-          :winning-positions="winningPositions"
-          :game-over="gameOver"
           :ai-best-position="aiBestPosition"
           :window-width="windowWidth"
           :window-height="windowHeight"

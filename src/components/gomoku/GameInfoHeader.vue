@@ -1,41 +1,46 @@
 <template>
-  <!-- 顶部信息 -->
-  <div class="bg-white/95 backdrop-blur-sm p-4 shadow-lg" v-if="isPortrait">
+  <!-- 顶部信息 竖屏布局 -->
+  <div class="bg-white/95 backdrop-blur-sm p-2" v-if="isPortrait">
     <div class="text-center">
-      <h1 class="text-2xl font-bold text-gray-800 mb-2">五子棋</h1>
-      <div class="flex items-center justify-center gap-2 mb-2 flex-wrap">
-        <span class="text-base font-semibold text-gray-800">当前玩家:</span>
-        <span class="font-bold text-base">{{ currentPlayerText }}(回合:{{ moveCount }})</span>
-        <div
-          class="w-5 h-5 rounded-full border-2 border-gray-800"
+      <h1 class="text-xl font-bold text-gray-800 mb-1">五子棋</h1>
+      <div class="flex items-center justify-center gap-1 mb-1 flex-wrap">
+        <span class="text-sm font-semibold text-gray-800">当前玩家:</span>
+        <span
+          class="w-4 h-4 rounded-full border-2 border-gray-800"
           :class="currentPlayer === 1 ? 'bg-black' : 'bg-white'"
-        ></div>
+        ></span>
+        <span class="font-bold text-sm">{{ currentPlayerText }}</span>
       </div>
       <!-- AI思考状态 - 固定高度避免布局跳动 -->
-      <div class="h-6 flex items-center justify-center mb-2">
-        <div v-if="aiThinking" class="flex items-center gap-1 text-blue-600">
+      <div class="flex items-center justify-center mb-1">
+        <span class="font-bold text-sm">回合: {{ moveCount }}</span>
+        <div v-if="aiThinking" class="flex items-center gap-1 text-blue-600 ml-2">
           <div
-            class="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"
+            class="w-2.5 h-2.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"
           ></div>
-          <span class="text-sm font-medium">{{
+          <span class="text-xs font-medium">{{
             gameMode === 'pvp' || aiInitialized ? 'AI思考中' : '初始化中'
           }}</span>
         </div>
       </div>
-      <div v-if="gameMode === 'pve'" class="text-sm text-gray-600">
+      <div v-if="gameMode === 'pve'" class="text-xs text-gray-600 mb-1">
         {{ `${aiPlayer == 1 ? 'AI执黑棋' : 'AI执白棋'} | 强度: ${aiSettings.strength}%` }}
       </div>
       <div
         v-if="gameMode === 'ave'"
-        class="text-sm text-gray-600 flex items-center justify-center gap-2"
+        class="text-xs text-gray-600 flex items-center justify-center gap-1"
       >
-        <span class="flex items-center gap-1">
-          <span class="inline-block w-3 h-3 rounded-full bg-black border border-gray-700"></span>
+        <span class="flex items-center gap-0.5">
+          <span
+            class="inline-block w-2.5 h-2.5 rounded-full bg-black border border-gray-700"
+          ></span>
           AI1:{{ aiVsAiSettings.aiPlayer1Strength }}%
         </span>
         <span>VS</span>
-        <span class="flex items-center gap-1">
-          <span class="inline-block w-3 h-3 rounded-full bg-white border border-gray-700"></span>
+        <span class="flex items-center gap-0.5">
+          <span
+            class="inline-block w-2.5 h-2.5 rounded-full bg-white border border-gray-700"
+          ></span>
           AI2:{{ aiVsAiSettings.aiPlayer2Strength }}%
         </span>
       </div>
@@ -48,7 +53,7 @@
     <!-- 当前玩家 -->
     <div class="bg-white/80 rounded-lg p-4 text-center">
       <div class="text-base font-semibold text-gray-800 mb-2">
-        当前玩家: <span class="font-bold">{{ currentPlayerText }}(回合:{{ moveCount }})</span>
+        当前玩家: <span class="font-bold">{{ currentPlayerText }}</span>
       </div>
       <div class="flex justify-center mb-2">
         <div
@@ -58,7 +63,8 @@
       </div>
       <!-- AI思考状态 - 固定高度避免布局跳动 -->
       <div class="h-6 flex items-center justify-center mb-2">
-        <div v-if="aiThinking" class="flex items-center justify-center gap-2 text-blue-600">
+        <span class="font-bold">回合: {{ moveCount }}</span>
+        <div v-if="aiThinking" class="flex items-center justify-center gap-2 text-blue-600 ml-2">
           <div
             class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"
           ></div>
