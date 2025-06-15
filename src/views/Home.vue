@@ -83,7 +83,6 @@
         >
           <div class="text-center">
             <div class="text-2xl font-bold text-white">2</div>
-            <div class="text-2xl font-bold text-white">2</div>
             <div class="text-sm text-gray-300">游戏总数</div>
           </div>
           <div class="w-px h-8 bg-gray-400"></div>
