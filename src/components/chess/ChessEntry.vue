@@ -1,5 +1,8 @@
 <template>
   <div class="chinese-chess-game">
+    <!-- 回到首页按钮 -->
+    <HomeButton />
+
     <!-- 竖屏布局 -->
     <div v-if="!isLandscape" class="portrait-layout">
       <!-- 顶部游戏标题和状态 -->
@@ -34,27 +37,47 @@
 
       <!-- 底部控制区域 -->
       <div class="controls-portrait">
-        <div class="control-buttons">
-          <button @click="toggleSound" class="control-btn" :class="{ active: soundEnabled }">
-            {{ soundEnabled ? '🔊' : '🔇' }}
-          </button>
-          <button
-            @click="toggleVoice"
-            class="control-btn"
-            :class="{ active: voiceEnabled, disabled: !soundEnabled }"
-            :disabled="!soundEnabled"
-          >
-            {{ voiceEnabled ? '🗣️' : '🔇' }}
-          </button>
-          <button @click="resetGame" class="control-btn primary">重新开始</button>
-          <button @click="undoMove" class="control-btn" :disabled="!canUndo">悔棋</button>
-          <button @click="toggleHistory" class="control-btn">
-            {{ showMoveHistory ? '隐藏' : '显示' }}历史
-          </button>
+        <div class="control-buttons-portrait">
+          <!-- 游戏控制按钮 -->
+          <div class="game-control-row-portrait">
+            <button @click="resetGame" class="control-btn primary">重新开始</button>
+            <button @click="undoMove" class="control-btn" :disabled="!canUndo">悔棋</button>
+          </div>
+          <!-- 声音控制和历史记录 -->
+          <div class="sound-history-row-portrait">
+            <div class="switch-group-portrait">
+              <label class="switch-item">
+                <span class="switch-label">🔊 音效</span>
+                <div class="switch" :class="{ 'switch-on': soundEnabled }">
+                  <input type="checkbox" :checked="soundEnabled" @change="toggleSound" />
+                  <span class="slider"></span>
+                </div>
+              </label>
+              <label class="switch-item" :class="{ disabled: !soundEnabled }">
+                <span class="switch-label">🗣️ 语音</span>
+                <div class="switch" :class="{ 'switch-on': voiceEnabled, disabled: !soundEnabled }">
+                  <input
+                    type="checkbox"
+                    :checked="voiceEnabled"
+                    :disabled="!soundEnabled"
+                    @change="toggleVoice"
+                  />
+                  <span class="slider"></span>
+                </div>
+              </label>
+              <label class="switch-item">
+                <span class="switch-label">📚 历史</span>
+                <div class="switch" :class="{ 'switch-on': showMoveHistory }">
+                  <input type="checkbox" :checked="showMoveHistory" @change="toggleHistory" />
+                  <span class="slider"></span>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
 
         <!-- 历史记录 -->
-        <div v-if="showMoveHistory" class="move-history">
+        <div v-if="showMoveHistory" class="move-history mt-5">
           <h3>走法历史</h3>
           <div class="history-list">
             <div v-for="(move, index) in moveHistory" :key="index" class="move-item">
@@ -176,6 +199,7 @@ import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 // @ts-ignore
 import { useStore } from 'vuex'
 import ChessBoard from './board/ChessBoard.vue'
+import HomeButton from '../HomeButton.vue'
 import { createChessSoundGenerator } from './ChessSound'
 import { ChessGame, type ChessPiece as ChessPieceType, type Position, type Move } from './ChessGame'
 
@@ -742,6 +766,42 @@ onUnmounted(() => {
   padding: 10px 0;
 }
 
+.control-buttons-portrait {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+}
+
+/* 竖屏版本的声音控制和历史记录行 */
+.sound-history-row-portrait {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(248, 249, 250, 0.8);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+.switch-group-portrait {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* 竖屏版本的游戏控制按钮行 */
+.game-control-row-portrait {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .control-buttons {
   display: flex;
   gap: 8px;
@@ -1095,6 +1155,21 @@ onUnmounted(() => {
     flex-wrap: wrap;
     justify-content: center;
   }
+
+  /* 竖屏布局的响应式调整 */
+  .sound-history-row-portrait {
+    padding: 10px;
+    max-width: 100%;
+  }
+
+  .switch-group-portrait {
+    gap: 15px;
+  }
+
+  .game-control-row-portrait {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 
 @media (max-height: 600px) {
@@ -1148,6 +1223,15 @@ onUnmounted(() => {
 
   .switch-on .slider {
     transform: translateX(16px);
+  }
+
+  /* 竖屏布局的小屏幕高度调整 */
+  .sound-history-row-portrait {
+    padding: 8px;
+  }
+
+  .switch-group-portrait {
+    gap: 12px;
   }
 }
 

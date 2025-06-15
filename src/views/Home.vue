@@ -3,7 +3,7 @@
     class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden"
   >
     <!-- 右上角按钮组 -->
-    <div class="absolute top-6 right-8 z-20 flex items-center space-x-4">
+    <div class="absolute top-6 right-8 z-20 flex items-center space-x-4 mobile-header-buttons">
       <!-- 全局设置按钮 -->
       <button
         @click="showGlobalSettings = true"
@@ -51,14 +51,14 @@
 
     <div class="relative z-10 container mx-auto px-4 py-12">
       <!-- 标题部分 -->
-      <div class="text-center mb-16">
+      <div class="text-center mb-16 mobile-title-section">
         <h1 class="text-6xl font-bold text-white mb-4 animate-pulse">🎮 游戏中心</h1>
         <p class="text-xl text-gray-300 max-w-2xl mx-auto">
           欢迎来到经典游戏世界，选择您喜欢的游戏开始挑战吧！
         </p>
       </div>
       <!-- 游戏网格 -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      <div class="game-grid">
         <!-- 五子棋 -->
         <div class="game-card group" @click="goToGame('/wuziqi')">
           <div class="game-icon">⚫⚪</div>
@@ -113,6 +113,48 @@ const goToGame = (path: string) => {
 </script>
 
 <style scoped>
+/* 移动端头部按钮调整 */
+@media (max-width: 768px) {
+  .mobile-header-buttons {
+    top: 1rem !important;
+    right: 1rem !important;
+  }
+
+  .mobile-title-section {
+    margin-top: 3rem;
+    margin-bottom: 3rem !important;
+  }
+
+  .mobile-title-section h1 {
+    font-size: 3rem !important;
+  }
+
+  .mobile-title-section p {
+    font-size: 1rem !important;
+    padding: 0 1rem;
+  }
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+  justify-items: center;
+  padding: 0 1rem;
+}
+
+/* 移动端样式调整 */
+@media (max-width: 768px) {
+  .game-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    max-width: 100%;
+    padding: 0 1rem;
+  }
+}
+
 .game-card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
@@ -125,6 +167,28 @@ const goToGame = (path: string) => {
   border: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
   overflow: hidden;
+  width: 100%;
+  max-width: 350px;
+  animation: cardFloat 4s ease-in-out infinite;
+}
+
+/* 移动端卡片样式 */
+@media (max-width: 768px) {
+  .game-card {
+    padding: 1.2rem;
+    max-width: none;
+    border-radius: 0.75rem;
+    animation: cardFloat 3s ease-in-out infinite;
+  }
+}
+
+/* 为每个卡片添加不同的动画延迟 */
+.game-card:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.game-card:nth-child(2) {
+  animation-delay: 1.5s;
 }
 
 .game-card:hover {
@@ -151,6 +215,15 @@ const goToGame = (path: string) => {
   margin-bottom: 1rem;
   transform: scale(1);
   transition: transform 0.3s ease;
+  animation: iconPulse 3s ease-in-out infinite;
+}
+
+/* 移动端图标样式 */
+@media (max-width: 768px) {
+  .game-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
 }
 
 .game-card:hover .game-icon {
@@ -164,12 +237,30 @@ const goToGame = (path: string) => {
   margin-bottom: 0.75rem;
 }
 
+/* 移动端标题样式 */
+@media (max-width: 768px) {
+  .game-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.4rem;
+  }
+}
+
 .game-description {
   color: #d1d5db;
   font-size: 0.875rem;
   line-height: 1.625;
   margin-bottom: 1rem;
   min-height: 3rem;
+}
+
+/* 移动端描述样式 */
+@media (max-width: 768px) {
+  .game-description {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+    min-height: 2rem;
+  }
 }
 
 .game-status {
@@ -180,6 +271,16 @@ const goToGame = (path: string) => {
   position: absolute;
   top: 1rem;
   right: 1rem;
+}
+
+/* 移动端状态标签样式 */
+@media (max-width: 768px) {
+  .game-status {
+    padding: 0.15rem 0.5rem;
+    font-size: 0.65rem;
+    top: 0.6rem;
+    right: 0.6rem;
+  }
 }
 
 .available {
@@ -205,7 +306,30 @@ const goToGame = (path: string) => {
   }
 }
 
+@keyframes cardFloat {
+  0%,
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+
+  50% {
+    transform: translateY(-5px) scale(1.02);
+  }
+}
+
+@keyframes iconPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+
 .game-card:hover .game-icon {
   animation: float 2s ease-in-out infinite;
+  transform: scale(1.2);
 }
 </style>

@@ -1,5 +1,8 @@
 <template>
   <div class="gomoku-game relative">
+    <!-- 回到首页按钮 -->
+    <HomeButton />
+
     <!-- AI状态监控面板 -->
     <AIStatusPanel
       :game-mode="gameMode"
@@ -94,6 +97,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 // @ts-ignore
 import { useStore } from 'vuex'
 import { SoundGenerator } from '../../utils/sound'
+import HomeButton from '../HomeButton.vue'
 
 const base = import.meta.env.BASE_URL || '/'
 // 类型定义
