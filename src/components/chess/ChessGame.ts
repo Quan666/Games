@@ -668,6 +668,45 @@ export class ChessGame {
     return true
   }
 
+  // 悔棋
+  undoMove(): boolean {
+    if (this.state.moveHistory.length === 0) {
+      return false
+    }
+
+    // 获取最后一步移动
+    const lastMove = this.state.moveHistory.pop()
+    if (!lastMove) {
+      return false
+    }
+
+    // 恢复棋子位置
+    const piece = lastMove.piece
+
+    // 将棋子移回原位置
+    this.state.board[lastMove.to.y][lastMove.to.x] = null
+    this.state.board[lastMove.from.y][lastMove.from.x] = piece
+    piece.position = lastMove.from
+
+    // 如果有被吃的棋子，恢复它
+    if (lastMove.capturedPiece) {
+      const capturedPiece = lastMove.capturedPiece
+      capturedPiece.alive = true
+      this.state.board[lastMove.to.y][lastMove.to.x] = capturedPiece
+      console.log('恢复被吃棋子:', capturedPiece.type, '在位置:', capturedPiece.position)
+    }
+
+    // 切换回上一个玩家
+    this.state.currentPlayer = this.state.currentPlayer === 'red' ? 'black' : 'red'
+
+    // 重新检查游戏状态
+    this.state.gameStatus = 'playing' // 悔棋后游戏继续
+    this.updateGameStatus()
+
+    console.log('悔棋成功，恢复到:', lastMove.from, '从:', lastMove.to)
+    return true
+  }
+
   // 更新游戏状态
   private updateGameStatus() {
     const currentCamp = this.state.currentPlayer === 'red' ? 'black' : 'red' // 下一个要移动的阵营

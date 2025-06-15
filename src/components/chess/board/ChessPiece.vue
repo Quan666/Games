@@ -8,8 +8,10 @@
       'hover-effect': true,
     }"
     :style="{
-      left: 50 + x * 55 - 22 + 'px',
-      top: 50 + y * 55 - 22 + 'px',
+      left: margin + x * cellSize - 22 * scale + 'px',
+      top: margin + y * cellSize - 22 * scale + 'px',
+      width: 44 * scale + 'px',
+      height: 44 * scale + 'px',
     }"
     @click="$emit('click')"
   >
@@ -23,17 +25,9 @@
   </div>
 </template>
 
-<!-- 棋子主体 -->
-<circle
-  :cx="size / 2"
-  :cy="size / 2"
-  :r="size / 2 - 2"
-  :fill="`url(#grad-${uniqueId})`"
-  :stroke="color"
-  stroke-width="2.5"
-  :filter="`url(#shadow-${uniqueId})`"
-/>
 <script setup lang="ts">
+import { toRefs } from 'vue'
+
 interface Props {
   piece: {
     type: string
@@ -44,19 +38,24 @@ interface Props {
   y: number
   isBlack: boolean
   isSelected?: boolean
+  cellSize: number
+  margin: number
+  scale: number
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+
 defineEmits<{
   click: []
 }>()
+
+// 解构 props 以便在模板中使用
+const { piece, x, y, isBlack, isSelected, cellSize, margin, scale } = toRefs(props)
 </script>
 
 <style scoped>
 .chess-piece {
   position: absolute;
-  width: 44px;
-  height: 44px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
@@ -69,8 +68,8 @@ defineEmits<{
 
 .piece-shadow {
   position: absolute;
-  width: 44px;
-  height: 44px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.3);
   filter: blur(4px);
@@ -131,18 +130,24 @@ defineEmits<{
 }
 
 .piece-text {
-  font-size: 16px;
+  font-size: v-bind('(26 * scale) + "px"');
   font-weight: 900;
   font-family: '楷体', 'KaiTi', '华文楷体', serif;
   text-shadow:
-    1px 1px 0 rgba(0, 0, 0, 0.8),
-    -1px -1px 0 rgba(0, 0, 0, 0.8),
-    1px -1px 0 rgba(0, 0, 0, 0.8),
-    -1px 1px 0 rgba(0, 0, 0, 0.8),
-    0 2px 4px rgba(0, 0, 0, 0.6);
+    v-bind('(1 * scale) + "px"') v-bind('(1 * scale) + "px"') 0 rgba(0, 0, 0, 0.8),
+    v-bind('(-1 * scale) + "px"') v-bind('(-1 * scale) + "px"') 0 rgba(0, 0, 0, 0.8),
+    v-bind('(1 * scale) + "px"') v-bind('(-1 * scale) + "px"') 0 rgba(0, 0, 0, 0.8),
+    v-bind('(-1 * scale) + "px"') v-bind('(1 * scale) + "px"') 0 rgba(0, 0, 0, 0.8),
+    0 v-bind('(2 * scale) + "px"') v-bind('(4 * scale) + "px"') rgba(0, 0, 0, 0.6);
   user-select: none;
   position: relative;
   z-index: 4;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .black-piece .piece-text {

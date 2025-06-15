@@ -32,7 +32,7 @@
             :x2="margin + 8 * cellSize"
             :y2="margin + (row - 1) * cellSize"
             stroke="#8B4513"
-            stroke-width="2"
+            :stroke-width="2 * scale"
           />
         </g>
 
@@ -45,7 +45,7 @@
             :x2="margin + (col - 1) * cellSize"
             :y2="margin + 4 * cellSize"
             stroke="#8B4513"
-            stroke-width="2"
+            :stroke-width="2 * scale"
           />
           <!-- 下半部分 -->
           <line
@@ -54,7 +54,7 @@
             :x2="margin + (col - 1) * cellSize"
             :y2="margin + 9 * cellSize"
             stroke="#8B4513"
-            stroke-width="2"
+            :stroke-width="2 * scale"
           />
         </g>
 
@@ -66,7 +66,7 @@
           :x2="margin + 5 * cellSize"
           :y2="margin + 2 * cellSize"
           stroke="#8B4513"
-          stroke-width="2"
+          :stroke-width="2 * scale"
         />
         <line
           :x1="margin + 5 * cellSize"
@@ -74,7 +74,7 @@
           :x2="margin + 3 * cellSize"
           :y2="margin + 2 * cellSize"
           stroke="#8B4513"
-          stroke-width="2"
+          :stroke-width="2 * scale"
         />
 
         <!-- 下方九宫 -->
@@ -84,7 +84,7 @@
           :x2="margin + 5 * cellSize"
           :y2="margin + 9 * cellSize"
           stroke="#8B4513"
-          stroke-width="2"
+          :stroke-width="2 * scale"
         />
         <line
           :x1="margin + 5 * cellSize"
@@ -92,7 +92,7 @@
           :x2="margin + 3 * cellSize"
           :y2="margin + 9 * cellSize"
           stroke="#8B4513"
-          stroke-width="2"
+          :stroke-width="2 * scale"
         />
 
         <!-- 楚河汉界文字 -->
@@ -100,7 +100,7 @@
           :x="margin + 2 * cellSize"
           :y="margin + 4.6 * cellSize"
           font-family="serif"
-          font-size="18"
+          :font-size="18 * scale"
           font-weight="bold"
           fill="#8B4513"
           text-anchor="middle"
@@ -111,7 +111,7 @@
           :x="margin + 6 * cellSize"
           :y="margin + 4.6 * cellSize"
           font-family="serif"
-          font-size="18"
+          :font-size="18 * scale"
           font-weight="bold"
           fill="#8B4513"
           text-anchor="middle"
@@ -125,77 +125,77 @@
           <!-- 左上角 -->
           <g>
             <line
-              :x1="margin + x * cellSize - 12"
-              :y1="margin + 2 * cellSize - 6"
-              :x2="margin + x * cellSize - 6"
-              :y2="margin + 2 * cellSize - 6"
+              :x1="margin + x * cellSize - 12 * scale"
+              :y1="margin + 2 * cellSize - 6 * scale"
+              :x2="margin + x * cellSize - 6 * scale"
+              :y2="margin + 2 * cellSize - 6 * scale"
               stroke="#000"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
             <line
-              :x1="margin + x * cellSize - 6"
-              :y1="margin + 2 * cellSize - 12"
-              :x2="margin + x * cellSize - 6"
-              :y2="margin + 2 * cellSize - 6"
+              :x1="margin + x * cellSize - 6 * scale"
+              :y1="margin + 2 * cellSize - 12 * scale"
+              :x2="margin + x * cellSize - 6 * scale"
+              :y2="margin + 2 * cellSize - 6 * scale"
               stroke="#000"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
           </g>
           <!-- 右上角 -->
           <g>
             <line
-              :x1="margin + x * cellSize + 6"
-              :y1="margin + 2 * cellSize - 6"
-              :x2="margin + x * cellSize + 12"
-              :y2="margin + 2 * cellSize - 6"
+              :x1="margin + x * cellSize + 6 * scale"
+              :y1="margin + 2 * cellSize - 6 * scale"
+              :x2="margin + x * cellSize + 12 * scale"
+              :y2="margin + 2 * cellSize - 6 * scale"
               stroke="#000"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
             <line
-              :x1="margin + x * cellSize + 6"
-              :y1="margin + 2 * cellSize - 12"
-              :x2="margin + x * cellSize + 6"
-              :y2="margin + 2 * cellSize - 6"
+              :x1="margin + x * cellSize + 6 * scale"
+              :y1="margin + 2 * cellSize - 12 * scale"
+              :x2="margin + x * cellSize + 6 * scale"
+              :y2="margin + 2 * cellSize - 6 * scale"
               stroke="#000"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
           </g>
           <!-- 左下角 -->
           <g>
             <line
-              :x1="margin + x * cellSize - 12"
-              :y1="margin + 2 * cellSize + 6"
-              :x2="margin + x * cellSize - 6"
-              :y2="margin + 2 * cellSize + 6"
+              :x1="margin + x * cellSize - 12 * scale"
+              :y1="margin + 2 * cellSize + 6 * scale"
+              :x2="margin + x * cellSize - 6 * scale"
+              :y2="margin + 2 * cellSize + 6 * scale"
               stroke="#000"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
             <line
-              :x1="margin + x * cellSize - 6"
-              :y1="margin + 2 * cellSize + 6"
-              :x2="margin + x * cellSize - 6"
-              :y2="margin + 2 * cellSize + 12"
+              :x1="margin + x * cellSize - 6 * scale"
+              :y1="margin + 2 * cellSize + 6 * scale"
+              :x2="margin + x * cellSize - 6 * scale"
+              :y2="margin + 2 * cellSize + 12 * scale"
               stroke="#000"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
           </g>
           <!-- 右下角 -->
           <g>
             <line
-              :x1="margin + x * cellSize + 6"
-              :y1="margin + 2 * cellSize + 6"
-              :x2="margin + x * cellSize + 12"
-              :y2="margin + 2 * cellSize + 6"
+              :x1="margin + x * cellSize + 6 * scale"
+              :y1="margin + 2 * cellSize + 6 * scale"
+              :x2="margin + x * cellSize + 12 * scale"
+              :y2="margin + 2 * cellSize + 6 * scale"
               stroke="#000"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
             <line
-              :x1="margin + x * cellSize + 6"
-              :y1="margin + 2 * cellSize + 6"
-              :x2="margin + x * cellSize + 6"
-              :y2="margin + 2 * cellSize + 12"
+              :x1="margin + x * cellSize + 6 * scale"
+              :y1="margin + 2 * cellSize + 6 * scale"
+              :x2="margin + x * cellSize + 6 * scale"
+              :y2="margin + 2 * cellSize + 12 * scale"
               stroke="#000"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
           </g>
         </g>
@@ -205,77 +205,77 @@
           <!-- 左上角 -->
           <g>
             <line
-              :x1="margin + x * cellSize - 12"
-              :y1="margin + 7 * cellSize - 6"
-              :x2="margin + x * cellSize - 6"
-              :y2="margin + 7 * cellSize - 6"
+              :x1="margin + x * cellSize - 12 * scale"
+              :y1="margin + 7 * cellSize - 6 * scale"
+              :x2="margin + x * cellSize - 6 * scale"
+              :y2="margin + 7 * cellSize - 6 * scale"
               stroke="#d32f2f"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
             <line
-              :x1="margin + x * cellSize - 6"
-              :y1="margin + 7 * cellSize - 12"
-              :x2="margin + x * cellSize - 6"
-              :y2="margin + 7 * cellSize - 6"
+              :x1="margin + x * cellSize - 6 * scale"
+              :y1="margin + 7 * cellSize - 12 * scale"
+              :x2="margin + x * cellSize - 6 * scale"
+              :y2="margin + 7 * cellSize - 6 * scale"
               stroke="#d32f2f"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
           </g>
           <!-- 右上角 -->
           <g>
             <line
-              :x1="margin + x * cellSize + 6"
-              :y1="margin + 7 * cellSize - 6"
-              :x2="margin + x * cellSize + 12"
-              :y2="margin + 7 * cellSize - 6"
+              :x1="margin + x * cellSize + 6 * scale"
+              :y1="margin + 7 * cellSize - 6 * scale"
+              :x2="margin + x * cellSize + 12 * scale"
+              :y2="margin + 7 * cellSize - 6 * scale"
               stroke="#d32f2f"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
             <line
-              :x1="margin + x * cellSize + 6"
-              :y1="margin + 7 * cellSize - 12"
-              :x2="margin + x * cellSize + 6"
-              :y2="margin + 7 * cellSize - 6"
+              :x1="margin + x * cellSize + 6 * scale"
+              :y1="margin + 7 * cellSize - 12 * scale"
+              :x2="margin + x * cellSize + 6 * scale"
+              :y2="margin + 7 * cellSize - 6 * scale"
               stroke="#d32f2f"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
           </g>
           <!-- 左下角 -->
           <g>
             <line
-              :x1="margin + x * cellSize - 12"
-              :y1="margin + 7 * cellSize + 6"
-              :x2="margin + x * cellSize - 6"
-              :y2="margin + 7 * cellSize + 6"
+              :x1="margin + x * cellSize - 12 * scale"
+              :y1="margin + 7 * cellSize + 6 * scale"
+              :x2="margin + x * cellSize - 6 * scale"
+              :y2="margin + 7 * cellSize + 6 * scale"
               stroke="#d32f2f"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
             <line
-              :x1="margin + x * cellSize - 6"
-              :y1="margin + 7 * cellSize + 6"
-              :x2="margin + x * cellSize - 6"
-              :y2="margin + 7 * cellSize + 12"
+              :x1="margin + x * cellSize - 6 * scale"
+              :y1="margin + 7 * cellSize + 6 * scale"
+              :x2="margin + x * cellSize - 6 * scale"
+              :y2="margin + 7 * cellSize + 12 * scale"
               stroke="#d32f2f"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
           </g>
           <!-- 右下角 -->
           <g>
             <line
-              :x1="margin + x * cellSize + 6"
-              :y1="margin + 7 * cellSize + 6"
-              :x2="margin + x * cellSize + 12"
-              :y2="margin + 7 * cellSize + 6"
+              :x1="margin + x * cellSize + 6 * scale"
+              :y1="margin + 7 * cellSize + 6 * scale"
+              :x2="margin + x * cellSize + 12 * scale"
+              :y2="margin + 7 * cellSize + 6 * scale"
               stroke="#d32f2f"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
             <line
-              :x1="margin + x * cellSize + 6"
-              :y1="margin + 7 * cellSize + 6"
-              :x2="margin + x * cellSize + 6"
-              :y2="margin + 7 * cellSize + 12"
+              :x1="margin + x * cellSize + 6 * scale"
+              :y1="margin + 7 * cellSize + 6 * scale"
+              :x2="margin + x * cellSize + 6 * scale"
+              :y2="margin + 7 * cellSize + 12 * scale"
               stroke="#d32f2f"
-              stroke-width="1.5"
+              :stroke-width="1.5 * scale"
             />
           </g>
         </g>
@@ -283,160 +283,160 @@
         <!-- 兵卒位直角标记 -->
         <!-- 黑方卒位 (0,3), (2,3), (4,3), (6,3), (8,3) -->
         <g v-for="x in [0, 2, 4, 6, 8]" :key="'black-pawn-' + x">
-          <!-- 左上角 -->
-          <g>
+          <!-- 左上角 (只在不是最左边时绘制) -->
+          <g v-if="x > 0">
             <line
-              :x1="margin + x * cellSize - 10"
-              :y1="margin + 3 * cellSize - 4"
-              :x2="margin + x * cellSize - 4"
-              :y2="margin + 3 * cellSize - 4"
+              :x1="margin + x * cellSize - 10 * scale"
+              :y1="margin + 3 * cellSize - 4 * scale"
+              :x2="margin + x * cellSize - 4 * scale"
+              :y2="margin + 3 * cellSize - 4 * scale"
               stroke="#000"
-              stroke-width="1"
+              :stroke-width="1 * scale"
             />
             <line
-              :x1="margin + x * cellSize - 4"
-              :y1="margin + 3 * cellSize - 10"
-              :x2="margin + x * cellSize - 4"
-              :y2="margin + 3 * cellSize - 4"
+              :x1="margin + x * cellSize - 4 * scale"
+              :y1="margin + 3 * cellSize - 10 * scale"
+              :x2="margin + x * cellSize - 4 * scale"
+              :y2="margin + 3 * cellSize - 4 * scale"
               stroke="#000"
-              stroke-width="1"
-            />
-          </g>
-          <!-- 右上角 -->
-          <g>
-            <line
-              :x1="margin + x * cellSize + 4"
-              :y1="margin + 3 * cellSize - 4"
-              :x2="margin + x * cellSize + 10"
-              :y2="margin + 3 * cellSize - 4"
-              stroke="#000"
-              stroke-width="1"
-            />
-            <line
-              :x1="margin + x * cellSize + 4"
-              :y1="margin + 3 * cellSize - 10"
-              :x2="margin + x * cellSize + 4"
-              :y2="margin + 3 * cellSize - 4"
-              stroke="#000"
-              stroke-width="1"
+              :stroke-width="1 * scale"
             />
           </g>
-          <!-- 左下角 -->
-          <g>
+          <!-- 右上角 (只在不是最右边时绘制) -->
+          <g v-if="x < 8">
             <line
-              :x1="margin + x * cellSize - 10"
-              :y1="margin + 3 * cellSize + 4"
-              :x2="margin + x * cellSize - 4"
-              :y2="margin + 3 * cellSize + 4"
+              :x1="margin + x * cellSize + 4 * scale"
+              :y1="margin + 3 * cellSize - 4 * scale"
+              :x2="margin + x * cellSize + 10 * scale"
+              :y2="margin + 3 * cellSize - 4 * scale"
               stroke="#000"
-              stroke-width="1"
+              :stroke-width="1 * scale"
             />
             <line
-              :x1="margin + x * cellSize - 4"
-              :y1="margin + 3 * cellSize + 4"
-              :x2="margin + x * cellSize - 4"
-              :y2="margin + 3 * cellSize + 10"
+              :x1="margin + x * cellSize + 4 * scale"
+              :y1="margin + 3 * cellSize - 10 * scale"
+              :x2="margin + x * cellSize + 4 * scale"
+              :y2="margin + 3 * cellSize - 4 * scale"
               stroke="#000"
-              stroke-width="1"
+              :stroke-width="1 * scale"
             />
           </g>
-          <!-- 右下角 -->
-          <g>
+          <!-- 左下角 (只在不是最左边时绘制) -->
+          <g v-if="x > 0">
             <line
-              :x1="margin + x * cellSize + 4"
-              :y1="margin + 3 * cellSize + 4"
-              :x2="margin + x * cellSize + 10"
-              :y2="margin + 3 * cellSize + 4"
+              :x1="margin + x * cellSize - 10 * scale"
+              :y1="margin + 3 * cellSize + 4 * scale"
+              :x2="margin + x * cellSize - 4 * scale"
+              :y2="margin + 3 * cellSize + 4 * scale"
               stroke="#000"
-              stroke-width="1"
+              :stroke-width="1 * scale"
             />
             <line
-              :x1="margin + x * cellSize + 4"
-              :y1="margin + 3 * cellSize + 4"
-              :x2="margin + x * cellSize + 4"
-              :y2="margin + 3 * cellSize + 10"
+              :x1="margin + x * cellSize - 4 * scale"
+              :y1="margin + 3 * cellSize + 4 * scale"
+              :x2="margin + x * cellSize - 4 * scale"
+              :y2="margin + 3 * cellSize + 10 * scale"
               stroke="#000"
-              stroke-width="1"
+              :stroke-width="1 * scale"
+            />
+          </g>
+          <!-- 右下角 (只在不是最右边时绘制) -->
+          <g v-if="x < 8">
+            <line
+              :x1="margin + x * cellSize + 4 * scale"
+              :y1="margin + 3 * cellSize + 4 * scale"
+              :x2="margin + x * cellSize + 10 * scale"
+              :y2="margin + 3 * cellSize + 4 * scale"
+              stroke="#000"
+              :stroke-width="1 * scale"
+            />
+            <line
+              :x1="margin + x * cellSize + 4 * scale"
+              :y1="margin + 3 * cellSize + 4 * scale"
+              :x2="margin + x * cellSize + 4 * scale"
+              :y2="margin + 3 * cellSize + 10 * scale"
+              stroke="#000"
+              :stroke-width="1 * scale"
             />
           </g>
         </g>
 
         <!-- 红方兵位 (0,6), (2,6), (4,6), (6,6), (8,6) -->
         <g v-for="x in [0, 2, 4, 6, 8]" :key="'red-pawn-' + x">
-          <!-- 左上角 -->
-          <g>
+          <!-- 左上角 (只在不是最左边时绘制) -->
+          <g v-if="x > 0">
             <line
-              :x1="margin + x * cellSize - 10"
-              :y1="margin + 6 * cellSize - 4"
-              :x2="margin + x * cellSize - 4"
-              :y2="margin + 6 * cellSize - 4"
+              :x1="margin + x * cellSize - 10 * scale"
+              :y1="margin + 6 * cellSize - 4 * scale"
+              :x2="margin + x * cellSize - 4 * scale"
+              :y2="margin + 6 * cellSize - 4 * scale"
               stroke="#d32f2f"
-              stroke-width="1"
+              :stroke-width="1 * scale"
             />
             <line
-              :x1="margin + x * cellSize - 4"
-              :y1="margin + 6 * cellSize - 10"
-              :x2="margin + x * cellSize - 4"
-              :y2="margin + 6 * cellSize - 4"
+              :x1="margin + x * cellSize - 4 * scale"
+              :y1="margin + 6 * cellSize - 10 * scale"
+              :x2="margin + x * cellSize - 4 * scale"
+              :y2="margin + 6 * cellSize - 4 * scale"
               stroke="#d32f2f"
-              stroke-width="1"
-            />
-          </g>
-          <!-- 右上角 -->
-          <g>
-            <line
-              :x1="margin + x * cellSize + 4"
-              :y1="margin + 6 * cellSize - 4"
-              :x2="margin + x * cellSize + 10"
-              :y2="margin + 6 * cellSize - 4"
-              stroke="#d32f2f"
-              stroke-width="1"
-            />
-            <line
-              :x1="margin + x * cellSize + 4"
-              :y1="margin + 6 * cellSize - 10"
-              :x2="margin + x * cellSize + 4"
-              :y2="margin + 6 * cellSize - 4"
-              stroke="#d32f2f"
-              stroke-width="1"
+              :stroke-width="1 * scale"
             />
           </g>
-          <!-- 左下角 -->
-          <g>
+          <!-- 右上角 (只在不是最右边时绘制) -->
+          <g v-if="x < 8">
             <line
-              :x1="margin + x * cellSize - 10"
-              :y1="margin + 6 * cellSize + 4"
-              :x2="margin + x * cellSize - 4"
-              :y2="margin + 6 * cellSize + 4"
+              :x1="margin + x * cellSize + 4 * scale"
+              :y1="margin + 6 * cellSize - 4 * scale"
+              :x2="margin + x * cellSize + 10 * scale"
+              :y2="margin + 6 * cellSize - 4 * scale"
               stroke="#d32f2f"
-              stroke-width="1"
+              :stroke-width="1 * scale"
             />
             <line
-              :x1="margin + x * cellSize - 4"
-              :y1="margin + 6 * cellSize + 4"
-              :x2="margin + x * cellSize - 4"
-              :y2="margin + 6 * cellSize + 10"
+              :x1="margin + x * cellSize + 4 * scale"
+              :y1="margin + 6 * cellSize - 10 * scale"
+              :x2="margin + x * cellSize + 4 * scale"
+              :y2="margin + 6 * cellSize - 4 * scale"
               stroke="#d32f2f"
-              stroke-width="1"
+              :stroke-width="1 * scale"
             />
           </g>
-          <!-- 右下角 -->
-          <g>
+          <!-- 左下角 (只在不是最左边时绘制) -->
+          <g v-if="x > 0">
             <line
-              :x1="margin + x * cellSize + 4"
-              :y1="margin + 6 * cellSize + 4"
-              :x2="margin + x * cellSize + 10"
-              :y2="margin + 6 * cellSize + 4"
+              :x1="margin + x * cellSize - 10 * scale"
+              :y1="margin + 6 * cellSize + 4 * scale"
+              :x2="margin + x * cellSize - 4 * scale"
+              :y2="margin + 6 * cellSize + 4 * scale"
               stroke="#d32f2f"
-              stroke-width="1"
+              :stroke-width="1 * scale"
             />
             <line
-              :x1="margin + x * cellSize + 4"
-              :y1="margin + 6 * cellSize + 4"
-              :x2="margin + x * cellSize + 4"
-              :y2="margin + 6 * cellSize + 10"
+              :x1="margin + x * cellSize - 4 * scale"
+              :y1="margin + 6 * cellSize + 4 * scale"
+              :x2="margin + x * cellSize - 4 * scale"
+              :y2="margin + 6 * cellSize + 10 * scale"
               stroke="#d32f2f"
-              stroke-width="1"
+              :stroke-width="1 * scale"
+            />
+          </g>
+          <!-- 右下角 (只在不是最右边时绘制) -->
+          <g v-if="x < 8">
+            <line
+              :x1="margin + x * cellSize + 4 * scale"
+              :y1="margin + 6 * cellSize + 4 * scale"
+              :x2="margin + x * cellSize + 10 * scale"
+              :y2="margin + 6 * cellSize + 4 * scale"
+              stroke="#d32f2f"
+              :stroke-width="1 * scale"
+            />
+            <line
+              :x1="margin + x * cellSize + 4 * scale"
+              :y1="margin + 6 * cellSize + 4 * scale"
+              :x2="margin + x * cellSize + 4 * scale"
+              :y2="margin + 6 * cellSize + 10 * scale"
+              stroke="#d32f2f"
+              :stroke-width="1 * scale"
             />
           </g>
         </g>
@@ -453,22 +453,27 @@
           :y="piece.position.y"
           :is-black="piece.camp === 'black'"
           :is-selected="isPieceSelected(piece)"
+          :cell-size="cellSize"
+          :margin="margin"
+          :scale="scale"
           @click="onPieceClick(piece)"
         />
 
         <!-- 选中标记 -->
         <div
-          v-if="selectedPiece"
+          v-if="props.selectedPiece"
           class="selection-mark"
           :style="{
-            left: margin + selectedPiece.position.x * cellSize - pieceRadius + 'px',
-            top: margin + selectedPiece.position.y * cellSize - pieceRadius + 'px',
+            left: margin + props.selectedPiece.position.x * cellSize - pieceRadius + 'px',
+            top: margin + props.selectedPiece.position.y * cellSize - pieceRadius + 'px',
+            width: pieceRadius * 2 + 'px',
+            height: pieceRadius * 2 + 'px',
           }"
         ></div>
 
         <!-- 可移动位置提示 -->
         <div
-          v-for="pos in availableMoves"
+          v-for="pos in props.availableMoves"
           :key="`move-${pos.x}-${pos.y}`"
           :class="[
             'move-hint',
@@ -481,8 +486,10 @@
             },
           ]"
           :style="{
-            left: margin + pos.x * cellSize - 15 + 'px',
-            top: margin + pos.y * cellSize - 15 + 'px',
+            left: margin + pos.x * cellSize - 15 * scale + 'px',
+            top: margin + pos.y * cellSize - 15 * scale + 'px',
+            width: 30 * scale + 'px',
+            height: 30 * scale + 'px',
           }"
           @click="onMoveClick(pos)"
         ></div>
@@ -497,8 +504,10 @@
             { 'attackable-black-piece': piece.camp === 'black' },
           ]"
           :style="{
-            left: margin + piece.position.x * cellSize - pieceRadius - 4 + 'px',
-            top: margin + piece.position.y * cellSize - pieceRadius - 4 + 'px',
+            left: margin + piece.position.x * cellSize - pieceRadius - 4 * scale + 'px',
+            top: margin + piece.position.y * cellSize - pieceRadius - 4 * scale + 'px',
+            width: (pieceRadius + 4 * scale) * 2 + 'px',
+            height: (pieceRadius + 4 * scale) * 2 + 'px',
           }"
         ></div>
 
@@ -507,13 +516,20 @@
           v-for="row in 10"
           :key="'row-' + row"
           class="board-row"
-          :style="{ top: margin + (row - 1) * cellSize - 15 + 'px' }"
+          :style="{
+            top: margin + (row - 1) * cellSize - 15 * scale + 'px',
+            height: 30 * scale + 'px',
+          }"
         >
           <div
             v-for="col in 9"
             :key="'col-' + col"
             class="board-cell"
-            :style="{ left: margin + (col - 1) * cellSize - 15 + 'px' }"
+            :style="{
+              left: margin + (col - 1) * cellSize - 15 * scale + 'px',
+              width: 30 * scale + 'px',
+              height: 30 * scale + 'px',
+            }"
             @click="onBoardClick(col - 1, row - 1)"
           ></div>
         </div>
@@ -523,37 +539,53 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import ChessPiece from './ChessPiece.vue'
-import { ChessGame, type ChessPiece as ChessPieceType, type Position } from '../ChessGame'
+import { type ChessPiece as ChessPieceType, type Position } from '../ChessGame'
 
-// 棋盘尺寸
-const boardWidth = 540
-const boardHeight = 600
-const margin = 50
-const cellSize = 55
-const pieceRadius = 22
+// 定义 props
+interface Props {
+  width?: number
+  height?: number
+  gameState: any
+  selectedPiece: any
+  availableMoves: any[]
+}
 
-// 游戏实例
-const game = new ChessGame()
-const gameState = reactive(game.getState())
+const props = withDefaults(defineProps<Props>(), {
+  width: 540,
+  height: 600,
+})
 
-// 选中的棋子和可移动位置
-const selectedPiece = ref<ChessPieceType | null>(null)
-const availableMoves = ref<Position[]>([])
+// 棋盘尺寸计算
+// 标准比例：宽540，高600，边距50，格子55
+const STANDARD_WIDTH = 540
+const STANDARD_HEIGHT = 600
+const STANDARD_MARGIN = 50
+const STANDARD_CELL_SIZE = 55
+const STANDARD_PIECE_RADIUS = 22
 
-// 用于强制刷新UI的响应式变量
-const forceUpdate = ref(0)
+// 计算缩放比例
+const scaleX = computed(() => props.width / STANDARD_WIDTH)
+const scaleY = computed(() => props.height / STANDARD_HEIGHT)
+const scale = computed(() => Math.min(scaleX.value, scaleY.value)) // 保持比例，使用较小的缩放值
+
+// 计算实际尺寸
+const boardWidth = computed(() => STANDARD_WIDTH * scale.value)
+const boardHeight = computed(() => STANDARD_HEIGHT * scale.value)
+const margin = computed(() => STANDARD_MARGIN * scale.value)
+const cellSize = computed(() => STANDARD_CELL_SIZE * scale.value)
+const pieceRadius = computed(() => STANDARD_PIECE_RADIUS * scale.value)
 
 // 计算可攻击的棋子（用于高亮显示）
 const attackablePieces = computed(() => {
-  if (!selectedPiece.value) return []
+  if (!props.selectedPiece) return []
 
-  return gameState.pieces.filter((piece) => {
-    if (!piece.alive || piece.camp === selectedPiece.value?.camp) return false
+  return props.gameState.pieces.filter((piece: any) => {
+    if (!piece.alive || piece.camp === props.selectedPiece?.camp) return false
 
     // 检查这个棋子的位置是否在可移动位置中
-    return availableMoves.value.some(
+    return props.availableMoves.some(
       (move) => move.x === piece.position.x && move.y === piece.position.y,
     )
   })
@@ -561,261 +593,51 @@ const attackablePieces = computed(() => {
 
 // 计算棋子列表用于渲染
 const alivePieces = computed(() => {
-  // 强制响应式更新，使用新数组确保Vue能检测到变化
-  forceUpdate.value // 触发响应式依赖
-  const alive = gameState.pieces.filter((piece) => piece.alive)
-  console.log('计算存活棋子:', alive.length, '个')
-  return alive
+  return props.gameState.pieces.filter((piece: any) => piece.alive)
 })
 
 // 事件发射
 const emit = defineEmits<{
-  gameStatusChange: [status: string]
-  playerChange: [player: string]
-  movePerformed: [
-    data: {
-      move?: any
-      isCapture: boolean
-      isCheck: boolean
-      pieceType: string
-      capturedPieceType?: string
-    },
-  ]
-  pieceSelected: []
+  pieceClick: [piece: ChessPieceType]
+  boardClick: [x: number, y: number]
+  moveClick: [position: Position]
 }>()
-
-// 初始化游戏状态
-const updateGameState = () => {
-  const newState = game.getState()
-  console.log('更新游戏状态 - 新状态棋子数量:', newState.pieces.filter((p) => p.alive).length)
-  // 深度更新响应式状态 - 完全替换数组确保响应式更新
-  Object.assign(gameState, {
-    pieces: [...newState.pieces],
-    currentPlayer: newState.currentPlayer,
-    gameStatus: newState.gameStatus,
-    isInCheck: newState.isInCheck,
-    moveHistory: [...newState.moveHistory],
-  })
-
-  // 强制触发UI更新
-  forceUpdate.value++
-
-  console.log('更新后存活棋子数量:', alivePieces.value.length)
-
-  emit('gameStatusChange', gameState.gameStatus)
-  emit('playerChange', gameState.currentPlayer)
-}
 
 // 棋子点击事件
 const onPieceClick = (piece: ChessPieceType) => {
-  // 如果没有选中棋子，只能选中自己的棋子
-  if (!selectedPiece.value) {
-    if (piece.camp !== gameState.currentPlayer) {
-      return
-    }
-    // 选中棋子
-    selectedPiece.value = piece
-    availableMoves.value = game.getValidMoves(piece)
-    console.log(
-      '选中棋子:',
-      piece.type,
-      '在位置:',
-      piece.position,
-      '可移动位置:',
-      availableMoves.value,
-    )
-    emit('pieceSelected')
-    return
-  }
-
-  // 如果点击的是自己的棋子
-  if (piece.camp === gameState.currentPlayer) {
-    if (selectedPiece.value?.id === piece.id) {
-      // 取消选中
-      selectedPiece.value = null
-      availableMoves.value = []
-    } else {
-      // 选中其他自己的棋子
-      selectedPiece.value = piece
-      availableMoves.value = game.getValidMoves(piece)
-      console.log(
-        '重新选中棋子:',
-        piece.type,
-        '在位置:',
-        piece.position,
-        '可移动位置:',
-        availableMoves.value,
-      )
-      emit('pieceSelected')
-    }
-    return
-  }
-
-  // 如果点击的是敌方棋子，尝试吃子
-  if (selectedPiece.value && piece.camp !== gameState.currentPlayer) {
-    const targetPosition = piece.position
-    const isValidMove = availableMoves.value.some(
-      (move) => move.x === targetPosition.x && move.y === targetPosition.y,
-    )
-
-    if (isValidMove) {
-      console.log(
-        '正在吃子:',
-        selectedPiece.value.type,
-        '吃',
-        piece.type,
-        '在位置:',
-        piece.position,
-      )
-      console.log('被吃棋子移动前alive状态:', piece.alive)
-      const movingPieceType = selectedPiece.value.type
-      const success = game.makeMove(selectedPiece.value.position, targetPosition)
-      if (success) {
-        console.log('吃子成功，被吃棋子移动后alive状态:', piece.alive)
-        const newState = game.getState()
-        const checkPiece = newState.pieces.find((p) => p.id === piece.id)
-        console.log('新状态中被吃棋子alive状态:', checkPiece?.alive)
-        const latestMove = newState.moveHistory[newState.moveHistory.length - 1]
-        emit('movePerformed', {
-          move: latestMove,
-          isCapture: true,
-          isCheck: newState.isInCheck,
-          pieceType: movingPieceType,
-          capturedPieceType: piece.type,
-        })
-
-        selectedPiece.value = null
-        availableMoves.value = []
-        updateGameState()
-
-        // 确保UI立即反映变化
-        console.log('吃子完成，清除选中状态和移动提示')
-        console.log('状态更新后存活棋子数量:', alivePieces.value.length)
-      }
-    }
-  }
+  emit('pieceClick', piece)
 }
 
 // 棋盘点击事件（空位移动）
 const onBoardClick = (x: number, y: number) => {
-  if (!selectedPiece.value) return
-
-  const targetPosition = { x, y }
-  const isValidMove = availableMoves.value.some(
-    (move) => move.x === targetPosition.x && move.y === targetPosition.y,
-  )
-
-  if (isValidMove) {
-    const oldState = game.getState()
-    const targetPiece = oldState.pieces.find(
-      (p) => p.position.x === targetPosition.x && p.position.y === targetPosition.y && p.alive,
-    )
-
-    const movingPieceType = selectedPiece.value.type
-
-    const success = game.makeMove(selectedPiece.value.position, targetPosition)
-    if (success) {
-      const newState = game.getState()
-      const latestMove = newState.moveHistory[newState.moveHistory.length - 1]
-      emit('movePerformed', {
-        move: latestMove,
-        isCapture: !!targetPiece,
-        isCheck: newState.isInCheck,
-        pieceType: movingPieceType,
-        capturedPieceType: targetPiece?.type,
-      })
-
-      selectedPiece.value = null
-      availableMoves.value = []
-      updateGameState()
-    }
-  }
+  emit('boardClick', x, y)
 }
 
 // 可移动位置点击
 const onMoveClick = (pos: Position) => {
-  if (selectedPiece.value) {
-    const oldState = game.getState()
-    const targetPiece = oldState.pieces.find(
-      (p) => p.position.x === pos.x && p.position.y === pos.y && p.alive,
-    )
-
-    const movingPieceType = selectedPiece.value.type
-
-    const success = game.makeMove(selectedPiece.value.position, pos)
-    if (success) {
-      const newState = game.getState()
-      const latestMove = newState.moveHistory[newState.moveHistory.length - 1]
-      emit('movePerformed', {
-        move: latestMove,
-        isCapture: !!targetPiece,
-        isCheck: newState.isInCheck,
-        pieceType: movingPieceType,
-        capturedPieceType: targetPiece?.type,
-      })
-
-      selectedPiece.value = null
-      availableMoves.value = []
-      updateGameState()
-    }
-  }
+  emit('moveClick', pos)
 }
 
 // 棋子是否被选中
 const isPieceSelected = (piece: ChessPieceType) => {
-  return selectedPiece.value?.id === piece.id
+  return props.selectedPiece?.id === piece.id
 }
 
 // 检查位置是否是攻击位置（有敌方棋子）
 const isAttackPosition = (pos: Position) => {
   // 直接检查这个位置是否有敌方棋子
-  const targetPiece = gameState.pieces.find(
-    (p) => p.position.x === pos.x && p.position.y === pos.y && p.alive,
+  const targetPiece = props.gameState.pieces.find(
+    (p: any) => p.position.x === pos.x && p.position.y === pos.y && p.alive,
   )
-  return targetPiece && selectedPiece.value && targetPiece.camp !== selectedPiece.value.camp
+  return targetPiece && props.selectedPiece && targetPiece.camp !== props.selectedPiece.camp
 }
 
 // 获取攻击位置上的棋子
 const getAttackTargetPiece = (pos: Position) => {
-  return gameState.pieces.find((p) => p.position.x === pos.x && p.position.y === pos.y && p.alive)
+  return props.gameState.pieces.find(
+    (p: any) => p.position.x === pos.x && p.position.y === pos.y && p.alive,
+  )
 }
-
-// 重置游戏
-const resetGame = () => {
-  game.reset()
-  selectedPiece.value = null
-  availableMoves.value = []
-  updateGameState()
-}
-
-// 获取游戏状态文本
-const getGameStatusText = () => {
-  switch (gameState.gameStatus) {
-    case 'playing':
-      return gameState.isInCheck
-        ? `${gameState.currentPlayer === 'red' ? '红方' : '黑方'}被将军!`
-        : `轮到${gameState.currentPlayer === 'red' ? '红方' : '黑方'}下棋`
-    case 'checkmate':
-      return `${gameState.currentPlayer === 'red' ? '黑方' : '红方'}获胜!`
-    case 'stalemate':
-      return '和棋 - 无棋可走'
-    case 'draw':
-      return '和棋'
-    default:
-      return ''
-  }
-}
-
-// 暴露方法给父组件
-defineExpose({
-  resetGame,
-  getGameState: () => gameState,
-  getGameStatusText,
-})
-
-onMounted(() => {
-  updateGameState()
-})
 </script>
 
 <style scoped>
@@ -853,8 +675,6 @@ onMounted(() => {
 
 .selection-mark {
   position: absolute;
-  width: 44px;
-  height: 44px;
   border: 3px solid #fff;
   border-radius: 50%;
   pointer-events: none;
@@ -879,8 +699,6 @@ onMounted(() => {
 
 .move-hint {
   position: absolute;
-  width: 30px;
-  height: 30px;
   background: rgba(76, 175, 80, 0.6);
   border: 3px solid rgba(76, 175, 80, 0.8);
   border-radius: 50%;
@@ -894,8 +712,8 @@ onMounted(() => {
 
 .move-hint::before {
   content: '';
-  width: 12px;
-  height: 12px;
+  width: 40%;
+  height: 40%;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   transition: all 0.3s ease;
@@ -1045,14 +863,11 @@ onMounted(() => {
 .board-row {
   position: absolute;
   width: 100%;
-  height: 30px;
   pointer-events: none;
 }
 
 .board-cell {
   position: absolute;
-  width: 30px;
-  height: 30px;
   pointer-events: auto;
   cursor: pointer;
   border-radius: 50%;
@@ -1065,8 +880,6 @@ onMounted(() => {
 
 .attackable-piece-highlight {
   position: absolute;
-  width: 52px;
-  height: 52px;
   border-radius: 50%;
   pointer-events: none;
   z-index: 8;
