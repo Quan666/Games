@@ -99,6 +99,22 @@
       </g>
     </svg>
 
+    <!-- 获胜连线 -->
+    <svg
+      v-if="winningPositions && winningPositions.length >= 2"
+      class="absolute inset-0 w-full h-full pointer-events-none z-30"
+    >
+      <line
+        :x1="`${padding_percent + (grid_area_percent / (boardSize - 1)) * winningPositions[0].col}%`"
+        :y1="`${padding_percent + (grid_area_percent / (boardSize - 1)) * winningPositions[0].row}%`"
+        :x2="`${padding_percent + (grid_area_percent / (boardSize - 1)) * winningPositions[winningPositions.length - 1].col}%`"
+        :y2="`${padding_percent + (grid_area_percent / (boardSize - 1)) * winningPositions[winningPositions.length - 1].row}%`"
+        stroke="#ef4444"
+        stroke-width="0.5%"
+        stroke-linecap="round"
+        style="filter: drop-shadow(0 0 4px #ef4444)"
+      />
+    </svg>
     <!-- 交点和棋子 -->
     <div class="absolute inset-0">
       <template v-for="(row, rowIndex) in board" :key="`row-${rowIndex}`">
@@ -109,7 +125,7 @@
           :class="[
             getHoverClass(rowIndex, colIndex),
             {
-              'z-100': isLastMove(rowIndex, colIndex) || isWinningPiece(rowIndex, colIndex),
+              'z-20': isLastMove(rowIndex, colIndex) || isWinningPiece(rowIndex, colIndex),
               'z-10': !isLastMove(rowIndex, colIndex),
             },
           ]"
@@ -332,9 +348,7 @@ const getPieceClass = (row: number, col: number): string => {
       ? 'bg-gradient-radial from-gray-600 to-black'
       : 'bg-gradient-radial from-white to-gray-300'
 
-  const winningClass = isWinningPiece(row, col)
-    ? 'ring-4 ring-red-500 ring-opacity-70 animate-pulse'
-    : ''
+  const winningClass = isWinningPiece(row, col) ? 'winning-outline animate-pulse' : ''
 
   // 最后一步加蓝色圈圈
   const lastMoveClass =
@@ -380,19 +394,19 @@ const handleMove = (row: number, col: number) => {
 
 .last-move-outline {
   box-shadow:
-    0 0 0 0.18em #3b82f6,
+    0 0 0 0.1em #3b82f6,
     0 0 8px 0 #3b82f6;
   animation: lastMovePulse 1.2s infinite alternate;
 }
 @keyframes lastMovePulse {
   0% {
     box-shadow:
-      0 0 0 0.18em #3b82f6,
+      0 0 0 0.1em #3b82f6,
       0 0 8px 0 #3b82f6;
   }
   100% {
     box-shadow:
-      0 0 0 0.32em #60a5fa,
+      0 0 0 0.18em #60a5fa,
       0 0 12px 2px #3b82f6;
   }
 }
@@ -412,6 +426,25 @@ const handleMove = (row: number, col: number) => {
 
 .ai-best-mark {
   animation: aiBestPulse 1.5s ease-in-out infinite;
+}
+
+.winning-outline {
+  box-shadow:
+    0 0 0 0.1em #ef4444,
+    0 0 8px 0 #ef4444;
+  animation: winningPulse 1.2s infinite alternate;
+}
+@keyframes winningPulse {
+  0% {
+    box-shadow:
+      0 0 0 0.1em #ef4444,
+      0 0 8px 0 #ef4444;
+  }
+  100% {
+    box-shadow:
+      0 0 0 0.18em #f87171,
+      0 0 12px 2px #ef4444;
+  }
 }
 
 .gomoku-board-container {
