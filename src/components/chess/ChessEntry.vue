@@ -241,12 +241,12 @@ const boardSize = computed(() => {
     const aspectRatio = 600 / 660
 
     // 优先按高度计算，充分利用屏幕高度
-    let height = availableHeight * 0.95 // 留5%边距
+    let height = availableHeight * 0.99 // 留1%边距
     let width = height * aspectRatio
 
     // 如果宽度超出可用空间，则按宽度计算
     if (width > availableWidth) {
-      width = availableWidth * 0.95 // 留5%边距
+      width = availableWidth * 0.99 // 留1%边距
       height = width / aspectRatio
     }
 
@@ -276,7 +276,7 @@ const boardSize = computed(() => {
     }
   } else {
     // 竖屏时保持原有逻辑
-    const availableWidth = windowWidth.value * 0.85 // 减少一些，确保有足够边距
+    const availableWidth = windowWidth.value * 0.95 // 减少一些，确保有足够边距
     const availableHeight = windowHeight.value * 0.6 // 减少高度占比，为控制面板留空间
 
     // 保持棋盘的宽高比例 (600:660)
@@ -644,7 +644,6 @@ onUnmounted(() => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 10px;
 }
 
 .game-header {
@@ -800,7 +799,6 @@ onUnmounted(() => {
 .landscape-layout {
   height: 100vh;
   display: flex;
-  padding: 10px;
   gap: 20px;
 }
 

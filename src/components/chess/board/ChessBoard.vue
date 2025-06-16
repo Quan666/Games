@@ -780,7 +780,7 @@ const getAttackTargetPiece = (pos: Position) => {
 <style scoped>
 .chess-board-container {
   display: inline-block;
-  padding: 20px;
+  padding: 5px;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
