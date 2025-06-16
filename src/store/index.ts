@@ -77,12 +77,12 @@ const store = createStore({
       },
       // 中国象棋游戏设置
       chess: {
-        gameSettings: {
-          soundEnabled: true, // 音效开关
-          voiceEnabled: true, // 语音播报开关
-          showMoveHistory: true, // 显示移动历史
-          autoSave: true, // 自动保存游戏进度
-          animationSpeed: 'normal', // 动画速度: slow, normal, fast
+        settings: {
+          gameMode: 'pvp', // 游戏模式: pvp=双人对战, pve=人机对战
+          showCoordinates: true, // 显示棋盘坐标
+          showMoveHistory: false, // 显示走法记录开关
+          enableSound: true, // 音效开关
+          enableVoice: false, // 语音播报开关
         },
         gameState: {
           // 当前游戏状态将动态保存
@@ -232,20 +232,16 @@ const store = createStore({
 
     // 中国象棋设置 mutations
     updateChessSettings(state: any, payload: any) {
-      Object.assign(state.chess.gameSettings, payload)
+      Object.assign(state.chess.settings, payload)
     },
     toggleChessSound(state: any) {
-      state.chess.gameSettings.soundEnabled = !state.chess.gameSettings.soundEnabled
-      // 如果音效关闭，也关闭语音
-      if (!state.chess.gameSettings.soundEnabled) {
-        state.chess.gameSettings.voiceEnabled = false
-      }
+      state.chess.settings.enableSound = !state.chess.settings.enableSound
     },
     toggleChessVoice(state: any) {
-      state.chess.gameSettings.voiceEnabled = !state.chess.gameSettings.voiceEnabled
+      state.chess.settings.enableVoice = !state.chess.settings.enableVoice
     },
     toggleChessMoveHistory(state: any) {
-      state.chess.gameSettings.showMoveHistory = !state.chess.gameSettings.showMoveHistory
+      state.chess.settings.showMoveHistory = !state.chess.settings.showMoveHistory
     },
 
     // 中国象棋游戏状态 mutations

@@ -1,10 +1,15 @@
 <template>
   <div
     v-if="showStatusPanel && (gameMode === 'pve' || gameMode === 'ave')"
+    ref="elementRef"
     class="fixed top-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl p-3 max-w-xs w-full max-h-[85vh] overflow-y-auto shadow-xl z-30 border border-gray-200 md:max-w-xs md:top-4 md:right-4 md:w-80 max-md:top-2 max-md:right-2 max-md:left-auto max-md:max-w-[280px] max-md:w-[280px]"
+    :class="{ 'cursor-move': isDragging }"
   >
-    <div class="flex justify-between items-center mb-2">
-      <h3 class="text-sm font-bold text-gray-800 max-md:text-xs">🧠 AI监控</h3>
+    <div
+      class="flex justify-between items-center mb-2 cursor-move select-none"
+      @mousedown="startDrag"
+    >
+      <h3 class="text-sm font-bold text-gray-800 max-md:text-xs flex items-center">🧠 AI监控</h3>
       <button
         @click="closePanel"
         class="text-gray-500 hover:text-gray-700 text-lg max-md:text-base p-1"
@@ -111,6 +116,7 @@
 import { computed } from 'vue'
 // @ts-ignore
 import { useStore } from 'vuex'
+import { useDraggable } from '../../composables/useDraggable'
 
 // 类型定义
 interface AILog {
@@ -143,6 +149,9 @@ defineProps<{
 
 const store = useStore()
 const showStatusPanel = computed(() => store.state.gomoku.gameSettings.showStatusPanel)
+
+// 拖动功能
+const { elementRef, isDragging, startDrag } = useDraggable()
 
 const closePanel = () => {
   store.commit('updateGameSettings', { showStatusPanel: false })

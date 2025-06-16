@@ -29,6 +29,7 @@
           :gameState="gameState"
           :selectedPiece="selectedPiece"
           :availableMoves="availableMoves"
+          :showCoordinates="showCoordinates"
           @piece-click="onPieceClick"
           @board-click="onBoardClick"
           @move-click="onMoveClick"
@@ -37,55 +38,16 @@
 
       <!-- 底部控制区域 -->
       <div class="controls-portrait">
-        <div class="control-buttons-portrait">
-          <!-- 游戏控制按钮 -->
-          <div class="game-control-row-portrait">
+        <div class="control-buttons-grid">
+          <!-- 第一行：游戏控制 -->
+          <div class="control-row">
             <button @click="resetGame" class="control-btn primary">重新开始</button>
             <button @click="undoMove" class="control-btn" :disabled="!canUndo">悔棋</button>
           </div>
-          <!-- 声音控制和历史记录 -->
-          <div class="sound-history-row-portrait">
-            <div class="switch-group-portrait">
-              <label class="switch-item">
-                <span class="switch-label">🔊 音效</span>
-                <div class="switch" :class="{ 'switch-on': soundEnabled }">
-                  <input type="checkbox" :checked="soundEnabled" @change="toggleSound" />
-                  <span class="slider"></span>
-                </div>
-              </label>
-              <label class="switch-item" :class="{ disabled: !soundEnabled }">
-                <span class="switch-label">🗣️ 语音</span>
-                <div class="switch" :class="{ 'switch-on': voiceEnabled, disabled: !soundEnabled }">
-                  <input
-                    type="checkbox"
-                    :checked="voiceEnabled"
-                    :disabled="!soundEnabled"
-                    @change="toggleVoice"
-                  />
-                  <span class="slider"></span>
-                </div>
-              </label>
-              <label class="switch-item">
-                <span class="switch-label">📚 历史</span>
-                <div class="switch" :class="{ 'switch-on': showMoveHistory }">
-                  <input type="checkbox" :checked="showMoveHistory" @change="toggleHistory" />
-                  <span class="slider"></span>
-                </div>
-              </label>
-            </div>
-          </div>
-        </div>
 
-        <!-- 历史记录 -->
-        <div v-if="showMoveHistory" class="move-history mt-5">
-          <h3>走法历史</h3>
-          <div class="history-list">
-            <div v-for="(move, index) in moveHistory" :key="index" class="move-item">
-              <span class="move-number">{{ index + 1 }}.</span>
-              <span class="move-text">
-                {{ formatMove(move) }}
-              </span>
-            </div>
+          <!-- 第二行：设置 -->
+          <div class="control-row">
+            <button @click="showSettings = true" class="control-btn settings">⚙️ 设置</button>
           </div>
         </div>
       </div>
@@ -112,55 +74,12 @@
 
         <!-- 控制按钮 -->
         <div class="control-buttons-landscape">
-          <!-- 声音控制和历史记录 -->
-          <div class="sound-history-row">
-            <div class="switch-group">
-              <label class="switch-item">
-                <span class="switch-label">🔊 音效</span>
-                <div class="switch" :class="{ 'switch-on': soundEnabled }">
-                  <input type="checkbox" :checked="soundEnabled" @change="toggleSound" />
-                  <span class="slider"></span>
-                </div>
-              </label>
-              <label class="switch-item" :class="{ disabled: !soundEnabled }">
-                <span class="switch-label">🗣️ 语音</span>
-                <div class="switch" :class="{ 'switch-on': voiceEnabled, disabled: !soundEnabled }">
-                  <input
-                    type="checkbox"
-                    :checked="voiceEnabled"
-                    :disabled="!soundEnabled"
-                    @change="toggleVoice"
-                  />
-                  <span class="slider"></span>
-                </div>
-              </label>
-              <label class="switch-item">
-                <span class="switch-label">📚 历史</span>
-                <div class="switch" :class="{ 'switch-on': showMoveHistory }">
-                  <input type="checkbox" :checked="showMoveHistory" @change="toggleHistory" />
-                  <span class="slider"></span>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <!-- 游戏控制按钮 -->
-          <div class="game-control-row">
+          <div class="control-row">
             <button @click="resetGame" class="control-btn primary">重新开始</button>
             <button @click="undoMove" class="control-btn" :disabled="!canUndo">悔棋</button>
           </div>
-        </div>
-
-        <!-- 历史记录 -->
-        <div v-if="showMoveHistory" class="move-history-landscape">
-          <h3>走法历史</h3>
-          <div class="history-list-landscape">
-            <div v-for="(move, index) in moveHistory" :key="index" class="move-item">
-              <span class="move-number">{{ index + 1 }}.</span>
-              <span class="move-text">
-                {{ formatMove(move) }}
-              </span>
-            </div>
+          <div class="control-row">
+            <button @click="showSettings = true" class="control-btn settings">⚙️ 设置</button>
           </div>
         </div>
       </div>
@@ -174,6 +93,7 @@
           :gameState="gameState"
           :selectedPiece="selectedPiece"
           :availableMoves="availableMoves"
+          :showCoordinates="showCoordinates"
           @piece-click="onPieceClick"
           @board-click="onBoardClick"
           @move-click="onMoveClick"
@@ -189,6 +109,22 @@
       :isInCheck="gameState.isInCheck"
       @close="hideGameOverDialog"
     />
+
+    <!-- 走法历史弹窗 -->
+    <MoveHistoryDialog
+      :show="chessSettings.showMoveHistory"
+      :moveHistory="moveHistory"
+      :gameStartTime="gameStartTime"
+      @close="closeMoveHistoryDialog"
+    />
+
+    <!-- 象棋设置弹窗 -->
+    <ChessSettings
+      :show="showSettings"
+      @close="showSettings = false"
+      @apply-settings="applySettings"
+      @open-move-history="openMoveHistoryFromSettings"
+    />
   </div>
 </template>
 
@@ -199,21 +135,26 @@ import { useStore } from 'vuex'
 import ChessBoard from './board/ChessBoard.vue'
 import HomeButton from '../HomeButton.vue'
 import GameOverDialog from './GameOverDialog.vue'
+import MoveHistoryDialog from './MoveHistoryDialog.vue'
+import ChessSettings from './ChessSettings.vue'
 import { createChessSoundGenerator } from './ChessSound'
 import { ChessGame, type ChessPiece as ChessPieceType, type Position, type Move } from './ChessGame'
 
 const store = useStore()
 const chessBoardRef = ref()
 
+// 设置弹窗状态
+const showSettings = ref(false)
+
 // 从 store 获取设置，如果不存在则使用默认值
 const chessSettings = computed(
   () =>
-    store.state.chess?.gameSettings || {
-      soundEnabled: true,
-      voiceEnabled: true,
-      showMoveHistory: true,
-      autoSave: true,
-      animationSpeed: 'normal',
+    store.state.chess?.settings || {
+      gameMode: 'pvp',
+      showCoordinates: true,
+      showMoveHistory: false,
+      enableSound: true,
+      enableVoice: false,
     },
 )
 
@@ -221,29 +162,22 @@ const globalSettings = computed(
   () =>
     store.state.globalSettings || {
       soundEnabled: true,
-      voiceEnabled: true,
+      voiceEnabled: false,
     },
 )
 
 // 使用计算属性从 store 获取设置
-const showMoveHistory = computed({
-  get: () => chessSettings.value.showMoveHistory,
-  set: (value) => store.commit('updateChessSettings', { showMoveHistory: value }),
-})
-
-const soundEnabled = computed({
-  get: () => globalSettings.value.soundEnabled && chessSettings.value.soundEnabled,
-  set: (value) => store.commit('updateChessSettings', { soundEnabled: value }),
-})
-
-const voiceEnabled = computed({
-  get: () =>
+const showCoordinates = computed(() => chessSettings.value.showCoordinates)
+const soundEnabled = computed(
+  () => globalSettings.value.soundEnabled && chessSettings.value.enableSound,
+)
+const voiceEnabled = computed(
+  () =>
     globalSettings.value.soundEnabled &&
     globalSettings.value.voiceEnabled &&
-    chessSettings.value.soundEnabled &&
-    chessSettings.value.voiceEnabled,
-  set: (value) => store.commit('updateChessSettings', { voiceEnabled: value }),
-})
+    chessSettings.value.enableSound &&
+    chessSettings.value.enableVoice,
+)
 
 // 游戏实例 - 从store恢复或创建新游戏
 const initializeGame = () => {
@@ -272,6 +206,9 @@ const availableMoves = ref<Position[]>([])
 // 游戏结束弹窗控制
 const showGameOverDialog = ref(false)
 
+// 游戏开始时间
+const gameStartTime = ref(new Date())
+
 // 响应式屏幕尺寸
 const windowWidth = ref(window.innerWidth)
 const windowHeight = ref(window.innerHeight)
@@ -282,31 +219,55 @@ const isLandscape = computed(() => windowWidth.value > windowHeight.value)
 // 根据屏幕大小计算棋盘尺寸
 const boardSize = computed(() => {
   if (isLandscape.value) {
-    // 横屏时棋盘占满高度，左侧留给控制面板
-    const controlPanelWidth = 320 // 控制面板宽度加间距
-    const availableWidth = windowWidth.value - controlPanelWidth
-    const availableHeight = windowHeight.value - 40 // 减去上下padding
+    // 横屏时棋盘占满可用空间，左侧留给控制面板
+    // 根据屏幕宽度确定控制面板宽度
+    let controlPanelWidth = 280 // 默认控制面板宽度
+    if (windowWidth.value >= 1920) {
+      controlPanelWidth = 360
+    } else if (windowWidth.value >= 1440) {
+      controlPanelWidth = 320
+    }
 
-    // 中国象棋棋盘比例：宽540 × 高600
-    const aspectRatio = 540 / 600
+    const layoutPadding = 20 // 整体布局左右padding (10px * 2)
+    const layoutGap = 20 // 控制面板和棋盘之间的gap
+    const boardContainerPadding = 20 // 棋盘容器的内边距
 
-    // 首先按高度计算，让棋盘占满高度
-    let height = availableHeight
+    // 计算棋盘可用空间
+    const totalReservedWidth = controlPanelWidth + layoutPadding + layoutGap + boardContainerPadding
+    const availableWidth = Math.max(windowWidth.value - totalReservedWidth, 300)
+    const availableHeight = Math.max(windowHeight.value - layoutPadding, 400) // 减去上下padding
+
+    // 中国象棋棋盘比例：宽600 × 高660（包含四个方向的坐标）
+    const aspectRatio = 600 / 660
+
+    // 优先按高度计算，充分利用屏幕高度
+    let height = availableHeight * 0.95 // 留5%边距
     let width = height * aspectRatio
 
     // 如果宽度超出可用空间，则按宽度计算
     if (width > availableWidth) {
-      width = availableWidth
+      width = availableWidth * 0.95 // 留5%边距
       height = width / aspectRatio
     }
 
-    // 确保最小尺寸
-    const minHeight = Math.min(400, availableHeight * 0.8)
-    const minWidth = minHeight * aspectRatio
+    // 设置最小和最大尺寸
+    const minSize = Math.min(windowWidth.value, windowHeight.value) * 0.4
+    const maxSize = Math.min(windowWidth.value, windowHeight.value) * 0.9
 
-    if (height < minHeight) {
-      height = minHeight
-      width = minWidth
+    const minHeight = Math.max(minSize / aspectRatio, 350)
+    const maxHeight = maxSize / aspectRatio
+    const minWidth = minHeight * aspectRatio
+    const maxWidth = maxHeight * aspectRatio
+
+    // 应用尺寸限制
+    height = Math.min(Math.max(height, minHeight), maxHeight)
+    width = Math.min(Math.max(width, minWidth), maxWidth)
+
+    // 对于超宽屏幕，适当增大棋盘尺寸
+    if (windowWidth.value / windowHeight.value > 2) {
+      const scaleFactor = Math.min(1.3, windowWidth.value / windowHeight.value / 2)
+      height = Math.min(height * scaleFactor, availableHeight * 0.9)
+      width = height * aspectRatio
     }
 
     return {
@@ -315,11 +276,11 @@ const boardSize = computed(() => {
     }
   } else {
     // 竖屏时保持原有逻辑
-    const availableWidth = windowWidth.value * 0.9
+    const availableWidth = windowWidth.value * 0.85 // 减少一些，确保有足够边距
     const availableHeight = windowHeight.value * 0.6 // 减少高度占比，为控制面板留空间
 
-    // 保持棋盘的宽高比例 (540:600)
-    const aspectRatio = 540 / 600
+    // 保持棋盘的宽高比例 (600:660)
+    const aspectRatio = 600 / 660
 
     let width = Math.min(availableWidth, availableHeight * aspectRatio)
     let height = width / aspectRatio
@@ -560,8 +521,10 @@ const onMoveClick = (pos: Position) => {
 // 重置游戏
 const resetGame = () => {
   game.reset()
+  gameStartTime.value = new Date()
   selectedPiece.value = null
   availableMoves.value = []
+  showGameOverDialog.value = false
   updateGameState()
   soundGenerator.playGameStartSound()
 
@@ -633,39 +596,22 @@ const handleResize = () => {
 //   // 棋子选中时的处理
 // }
 
-// 音效控制
-const toggleSound = () => {
-  store.commit('toggleChessSound')
+// 设置应用
+const applySettings = (settings: any, globalSettings: any) => {
+  // 更新象棋设置
+  store.commit('updateChessSettings', settings)
+  // 更新全局设置
+  store.commit('updateGlobalSettings', globalSettings)
 }
 
-const toggleVoice = () => {
-  store.commit('toggleChessVoice')
+// 从设置中打开走法记录
+const openMoveHistoryFromSettings = () => {
+  // 走法记录弹窗的显示已经由设置控制，这里不需要额外操作
 }
 
-// 历史记录控制
-const toggleHistory = () => {
-  store.commit('toggleChessMoveHistory')
-}
-
-// 格式化走法文本
-const formatMove = (move: Move) => {
-  if (!move) return ''
-
-  const pieceNames: Record<string, string> = {
-    king: '帅/将',
-    advisor: '仕/士',
-    elephant: '相/象',
-    horse: '马',
-    chariot: '车',
-    cannon: '炮',
-    pawn: '兵/卒',
-  }
-
-  const pieceName = pieceNames[move.piece.type] || move.piece.type
-  const fromPos = `(${move.from.x},${move.from.y})`
-  const toPos = `(${move.to.x},${move.to.y})`
-
-  return `${pieceName}${fromPos}→${toPos}`
+// 关闭走法历史弹窗（将设置中的开关关闭）
+const closeMoveHistoryDialog = () => {
+  store.commit('updateChessSettings', { showMoveHistory: false })
 }
 
 onMounted(() => {
@@ -788,6 +734,8 @@ onUnmounted(() => {
   justify-content: center;
   align-items: center;
   padding: 10px 0;
+  width: 100%;
+  overflow-x: auto; /* 如果棋盘太宽，允许水平滚动 */
 }
 
 .controls-portrait {
@@ -795,11 +743,20 @@ onUnmounted(() => {
   padding: 10px 0;
 }
 
-.control-buttons-portrait {
+.control-buttons-grid {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
   align-items: center;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.control-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  width: 100%;
 }
 
 /* 竖屏版本的声音控制和历史记录行 */
@@ -861,6 +818,30 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
+/* 超大屏幕优化 */
+@media (min-width: 1440px) {
+  .controls-landscape {
+    width: 320px;
+    padding: 24px;
+  }
+
+  .controls-header h2 {
+    font-size: 22px;
+  }
+
+  .control-btn {
+    padding: 12px 18px;
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .controls-landscape {
+    width: 360px;
+    padding: 28px;
+  }
+}
+
 .controls-header {
   text-align: center;
 }
@@ -882,7 +863,8 @@ onUnmounted(() => {
 .control-buttons-landscape {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
+  margin-top: 20px;
 }
 
 /* 声音控制和历史记录行 */
@@ -956,10 +938,54 @@ onUnmounted(() => {
   transform: translateX(20px);
 }
 
+/* 走法历史按钮样式 */
 .history-btn {
-  min-width: 70px;
-  padding: 8px 12px;
-  font-size: 12px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin: 0 3px;
+  min-width: 80px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.history-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+}
+
+.history-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 新增设置按钮样式 */
+.control-btn.settings {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.control-btn.settings:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+}
+
+.control-btn.history {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: white;
+}
+
+.control-btn.history:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
 }
 
 /* 游戏控制按钮行 */
@@ -975,7 +1001,8 @@ onUnmounted(() => {
   justify-content: center;
   align-items: center;
   height: 100%;
-  overflow: hidden;
+  width: 100%;
+  overflow: auto; /* 如果棋盘太大，允许滚动 */
 }
 
 /* 控制按钮样式 */
@@ -1082,22 +1109,59 @@ onUnmounted(() => {
   flex: 1;
 }
 
+/* 走法历史日志样式 */
+.move-history,
+.move-history-landscape {
+  .bg-gradient-to-br {
+    background-image: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
+  }
+
+  .font-mono {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  }
+
+  .overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .overflow-y-auto::-webkit-scrollbar-track {
+    background: #2d3748;
+    border-radius: 3px;
+  }
+
+  .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #4a5568;
+    border-radius: 3px;
+  }
+
+  .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #718096;
+  }
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
   .landscape-layout {
     flex-direction: column;
     height: auto;
     min-height: 100vh;
+    padding: 5px;
+    gap: 10px;
   }
 
   .controls-landscape {
     width: 100%;
     order: 2;
+    padding: 15px;
   }
 
   .board-container-landscape {
     order: 1;
-    height: 60vh;
+    height: 65vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .sound-history-row {
@@ -1138,6 +1202,49 @@ onUnmounted(() => {
   .game-control-row-portrait {
     flex-wrap: wrap;
     justify-content: center;
+  }
+}
+
+/* 针对平板横屏的优化 */
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
+  .landscape-layout {
+    padding: 8px;
+    gap: 15px;
+  }
+
+  .controls-landscape {
+    width: 260px;
+    padding: 18px;
+  }
+
+  .controls-header h2 {
+    font-size: 19px;
+  }
+
+  .control-btn {
+    padding: 9px 14px;
+    font-size: 13px;
+  }
+}
+
+/* 针对小屏幕横屏设备的特殊优化 */
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
+  .landscape-layout {
+    padding: 5px;
+    gap: 10px;
+  }
+
+  .controls-landscape {
+    width: 240px;
+    padding: 12px;
+    overflow-y: auto;
+    max-height: calc(100vh - 10px);
+  }
+
+  .board-container-landscape {
+    flex: 1;
+    min-width: 0; /* 允许flex项目缩小 */
+    min-height: 0;
   }
 }
 

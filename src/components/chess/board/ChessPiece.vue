@@ -8,10 +8,10 @@
       'hover-effect': true,
     }"
     :style="{
-      left: margin + x * cellSize - 22 * scale + 'px',
-      top: margin + y * cellSize - 22 * scale + 'px',
-      width: 44 * scale + 'px',
-      height: 44 * scale + 'px',
+      left: marginX + x * cellSize - pieceRadius + 'px',
+      top: marginY + y * cellSize - pieceRadius + 'px',
+      width: pieceDiameter + 'px',
+      height: pieceDiameter + 'px',
       zIndex: zIndex || 10,
     }"
     @click="$emit('click')"
@@ -27,7 +27,8 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs } from 'vue'
+import { toRefs, computed } from 'vue'
+import { BOARD_CONFIG } from './boardConfig'
 
 interface Props {
   piece: {
@@ -40,7 +41,8 @@ interface Props {
   isBlack: boolean
   isSelected?: boolean
   cellSize: number
-  margin: number
+  marginX: number
+  marginY: number
   scale: number
   zIndex?: number
 }
@@ -51,8 +53,14 @@ defineEmits<{
   click: []
 }>()
 
+// 计算棋子的实际尺寸 - 使用配置文件中的参数
+const pieceRadius = computed(() => BOARD_CONFIG.PIECE_RADIUS * props.scale)
+const pieceDiameter = computed(() => pieceRadius.value * 2)
+const pieceFontSize = computed(() => pieceRadius.value * BOARD_CONFIG.PIECE_FONT_RATIO)
+
 // 解构 props 以便在模板中使用
-const { piece, x, y, isBlack, isSelected, cellSize, margin, scale, zIndex } = toRefs(props)
+const { piece, x, y, isBlack, isSelected, cellSize, marginX, marginY, scale, zIndex } =
+  toRefs(props)
 </script>
 
 <style scoped>
@@ -73,8 +81,8 @@ const { piece, x, y, isBlack, isSelected, cellSize, margin, scale, zIndex } = to
   height: 100%;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.3);
-  filter: blur(4px);
-  transform: translateY(2px) scale(0.9);
+  filter: blur(v-bind('BOARD_CONFIG.PIECE_SHADOW_BLUR + "px"'));
+  transform: translateY(v-bind('BOARD_CONFIG.PIECE_SHADOW_OFFSET + "px"')) scale(0.9);
   z-index: -1;
 }
 
@@ -86,7 +94,7 @@ const { piece, x, y, isBlack, isSelected, cellSize, margin, scale, zIndex } = to
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #333;
+  border: v-bind('BOARD_CONFIG.PIECE_BORDER_WIDTH + "px"') solid #333;
   overflow: hidden;
 }
 
@@ -131,7 +139,7 @@ const { piece, x, y, isBlack, isSelected, cellSize, margin, scale, zIndex } = to
 }
 
 .piece-text {
-  font-size: v-bind('(26 * scale) + "px"');
+  font-size: v-bind('pieceFontSize + "px"');
   font-weight: 900;
   font-family: '楷体', 'KaiTi', '华文楷体', serif;
   text-shadow:

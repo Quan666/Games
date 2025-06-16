@@ -25,12 +25,12 @@
         <!-- 横线 -->
         <g v-for="row in 10" :key="'row-' + row">
           <line
-            :x1="margin"
-            :y1="margin + (row - 1) * cellSize"
-            :x2="margin + 8 * cellSize"
-            :y2="margin + (row - 1) * cellSize"
+            :x1="marginX"
+            :y1="marginY + (row - 1) * cellSize"
+            :x2="marginX + 8 * cellSize"
+            :y2="marginY + (row - 1) * cellSize"
             stroke="rgba(0, 0, 0, 0.6)"
-            :stroke-width="2 * scale"
+            :stroke-width="BOARD_CONFIG.LINE_STROKE_WIDTH * scale"
           />
         </g>
 
@@ -38,67 +38,67 @@
         <g v-for="col in 9" :key="'col-' + col">
           <!-- 上半部分 -->
           <line
-            :x1="margin + (col - 1) * cellSize"
-            :y1="margin"
-            :x2="margin + (col - 1) * cellSize"
-            :y2="margin + 4 * cellSize"
+            :x1="marginX + (col - 1) * cellSize"
+            :y1="marginY"
+            :x2="marginX + (col - 1) * cellSize"
+            :y2="marginY + 4 * cellSize"
             stroke="rgba(0, 0, 0, 0.6)"
-            :stroke-width="2 * scale"
+            :stroke-width="BOARD_CONFIG.LINE_STROKE_WIDTH * scale"
           />
           <!-- 下半部分 -->
           <line
-            :x1="margin + (col - 1) * cellSize"
-            :y1="margin + 5 * cellSize"
-            :x2="margin + (col - 1) * cellSize"
-            :y2="margin + 9 * cellSize"
+            :x1="marginX + (col - 1) * cellSize"
+            :y1="marginY + 5 * cellSize"
+            :x2="marginX + (col - 1) * cellSize"
+            :y2="marginY + 9 * cellSize"
             stroke="rgba(0, 0, 0, 0.6)"
-            :stroke-width="2 * scale"
+            :stroke-width="BOARD_CONFIG.LINE_STROKE_WIDTH * scale"
           />
         </g>
 
         <!-- 九宫格斜线 -->
         <!-- 上方九宫 -->
         <line
-          :x1="margin + 3 * cellSize"
-          :y1="margin"
-          :x2="margin + 5 * cellSize"
-          :y2="margin + 2 * cellSize"
+          :x1="marginX + 3 * cellSize"
+          :y1="marginY"
+          :x2="marginX + 5 * cellSize"
+          :y2="marginY + 2 * cellSize"
           stroke="rgba(0, 0, 0, 0.6)"
-          :stroke-width="2 * scale"
+          :stroke-width="BOARD_CONFIG.LINE_STROKE_WIDTH * scale"
         />
         <line
-          :x1="margin + 5 * cellSize"
-          :y1="margin"
-          :x2="margin + 3 * cellSize"
-          :y2="margin + 2 * cellSize"
+          :x1="marginX + 5 * cellSize"
+          :y1="marginY"
+          :x2="marginX + 3 * cellSize"
+          :y2="marginY + 2 * cellSize"
           stroke="rgba(0, 0, 0, 0.6)"
-          :stroke-width="2 * scale"
+          :stroke-width="BOARD_CONFIG.LINE_STROKE_WIDTH * scale"
         />
 
         <!-- 下方九宫 -->
         <line
-          :x1="margin + 3 * cellSize"
-          :y1="margin + 7 * cellSize"
-          :x2="margin + 5 * cellSize"
-          :y2="margin + 9 * cellSize"
+          :x1="marginX + 3 * cellSize"
+          :y1="marginY + 7 * cellSize"
+          :x2="marginX + 5 * cellSize"
+          :y2="marginY + 9 * cellSize"
           stroke="rgba(0, 0, 0, 0.6)"
-          :stroke-width="2 * scale"
+          :stroke-width="BOARD_CONFIG.LINE_STROKE_WIDTH * scale"
         />
         <line
-          :x1="margin + 5 * cellSize"
-          :y1="margin + 7 * cellSize"
-          :x2="margin + 3 * cellSize"
-          :y2="margin + 9 * cellSize"
+          :x1="marginX + 5 * cellSize"
+          :y1="marginY + 7 * cellSize"
+          :x2="marginX + 3 * cellSize"
+          :y2="marginY + 9 * cellSize"
           stroke="rgba(0, 0, 0, 0.6)"
-          :stroke-width="2 * scale"
+          :stroke-width="BOARD_CONFIG.LINE_STROKE_WIDTH * scale"
         />
 
         <!-- 楚河汉界文字 -->
         <text
-          :x="margin + 2 * cellSize"
-          :y="margin + 4.6 * cellSize"
+          :x="marginX + 2 * cellSize"
+          :y="marginY + 4.6 * cellSize"
           font-family="serif"
-          :font-size="18 * scale"
+          :font-size="BOARD_CONFIG.RIVER_FONT_SIZE * scale"
           font-weight="bold"
           fill="rgba(0, 0, 0, 0.7)"
           text-anchor="middle"
@@ -106,10 +106,10 @@
           楚河
         </text>
         <text
-          :x="margin + 6 * cellSize"
-          :y="margin + 4.6 * cellSize"
+          :x="marginX + 6 * cellSize"
+          :y="marginY + 4.6 * cellSize"
           font-family="serif"
-          :font-size="18 * scale"
+          :font-size="BOARD_CONFIG.RIVER_FONT_SIZE * scale"
           font-weight="bold"
           fill="rgba(0, 0, 0, 0.7)"
           text-anchor="middle"
@@ -123,77 +123,77 @@
           <!-- 左上角 -->
           <g>
             <line
-              :x1="margin + x * cellSize - 12 * scale"
-              :y1="margin + 2 * cellSize - 6 * scale"
-              :x2="margin + x * cellSize - 6 * scale"
-              :y2="margin + 2 * cellSize - 6 * scale"
+              :x1="marginX + x * cellSize - BOARD_CONFIG.MARK_SIZE * scale"
+              :y1="marginY + 2 * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :x2="marginX + x * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y2="marginY + 2 * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize - 6 * scale"
-              :y1="margin + 2 * cellSize - 12 * scale"
-              :x2="margin + x * cellSize - 6 * scale"
-              :y2="margin + 2 * cellSize - 6 * scale"
+              :x1="marginX + x * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y1="marginY + 2 * cellSize - BOARD_CONFIG.MARK_SIZE * scale"
+              :x2="marginX + x * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y2="marginY + 2 * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
           </g>
           <!-- 右上角 -->
           <g>
             <line
-              :x1="margin + x * cellSize + 6 * scale"
-              :y1="margin + 2 * cellSize - 6 * scale"
-              :x2="margin + x * cellSize + 12 * scale"
-              :y2="margin + 2 * cellSize - 6 * scale"
+              :x1="marginX + x * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y1="marginY + 2 * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :x2="marginX + x * cellSize + BOARD_CONFIG.MARK_SIZE * scale"
+              :y2="marginY + 2 * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize + 6 * scale"
-              :y1="margin + 2 * cellSize - 12 * scale"
-              :x2="margin + x * cellSize + 6 * scale"
-              :y2="margin + 2 * cellSize - 6 * scale"
+              :x1="marginX + x * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y1="marginY + 2 * cellSize - BOARD_CONFIG.MARK_SIZE * scale"
+              :x2="marginX + x * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y2="marginY + 2 * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
           </g>
           <!-- 左下角 -->
           <g>
             <line
-              :x1="margin + x * cellSize - 12 * scale"
-              :y1="margin + 2 * cellSize + 6 * scale"
-              :x2="margin + x * cellSize - 6 * scale"
-              :y2="margin + 2 * cellSize + 6 * scale"
+              :x1="marginX + x * cellSize - BOARD_CONFIG.MARK_SIZE * scale"
+              :y1="marginY + 2 * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :x2="marginX + x * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y2="marginY + 2 * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize - 6 * scale"
-              :y1="margin + 2 * cellSize + 6 * scale"
-              :x2="margin + x * cellSize - 6 * scale"
-              :y2="margin + 2 * cellSize + 12 * scale"
+              :x1="marginX + x * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y1="marginY + 2 * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :x2="marginX + x * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y2="marginY + 2 * cellSize + BOARD_CONFIG.MARK_SIZE * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
           </g>
           <!-- 右下角 -->
           <g>
             <line
-              :x1="margin + x * cellSize + 6 * scale"
-              :y1="margin + 2 * cellSize + 6 * scale"
-              :x2="margin + x * cellSize + 12 * scale"
-              :y2="margin + 2 * cellSize + 6 * scale"
+              :x1="marginX + x * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y1="marginY + 2 * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :x2="marginX + x * cellSize + BOARD_CONFIG.MARK_SIZE * scale"
+              :y2="marginY + 2 * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize + 6 * scale"
-              :y1="margin + 2 * cellSize + 6 * scale"
-              :x2="margin + x * cellSize + 6 * scale"
-              :y2="margin + 2 * cellSize + 12 * scale"
+              :x1="marginX + x * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y1="marginY + 2 * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :x2="marginX + x * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y2="marginY + 2 * cellSize + BOARD_CONFIG.MARK_SIZE * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
           </g>
         </g>
@@ -203,77 +203,77 @@
           <!-- 左上角 -->
           <g>
             <line
-              :x1="margin + x * cellSize - 12 * scale"
-              :y1="margin + 7 * cellSize - 6 * scale"
-              :x2="margin + x * cellSize - 6 * scale"
-              :y2="margin + 7 * cellSize - 6 * scale"
+              :x1="marginX + x * cellSize - BOARD_CONFIG.MARK_SIZE * scale"
+              :y1="marginY + 7 * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :x2="marginX + x * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y2="marginY + 7 * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize - 6 * scale"
-              :y1="margin + 7 * cellSize - 12 * scale"
-              :x2="margin + x * cellSize - 6 * scale"
-              :y2="margin + 7 * cellSize - 6 * scale"
+              :x1="marginX + x * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y1="marginY + 7 * cellSize - BOARD_CONFIG.MARK_SIZE * scale"
+              :x2="marginX + x * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y2="marginY + 7 * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
           </g>
           <!-- 右上角 -->
           <g>
             <line
-              :x1="margin + x * cellSize + 6 * scale"
-              :y1="margin + 7 * cellSize - 6 * scale"
-              :x2="margin + x * cellSize + 12 * scale"
-              :y2="margin + 7 * cellSize - 6 * scale"
+              :x1="marginX + x * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y1="marginY + 7 * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :x2="marginX + x * cellSize + BOARD_CONFIG.MARK_SIZE * scale"
+              :y2="marginY + 7 * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize + 6 * scale"
-              :y1="margin + 7 * cellSize - 12 * scale"
-              :x2="margin + x * cellSize + 6 * scale"
-              :y2="margin + 7 * cellSize - 6 * scale"
+              :x1="marginX + x * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y1="marginY + 7 * cellSize - BOARD_CONFIG.MARK_SIZE * scale"
+              :x2="marginX + x * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y2="marginY + 7 * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
           </g>
           <!-- 左下角 -->
           <g>
             <line
-              :x1="margin + x * cellSize - 12 * scale"
-              :y1="margin + 7 * cellSize + 6 * scale"
-              :x2="margin + x * cellSize - 6 * scale"
-              :y2="margin + 7 * cellSize + 6 * scale"
+              :x1="marginX + x * cellSize - BOARD_CONFIG.MARK_SIZE * scale"
+              :y1="marginY + 7 * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :x2="marginX + x * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y2="marginY + 7 * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize - 6 * scale"
-              :y1="margin + 7 * cellSize + 6 * scale"
-              :x2="margin + x * cellSize - 6 * scale"
-              :y2="margin + 7 * cellSize + 12 * scale"
+              :x1="marginX + x * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y1="marginY + 7 * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :x2="marginX + x * cellSize - (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y2="marginY + 7 * cellSize + BOARD_CONFIG.MARK_SIZE * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
           </g>
           <!-- 右下角 -->
           <g>
             <line
-              :x1="margin + x * cellSize + 6 * scale"
-              :y1="margin + 7 * cellSize + 6 * scale"
-              :x2="margin + x * cellSize + 12 * scale"
-              :y2="margin + 7 * cellSize + 6 * scale"
+              :x1="marginX + x * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y1="marginY + 7 * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :x2="marginX + x * cellSize + BOARD_CONFIG.MARK_SIZE * scale"
+              :y2="marginY + 7 * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize + 6 * scale"
-              :y1="margin + 7 * cellSize + 6 * scale"
-              :x2="margin + x * cellSize + 6 * scale"
-              :y2="margin + 7 * cellSize + 12 * scale"
+              :x1="marginX + x * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y1="marginY + 7 * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :x2="marginX + x * cellSize + (BOARD_CONFIG.MARK_SIZE / 2) * scale"
+              :y2="marginY + 7 * cellSize + BOARD_CONFIG.MARK_SIZE * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1.5 * scale"
+              :stroke-width="BOARD_CONFIG.MARK_STROKE_WIDTH * scale"
             />
           </g>
         </g>
@@ -284,77 +284,77 @@
           <!-- 左上角 (只在不是最左边时绘制) -->
           <g v-if="x > 0">
             <line
-              :x1="margin + x * cellSize - 10 * scale"
-              :y1="margin + 3 * cellSize - 4 * scale"
-              :x2="margin + x * cellSize - 4 * scale"
-              :y2="margin + 3 * cellSize - 4 * scale"
+              :x1="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_SIZE * scale"
+              :y1="marginY + 3 * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :x2="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y2="marginY + 3 * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize - 4 * scale"
-              :y1="margin + 3 * cellSize - 10 * scale"
-              :x2="margin + x * cellSize - 4 * scale"
-              :y2="margin + 3 * cellSize - 4 * scale"
+              :x1="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y1="marginY + 3 * cellSize - BOARD_CONFIG.PAWN_MARK_SIZE * scale"
+              :x2="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y2="marginY + 3 * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
           </g>
           <!-- 右上角 (只在不是最右边时绘制) -->
           <g v-if="x < 8">
             <line
-              :x1="margin + x * cellSize + 4 * scale"
-              :y1="margin + 3 * cellSize - 4 * scale"
-              :x2="margin + x * cellSize + 10 * scale"
-              :y2="margin + 3 * cellSize - 4 * scale"
+              :x1="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y1="marginY + 3 * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :x2="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_SIZE * scale"
+              :y2="marginY + 3 * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize + 4 * scale"
-              :y1="margin + 3 * cellSize - 10 * scale"
-              :x2="margin + x * cellSize + 4 * scale"
-              :y2="margin + 3 * cellSize - 4 * scale"
+              :x1="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y1="marginY + 3 * cellSize - BOARD_CONFIG.PAWN_MARK_SIZE * scale"
+              :x2="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y2="marginY + 3 * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
           </g>
           <!-- 左下角 (只在不是最左边时绘制) -->
           <g v-if="x > 0">
             <line
-              :x1="margin + x * cellSize - 10 * scale"
-              :y1="margin + 3 * cellSize + 4 * scale"
-              :x2="margin + x * cellSize - 4 * scale"
-              :y2="margin + 3 * cellSize + 4 * scale"
+              :x1="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_SIZE * scale"
+              :y1="marginY + 3 * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :x2="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y2="marginY + 3 * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize - 4 * scale"
-              :y1="margin + 3 * cellSize + 4 * scale"
-              :x2="margin + x * cellSize - 4 * scale"
-              :y2="margin + 3 * cellSize + 10 * scale"
+              :x1="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y1="marginY + 3 * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :x2="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y2="marginY + 3 * cellSize + BOARD_CONFIG.PAWN_MARK_SIZE * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
           </g>
           <!-- 右下角 (只在不是最右边时绘制) -->
           <g v-if="x < 8">
             <line
-              :x1="margin + x * cellSize + 4 * scale"
-              :y1="margin + 3 * cellSize + 4 * scale"
-              :x2="margin + x * cellSize + 10 * scale"
-              :y2="margin + 3 * cellSize + 4 * scale"
+              :x1="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y1="marginY + 3 * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :x2="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_SIZE * scale"
+              :y2="marginY + 3 * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize + 4 * scale"
-              :y1="margin + 3 * cellSize + 4 * scale"
-              :x2="margin + x * cellSize + 4 * scale"
-              :y2="margin + 3 * cellSize + 10 * scale"
+              :x1="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y1="marginY + 3 * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :x2="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y2="marginY + 3 * cellSize + BOARD_CONFIG.PAWN_MARK_SIZE * scale"
               stroke="rgba(0, 0, 0, 0.6)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
           </g>
         </g>
@@ -364,78 +364,143 @@
           <!-- 左上角 (只在不是最左边时绘制) -->
           <g v-if="x > 0">
             <line
-              :x1="margin + x * cellSize - 10 * scale"
-              :y1="margin + 6 * cellSize - 4 * scale"
-              :x2="margin + x * cellSize - 4 * scale"
-              :y2="margin + 6 * cellSize - 4 * scale"
+              :x1="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_SIZE * scale"
+              :y1="marginY + 6 * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :x2="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y2="marginY + 6 * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize - 4 * scale"
-              :y1="margin + 6 * cellSize - 10 * scale"
-              :x2="margin + x * cellSize - 4 * scale"
-              :y2="margin + 6 * cellSize - 4 * scale"
+              :x1="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y1="marginY + 6 * cellSize - BOARD_CONFIG.PAWN_MARK_SIZE * scale"
+              :x2="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y2="marginY + 6 * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
           </g>
           <!-- 右上角 (只在不是最右边时绘制) -->
           <g v-if="x < 8">
             <line
-              :x1="margin + x * cellSize + 4 * scale"
-              :y1="margin + 6 * cellSize - 4 * scale"
-              :x2="margin + x * cellSize + 10 * scale"
-              :y2="margin + 6 * cellSize - 4 * scale"
+              :x1="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y1="marginY + 6 * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :x2="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_SIZE * scale"
+              :y2="marginY + 6 * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize + 4 * scale"
-              :y1="margin + 6 * cellSize - 10 * scale"
-              :x2="margin + x * cellSize + 4 * scale"
-              :y2="margin + 6 * cellSize - 4 * scale"
+              :x1="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y1="marginY + 6 * cellSize - BOARD_CONFIG.PAWN_MARK_SIZE * scale"
+              :x2="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y2="marginY + 6 * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
           </g>
           <!-- 左下角 (只在不是最左边时绘制) -->
           <g v-if="x > 0">
             <line
-              :x1="margin + x * cellSize - 10 * scale"
-              :y1="margin + 6 * cellSize + 4 * scale"
-              :x2="margin + x * cellSize - 4 * scale"
-              :y2="margin + 6 * cellSize + 4 * scale"
+              :x1="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_SIZE * scale"
+              :y1="marginY + 6 * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :x2="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y2="marginY + 6 * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize - 4 * scale"
-              :y1="margin + 6 * cellSize + 4 * scale"
-              :x2="margin + x * cellSize - 4 * scale"
-              :y2="margin + 6 * cellSize + 10 * scale"
+              :x1="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y1="marginY + 6 * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :x2="marginX + x * cellSize - BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y2="marginY + 6 * cellSize + BOARD_CONFIG.PAWN_MARK_SIZE * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
           </g>
           <!-- 右下角 (只在不是最右边时绘制) -->
           <g v-if="x < 8">
             <line
-              :x1="margin + x * cellSize + 4 * scale"
-              :y1="margin + 6 * cellSize + 4 * scale"
-              :x2="margin + x * cellSize + 10 * scale"
-              :y2="margin + 6 * cellSize + 4 * scale"
+              :x1="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y1="marginY + 6 * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :x2="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_SIZE * scale"
+              :y2="marginY + 6 * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
             <line
-              :x1="margin + x * cellSize + 4 * scale"
-              :y1="margin + 6 * cellSize + 4 * scale"
-              :x2="margin + x * cellSize + 4 * scale"
-              :y2="margin + 6 * cellSize + 10 * scale"
+              :x1="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y1="marginY + 6 * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :x2="marginX + x * cellSize + BOARD_CONFIG.PAWN_MARK_OFFSET * scale"
+              :y2="marginY + 6 * cellSize + BOARD_CONFIG.PAWN_MARK_SIZE * scale"
               stroke="rgba(211, 47, 47, 0.7)"
-              :stroke-width="1 * scale"
+              :stroke-width="BOARD_CONFIG.PAWN_MARK_STROKE_WIDTH * scale"
             />
+          </g>
+        </g>
+
+        <!-- 坐标显示 -->
+        <g v-if="showCoordinates">
+          <!-- 纵线坐标 (A-I) - 顶部和底部 -->
+          <g v-for="col in 9" :key="'coord-x-' + col">
+            <!-- 顶部坐标：距离棋盘上边线 -->
+            <text
+              :x="marginX + (col - 1) * cellSize"
+              :y="marginY - BOARD_CONFIG.COORD_OFFSET * scale"
+              font-family="Arial, sans-serif"
+              :font-size="BOARD_CONFIG.COORD_FONT_SIZE * scale"
+              font-weight="bold"
+              fill="rgba(0, 0, 0, 0.9)"
+              text-anchor="middle"
+              dominant-baseline="middle"
+            >
+              {{ getColumnLetter(col - 1) }}
+            </text>
+
+            <!-- 底部坐标：距离棋盘下边线 -->
+            <text
+              :x="marginX + (col - 1) * cellSize"
+              :y="marginY + 9 * cellSize + BOARD_CONFIG.COORD_OFFSET * scale"
+              font-family="Arial, sans-serif"
+              :font-size="BOARD_CONFIG.COORD_FONT_SIZE * scale"
+              font-weight="bold"
+              fill="rgba(211, 47, 47, 0.9)"
+              text-anchor="middle"
+              dominant-baseline="middle"
+            >
+              {{ getColumnLetter(col - 1) }}
+            </text>
+          </g>
+
+          <!-- 横线坐标 (0-9) - 左侧和右侧 -->
+          <g v-for="row in 10" :key="'coord-y-' + row">
+            <!-- 左侧坐标：距离棋盘左边线 -->
+            <text
+              :x="marginX - BOARD_CONFIG.COORD_OFFSET * scale"
+              :y="marginY + (row - 1) * cellSize"
+              font-family="Arial, sans-serif"
+              :font-size="BOARD_CONFIG.COORD_FONT_SIZE * scale"
+              font-weight="bold"
+              fill="rgba(0, 0, 0, 0.9)"
+              text-anchor="middle"
+              dominant-baseline="middle"
+            >
+              {{ 9 - (row - 1) }}
+            </text>
+
+            <!-- 右侧坐标：距离棋盘右边线 -->
+            <text
+              :x="marginX + 8 * cellSize + BOARD_CONFIG.COORD_OFFSET * scale"
+              :y="marginY + (row - 1) * cellSize"
+              font-family="Arial, sans-serif"
+              :font-size="BOARD_CONFIG.COORD_FONT_SIZE * scale"
+              font-weight="bold"
+              fill="rgba(211, 47, 47, 0.9)"
+              text-anchor="middle"
+              dominant-baseline="middle"
+            >
+              {{ 9 - (row - 1) }}
+            </text>
           </g>
         </g>
       </svg>
@@ -453,7 +518,8 @@
             :is-black="piece.camp === 'black'"
             :is-selected="isPieceSelected(piece)"
             :cell-size="cellSize"
-            :margin="margin"
+            :margin-x="marginX"
+            :margin-y="marginY"
             :scale="scale"
             :z-index="50 + index"
             @click="onPieceClick(piece)"
@@ -465,8 +531,8 @@
           v-if="props.selectedPiece"
           class="selection-mark"
           :style="{
-            left: margin + props.selectedPiece.position.x * cellSize - pieceRadius + 'px',
-            top: margin + props.selectedPiece.position.y * cellSize - pieceRadius + 'px',
+            left: marginX + props.selectedPiece.position.x * cellSize - pieceRadius + 'px',
+            top: marginY + props.selectedPiece.position.y * cellSize - pieceRadius + 'px',
             width: pieceRadius * 2 + 'px',
             height: pieceRadius * 2 + 'px',
           }"
@@ -491,10 +557,10 @@
               },
             ]"
             :style="{
-              left: margin + pos.x * cellSize - 15 * scale + 'px',
-              top: margin + pos.y * cellSize - 15 * scale + 'px',
-              width: 30 * scale + 'px',
-              height: 30 * scale + 'px',
+              left: marginX + pos.x * cellSize - (BOARD_CONFIG.CELL_CLICK_SIZE / 2) * scale + 'px',
+              top: marginY + pos.y * cellSize - (BOARD_CONFIG.CELL_CLICK_SIZE / 2) * scale + 'px',
+              width: BOARD_CONFIG.CELL_CLICK_SIZE * scale + 'px',
+              height: BOARD_CONFIG.CELL_CLICK_SIZE * scale + 'px',
             }"
             @click="onMoveClick(pos)"
           ></div>
@@ -511,10 +577,20 @@
               { 'attackable-black-piece': piece.camp === 'black' },
             ]"
             :style="{
-              left: margin + piece.position.x * cellSize - pieceRadius - 4 * scale + 'px',
-              top: margin + piece.position.y * cellSize - pieceRadius - 4 * scale + 'px',
-              width: (pieceRadius + 4 * scale) * 2 + 'px',
-              height: (pieceRadius + 4 * scale) * 2 + 'px',
+              left:
+                marginX +
+                piece.position.x * cellSize -
+                pieceRadius -
+                BOARD_CONFIG.PAWN_MARK_OFFSET * scale +
+                'px',
+              top:
+                marginY +
+                piece.position.y * cellSize -
+                pieceRadius -
+                BOARD_CONFIG.PAWN_MARK_OFFSET * scale +
+                'px',
+              width: (pieceRadius + BOARD_CONFIG.PAWN_MARK_OFFSET * scale) * 2 + 'px',
+              height: (pieceRadius + BOARD_CONFIG.PAWN_MARK_OFFSET * scale) * 2 + 'px',
             }"
           ></div>
         </template>
@@ -525,8 +601,8 @@
           :key="'row-' + row"
           class="board-row"
           :style="{
-            top: margin + (row - 1) * cellSize - 15 * scale + 'px',
-            height: 30 * scale + 'px',
+            top: marginY + (row - 1) * cellSize - (BOARD_CONFIG.CELL_CLICK_SIZE / 2) * scale + 'px',
+            height: BOARD_CONFIG.CELL_CLICK_SIZE * scale + 'px',
           }"
         >
           <div
@@ -534,9 +610,10 @@
             :key="'col-' + col"
             class="board-cell"
             :style="{
-              left: margin + (col - 1) * cellSize - 15 * scale + 'px',
-              width: 30 * scale + 'px',
-              height: 30 * scale + 'px',
+              left:
+                marginX + (col - 1) * cellSize - (BOARD_CONFIG.CELL_CLICK_SIZE / 2) * scale + 'px',
+              width: BOARD_CONFIG.CELL_CLICK_SIZE * scale + 'px',
+              height: BOARD_CONFIG.CELL_CLICK_SIZE * scale + 'px',
             }"
             @click="onBoardClick(col - 1, row - 1)"
           ></div>
@@ -550,6 +627,7 @@
 import { computed } from 'vue'
 import ChessPiece from './ChessPiece.vue'
 import { type ChessPiece as ChessPieceType, type Position } from '../ChessGame'
+import { BOARD_CONFIG } from './boardConfig'
 
 // 定义 props
 interface Props {
@@ -558,21 +636,41 @@ interface Props {
   gameState: any
   selectedPiece: any
   availableMoves: any[]
+  showCoordinates?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  width: 540,
-  height: 600,
+  width: 600,
+  height: 660,
   availableMoves: () => [],
+  showCoordinates: false,
 })
 
-// 棋盘尺寸计算
-// 标准比例：宽540，高600，边距50，格子55
-const STANDARD_WIDTH = 540
-const STANDARD_HEIGHT = 600
-const STANDARD_MARGIN = 50
-const STANDARD_CELL_SIZE = 55
-const STANDARD_PIECE_RADIUS = 22
+// 从配置中提取常用值 (保持向后兼容)
+const STANDARD_WIDTH = BOARD_CONFIG.BOARD_WIDTH
+const STANDARD_HEIGHT = BOARD_CONFIG.BOARD_HEIGHT
+const STANDARD_CELL_SIZE = BOARD_CONFIG.CELL_SIZE
+const STANDARD_PIECE_RADIUS = BOARD_CONFIG.PIECE_RADIUS
+
+// 棋盘和棋子尺寸配置 - 现在从 boardConfig.ts 导入
+// 要修改尺寸，请编辑 boardConfig.ts 文件
+
+// 棋盘实际尺寸：8列×9行
+const BOARD_ACTUAL_WIDTH = 8 * STANDARD_CELL_SIZE // 496
+const BOARD_ACTUAL_HEIGHT = 9 * STANDARD_CELL_SIZE // 558
+
+// 计算居中的边距 - 减少50px边距优化显示
+const STANDARD_MARGIN_X = (STANDARD_WIDTH - BOARD_ACTUAL_WIDTH) / 2 // (600-440)/2 - 50 = 30
+const STANDARD_MARGIN_Y = (STANDARD_HEIGHT - BOARD_ACTUAL_HEIGHT) / 2 // (660-495)/2 - 50 = 32.5
+
+// ICCS坐标系统 - 获取列字母
+const getColumnLetter = (col: number) => {
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
+  return letters[col] || String(col)
+}
+
+// 计算属性：获取showCoordinates值
+const showCoordinates = computed(() => props.showCoordinates)
 
 // 计算缩放比例
 const scaleX = computed(() => props.width / STANDARD_WIDTH)
@@ -582,7 +680,8 @@ const scale = computed(() => Math.min(scaleX.value, scaleY.value)) // 保持比�
 // 计算实际尺寸
 const boardWidth = computed(() => STANDARD_WIDTH * scale.value)
 const boardHeight = computed(() => STANDARD_HEIGHT * scale.value)
-const margin = computed(() => STANDARD_MARGIN * scale.value)
+const marginX = computed(() => STANDARD_MARGIN_X * scale.value) // 水平居中边距
+const marginY = computed(() => STANDARD_MARGIN_Y * scale.value) // 垂直居中边距
 const cellSize = computed(() => STANDARD_CELL_SIZE * scale.value)
 const pieceRadius = computed(() => STANDARD_PIECE_RADIUS * scale.value)
 

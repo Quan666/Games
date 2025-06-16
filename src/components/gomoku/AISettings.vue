@@ -333,10 +333,15 @@
           </button>
         </div>
 
-        <ConfirmDialog :show="showConfirm" @confirm="onConfirmSave" @cancel="onCancelSave">
-          <template #title>设置未保存</template>
-          设置已更改，是否保存？
-        </ConfirmDialog>
+        <ConfirmDialog
+          :show="showConfirm"
+          title="设置未保存"
+          message="设置已更改，是否保存？"
+          confirm-text="保存"
+          cancel-text="不保存"
+          @confirm="onConfirmSave"
+          @cancel="onCancelSave"
+        />
       </div>
     </div>
   </div>
@@ -346,7 +351,7 @@
 import { computed, ref, watch } from 'vue'
 // @ts-ignore
 import { useStore } from 'vuex'
-import ConfirmDialog from './ConfirmDialog.vue'
+import ConfirmDialog from '../ConfirmDialog.vue'
 
 const store = useStore()
 

@@ -2,23 +2,23 @@
   <div v-if="show" class="fixed inset-0 z-60 flex items-center justify-center bg-black/30">
     <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-xs mx-4 text-center relative">
       <div class="text-lg font-semibold mb-4">
-        <slot name="title">提示</slot>
+        <slot name="title">{{ title || '提示' }}</slot>
       </div>
       <div class="mb-6 text-gray-700">
-        <slot>确定要执行此操作吗？</slot>
+        <slot>{{ message || '确定要执行此操作吗？' }}</slot>
       </div>
       <div class="flex justify-center gap-4">
         <button
           @click="$emit('cancel')"
-          class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
+          class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors"
         >
-          取消
+          {{ cancelText || '取消' }}
         </button>
         <button
           @click="$emit('confirm')"
-          class="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white"
+          class="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
         >
-          确定
+          {{ confirmText || '确定' }}
         </button>
       </div>
     </div>
@@ -26,8 +26,20 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ show: boolean }>()
-defineEmits(['confirm', 'cancel'])
+interface Props {
+  show: boolean
+  title?: string
+  message?: string
+  confirmText?: string
+  cancelText?: string
+}
+
+defineProps<Props>()
+
+defineEmits<{
+  confirm: []
+  cancel: []
+}>()
 </script>
 
 <style scoped>
