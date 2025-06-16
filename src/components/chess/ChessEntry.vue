@@ -275,23 +275,29 @@ const boardSize = computed(() => {
       height: Math.floor(height),
     }
   } else {
-    // 竖屏时保持原有逻辑
-    const availableWidth = windowWidth.value * 0.95 // 减少一些，确保有足够边距
-    const availableHeight = windowHeight.value * 0.6 // 减少高度占比，为控制面板留空间
+    // 竖屏时优化布局，不占满屏幕高度
+    const availableWidth = windowWidth.value * 0.95 // 减少宽度占比，确保有足够边距
 
-    // 保持棋盘的宽高比例 (600:660)
+    // 基于屏幕宽度计算合适的棋盘尺寸，而不是依赖屏幕高度
     const aspectRatio = 600 / 660
 
-    let width = Math.min(availableWidth, availableHeight * aspectRatio)
+    let width = availableWidth
     let height = width / aspectRatio
 
     // 确保最小尺寸
-    const minWidth = 300
+    const minWidth = 280
     const minHeight = minWidth / aspectRatio
+
+    // 确保最大尺寸，避免棋盘过大
+    const maxWidth = Math.min(windowWidth.value * 0.95, 450)
+    const maxHeight = maxWidth / aspectRatio
 
     if (width < minWidth) {
       width = minWidth
       height = minHeight
+    } else if (width > maxWidth) {
+      width = maxWidth
+      height = maxHeight
     }
 
     return {
@@ -636,12 +642,11 @@ onUnmounted(() => {
 .chinese-chess-game {
   font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  overflow: hidden;
+  min-height: auto;
 }
 
 /* 竖屏布局 */
 .portrait-layout {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -728,18 +733,17 @@ onUnmounted(() => {
 }
 
 .board-container-portrait {
-  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 10px 0;
+  padding: 20px 0;
   width: 100%;
-  overflow-x: auto; /* 如果棋盘太宽，允许水平滚动 */
 }
 
 .controls-portrait {
   flex-shrink: 0;
-  padding: 10px 0;
+  padding: 20px 0;
+  margin-bottom: 20px;
 }
 
 .control-buttons-grid {
