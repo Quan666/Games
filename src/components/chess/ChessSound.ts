@@ -121,6 +121,15 @@ export class ChessSoundGenerator {
 
   // 标准化棋子名称，用于语音播报
   private normalizePieceName(pieceType: string): string {
+    // 确保输入是字符串类型
+    if (typeof pieceType !== 'string') {
+      console.warn('normalizePieceName 接收到非字符串类型:', pieceType, '类型:', typeof pieceType)
+      pieceType = String(pieceType)
+    }
+
+    // 去除可能的空白字符
+    pieceType = pieceType.trim()
+
     const normalizeMap: { [key: string]: string } = {
       帥: '帅',
       將: '将',
@@ -135,7 +144,27 @@ export class ChessSoundGenerator {
       兵: '兵',
       卒: '卒', // 统一读作"卒"
     }
-    return normalizeMap[pieceType] || pieceType
+
+    const normalized = normalizeMap[pieceType]
+    if (!normalized) {
+      console.warn('未找到棋子类型的映射:', pieceType)
+      // 如果找不到映射，尝试基本的转换
+      if (pieceType.includes('馬') || pieceType.includes('马')) return '马'
+      if (pieceType.includes('車') || pieceType.includes('车')) return '车'
+      if (pieceType.includes('炮') || pieceType.includes('砲')) return '炮'
+      if (pieceType.includes('帥') || pieceType.includes('帅')) return '帅'
+      if (pieceType.includes('將') || pieceType.includes('将')) return '将'
+      if (pieceType.includes('仕') || pieceType.includes('士')) return '士'
+      if (pieceType.includes('相') || pieceType.includes('象'))
+        return pieceType.includes('相') ? '相' : '象'
+      if (pieceType.includes('兵')) return '兵'
+      if (pieceType.includes('卒')) return '卒'
+
+      // 如果都不匹配，返回原始字符串
+      return pieceType
+    }
+
+    return normalized
   }
 
   // 吃子音效 + 语音
@@ -170,7 +199,9 @@ export class ChessSoundGenerator {
     if (this.isVoiceEnabled()) {
       setTimeout(() => {
         if (capturedPiece) {
+          console.log('原始棋子类型:', capturedPiece, '类型:', typeof capturedPiece)
           const normalizedPiece = this.normalizePieceName(capturedPiece)
+          console.log('标准化后的棋子:', normalizedPiece)
           this.speak(`吃${normalizedPiece}`)
         } else {
           this.speak('吃子')

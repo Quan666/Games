@@ -155,6 +155,7 @@ const chessSettings = computed(
       showMoveHistory: false,
       enableSound: true,
       enableVoice: false,
+      autoSave: true,
     },
 )
 
@@ -181,15 +182,18 @@ const voiceEnabled = computed(
 
 // 游戏实例 - 从store恢复或创建新游戏
 const initializeGame = () => {
-  const savedGame = store.state.chess.gameState.currentGame
-  if (savedGame && chessSettings.value.autoSave) {
+  const savedGame = store.state.chess?.gameState?.currentGame
+  const autoSave = store.state.chess?.settings?.autoSave ?? true // 默认启用自动保存
+  if (savedGame && autoSave) {
     try {
+      console.log('尝试恢复游戏状态:', savedGame)
       return new ChessGame(savedGame)
     } catch (error) {
       console.warn('恢复游戏状态失败，创建新游戏:', error)
       return new ChessGame()
     }
   }
+  console.log('创建新游戏')
   return new ChessGame()
 }
 
@@ -361,10 +365,12 @@ const updateGameState = () => {
   }
 
   // 自动保存完整游戏状态（包括悔棋后的状态）
-  if (chessSettings.value.autoSave) {
+  const autoSave = store.state.chess?.settings?.autoSave ?? true
+  if (autoSave) {
     try {
       const gameStateForSaving = game.getStateForSaving()
       store.commit('saveChessGame', gameStateForSaving)
+      console.log('游戏状态已保存')
     } catch (error) {
       console.warn('保存游戏状态失败:', error)
     }
@@ -623,7 +629,8 @@ const closeMoveHistoryDialog = () => {
 onMounted(() => {
   // 显示上次游戏的基本信息（如果有的话）
   const savedGame = store.state.chess?.gameState?.currentGame
-  if (savedGame && chessSettings.value.autoSave) {
+  const autoSave = store.state.chess?.settings?.autoSave ?? true
+  if (savedGame && autoSave) {
     console.log('上次游戏信息:', savedGame)
     // 只显示统计信息，不恢复游戏状态
   }
