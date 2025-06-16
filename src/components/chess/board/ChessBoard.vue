@@ -3,25 +3,23 @@
     <div class="board-wrapper">
       <!-- SVG 棋盘 -->
       <svg :width="boardWidth" :height="boardHeight" class="chess-board">
-        <!-- 木质纹理背景 -->
+        <!-- 毛玻璃背景 -->
         <defs>
-          <pattern
-            id="woodTexture"
-            x="0"
-            y="0"
-            width="100"
-            height="100"
-            patternUnits="userSpaceOnUse"
-          >
-            <rect x="0" y="0" width="100" height="100" fill="#deb887" />
-            <rect x="0" y="0" width="100" height="20" fill="#d2b48c" opacity="0.5" />
-            <rect x="0" y="40" width="100" height="20" fill="#d2b48c" opacity="0.3" />
-            <rect x="0" y="80" width="100" height="20" fill="#d2b48c" opacity="0.5" />
-          </pattern>
+          <!-- 模糊滤镜定义 -->
+          <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+          </filter>
+
+          <!-- 渐变背景定义 -->
+          <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color: #667eea; stop-opacity: 0.3" />
+            <stop offset="50%" style="stop-color: #764ba2; stop-opacity: 0.2" />
+            <stop offset="100%" style="stop-color: #f093fb; stop-opacity: 0.3" />
+          </linearGradient>
         </defs>
 
         <!-- 背景 -->
-        <rect x="0" y="0" :width="boardWidth" :height="boardHeight" fill="url(#woodTexture)" />
+        <rect x="0" y="0" :width="boardWidth" :height="boardHeight" fill="url(#glassGradient)" />
 
         <!-- 棋盘线条 -->
         <!-- 横线 -->
@@ -31,7 +29,7 @@
             :y1="margin + (row - 1) * cellSize"
             :x2="margin + 8 * cellSize"
             :y2="margin + (row - 1) * cellSize"
-            stroke="#8B4513"
+            stroke="rgba(0, 0, 0, 0.6)"
             :stroke-width="2 * scale"
           />
         </g>
@@ -44,7 +42,7 @@
             :y1="margin"
             :x2="margin + (col - 1) * cellSize"
             :y2="margin + 4 * cellSize"
-            stroke="#8B4513"
+            stroke="rgba(0, 0, 0, 0.6)"
             :stroke-width="2 * scale"
           />
           <!-- 下半部分 -->
@@ -53,7 +51,7 @@
             :y1="margin + 5 * cellSize"
             :x2="margin + (col - 1) * cellSize"
             :y2="margin + 9 * cellSize"
-            stroke="#8B4513"
+            stroke="rgba(0, 0, 0, 0.6)"
             :stroke-width="2 * scale"
           />
         </g>
@@ -65,7 +63,7 @@
           :y1="margin"
           :x2="margin + 5 * cellSize"
           :y2="margin + 2 * cellSize"
-          stroke="#8B4513"
+          stroke="rgba(0, 0, 0, 0.6)"
           :stroke-width="2 * scale"
         />
         <line
@@ -73,7 +71,7 @@
           :y1="margin"
           :x2="margin + 3 * cellSize"
           :y2="margin + 2 * cellSize"
-          stroke="#8B4513"
+          stroke="rgba(0, 0, 0, 0.6)"
           :stroke-width="2 * scale"
         />
 
@@ -83,7 +81,7 @@
           :y1="margin + 7 * cellSize"
           :x2="margin + 5 * cellSize"
           :y2="margin + 9 * cellSize"
-          stroke="#8B4513"
+          stroke="rgba(0, 0, 0, 0.6)"
           :stroke-width="2 * scale"
         />
         <line
@@ -91,7 +89,7 @@
           :y1="margin + 7 * cellSize"
           :x2="margin + 3 * cellSize"
           :y2="margin + 9 * cellSize"
-          stroke="#8B4513"
+          stroke="rgba(0, 0, 0, 0.6)"
           :stroke-width="2 * scale"
         />
 
@@ -102,7 +100,7 @@
           font-family="serif"
           :font-size="18 * scale"
           font-weight="bold"
-          fill="#8B4513"
+          fill="rgba(0, 0, 0, 0.7)"
           text-anchor="middle"
         >
           楚河
@@ -113,7 +111,7 @@
           font-family="serif"
           :font-size="18 * scale"
           font-weight="bold"
-          fill="#8B4513"
+          fill="rgba(0, 0, 0, 0.7)"
           text-anchor="middle"
         >
           汉界
@@ -129,7 +127,7 @@
               :y1="margin + 2 * cellSize - 6 * scale"
               :x2="margin + x * cellSize - 6 * scale"
               :y2="margin + 2 * cellSize - 6 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1.5 * scale"
             />
             <line
@@ -137,7 +135,7 @@
               :y1="margin + 2 * cellSize - 12 * scale"
               :x2="margin + x * cellSize - 6 * scale"
               :y2="margin + 2 * cellSize - 6 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1.5 * scale"
             />
           </g>
@@ -148,7 +146,7 @@
               :y1="margin + 2 * cellSize - 6 * scale"
               :x2="margin + x * cellSize + 12 * scale"
               :y2="margin + 2 * cellSize - 6 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1.5 * scale"
             />
             <line
@@ -156,7 +154,7 @@
               :y1="margin + 2 * cellSize - 12 * scale"
               :x2="margin + x * cellSize + 6 * scale"
               :y2="margin + 2 * cellSize - 6 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1.5 * scale"
             />
           </g>
@@ -167,7 +165,7 @@
               :y1="margin + 2 * cellSize + 6 * scale"
               :x2="margin + x * cellSize - 6 * scale"
               :y2="margin + 2 * cellSize + 6 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1.5 * scale"
             />
             <line
@@ -175,7 +173,7 @@
               :y1="margin + 2 * cellSize + 6 * scale"
               :x2="margin + x * cellSize - 6 * scale"
               :y2="margin + 2 * cellSize + 12 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1.5 * scale"
             />
           </g>
@@ -186,7 +184,7 @@
               :y1="margin + 2 * cellSize + 6 * scale"
               :x2="margin + x * cellSize + 12 * scale"
               :y2="margin + 2 * cellSize + 6 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1.5 * scale"
             />
             <line
@@ -194,7 +192,7 @@
               :y1="margin + 2 * cellSize + 6 * scale"
               :x2="margin + x * cellSize + 6 * scale"
               :y2="margin + 2 * cellSize + 12 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1.5 * scale"
             />
           </g>
@@ -209,7 +207,7 @@
               :y1="margin + 7 * cellSize - 6 * scale"
               :x2="margin + x * cellSize - 6 * scale"
               :y2="margin + 7 * cellSize - 6 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1.5 * scale"
             />
             <line
@@ -217,7 +215,7 @@
               :y1="margin + 7 * cellSize - 12 * scale"
               :x2="margin + x * cellSize - 6 * scale"
               :y2="margin + 7 * cellSize - 6 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1.5 * scale"
             />
           </g>
@@ -228,7 +226,7 @@
               :y1="margin + 7 * cellSize - 6 * scale"
               :x2="margin + x * cellSize + 12 * scale"
               :y2="margin + 7 * cellSize - 6 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1.5 * scale"
             />
             <line
@@ -236,7 +234,7 @@
               :y1="margin + 7 * cellSize - 12 * scale"
               :x2="margin + x * cellSize + 6 * scale"
               :y2="margin + 7 * cellSize - 6 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1.5 * scale"
             />
           </g>
@@ -247,7 +245,7 @@
               :y1="margin + 7 * cellSize + 6 * scale"
               :x2="margin + x * cellSize - 6 * scale"
               :y2="margin + 7 * cellSize + 6 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1.5 * scale"
             />
             <line
@@ -255,7 +253,7 @@
               :y1="margin + 7 * cellSize + 6 * scale"
               :x2="margin + x * cellSize - 6 * scale"
               :y2="margin + 7 * cellSize + 12 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1.5 * scale"
             />
           </g>
@@ -266,7 +264,7 @@
               :y1="margin + 7 * cellSize + 6 * scale"
               :x2="margin + x * cellSize + 12 * scale"
               :y2="margin + 7 * cellSize + 6 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1.5 * scale"
             />
             <line
@@ -274,7 +272,7 @@
               :y1="margin + 7 * cellSize + 6 * scale"
               :x2="margin + x * cellSize + 6 * scale"
               :y2="margin + 7 * cellSize + 12 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1.5 * scale"
             />
           </g>
@@ -290,7 +288,7 @@
               :y1="margin + 3 * cellSize - 4 * scale"
               :x2="margin + x * cellSize - 4 * scale"
               :y2="margin + 3 * cellSize - 4 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1 * scale"
             />
             <line
@@ -298,7 +296,7 @@
               :y1="margin + 3 * cellSize - 10 * scale"
               :x2="margin + x * cellSize - 4 * scale"
               :y2="margin + 3 * cellSize - 4 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1 * scale"
             />
           </g>
@@ -309,7 +307,7 @@
               :y1="margin + 3 * cellSize - 4 * scale"
               :x2="margin + x * cellSize + 10 * scale"
               :y2="margin + 3 * cellSize - 4 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1 * scale"
             />
             <line
@@ -317,7 +315,7 @@
               :y1="margin + 3 * cellSize - 10 * scale"
               :x2="margin + x * cellSize + 4 * scale"
               :y2="margin + 3 * cellSize - 4 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1 * scale"
             />
           </g>
@@ -328,7 +326,7 @@
               :y1="margin + 3 * cellSize + 4 * scale"
               :x2="margin + x * cellSize - 4 * scale"
               :y2="margin + 3 * cellSize + 4 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1 * scale"
             />
             <line
@@ -336,7 +334,7 @@
               :y1="margin + 3 * cellSize + 4 * scale"
               :x2="margin + x * cellSize - 4 * scale"
               :y2="margin + 3 * cellSize + 10 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1 * scale"
             />
           </g>
@@ -347,7 +345,7 @@
               :y1="margin + 3 * cellSize + 4 * scale"
               :x2="margin + x * cellSize + 10 * scale"
               :y2="margin + 3 * cellSize + 4 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1 * scale"
             />
             <line
@@ -355,7 +353,7 @@
               :y1="margin + 3 * cellSize + 4 * scale"
               :x2="margin + x * cellSize + 4 * scale"
               :y2="margin + 3 * cellSize + 10 * scale"
-              stroke="#000"
+              stroke="rgba(0, 0, 0, 0.6)"
               :stroke-width="1 * scale"
             />
           </g>
@@ -370,7 +368,7 @@
               :y1="margin + 6 * cellSize - 4 * scale"
               :x2="margin + x * cellSize - 4 * scale"
               :y2="margin + 6 * cellSize - 4 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1 * scale"
             />
             <line
@@ -378,7 +376,7 @@
               :y1="margin + 6 * cellSize - 10 * scale"
               :x2="margin + x * cellSize - 4 * scale"
               :y2="margin + 6 * cellSize - 4 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1 * scale"
             />
           </g>
@@ -389,7 +387,7 @@
               :y1="margin + 6 * cellSize - 4 * scale"
               :x2="margin + x * cellSize + 10 * scale"
               :y2="margin + 6 * cellSize - 4 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1 * scale"
             />
             <line
@@ -397,7 +395,7 @@
               :y1="margin + 6 * cellSize - 10 * scale"
               :x2="margin + x * cellSize + 4 * scale"
               :y2="margin + 6 * cellSize - 4 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1 * scale"
             />
           </g>
@@ -408,7 +406,7 @@
               :y1="margin + 6 * cellSize + 4 * scale"
               :x2="margin + x * cellSize - 4 * scale"
               :y2="margin + 6 * cellSize + 4 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1 * scale"
             />
             <line
@@ -416,7 +414,7 @@
               :y1="margin + 6 * cellSize + 4 * scale"
               :x2="margin + x * cellSize - 4 * scale"
               :y2="margin + 6 * cellSize + 10 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1 * scale"
             />
           </g>
@@ -427,7 +425,7 @@
               :y1="margin + 6 * cellSize + 4 * scale"
               :x2="margin + x * cellSize + 10 * scale"
               :y2="margin + 6 * cellSize + 4 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1 * scale"
             />
             <line
@@ -435,7 +433,7 @@
               :y1="margin + 6 * cellSize + 4 * scale"
               :x2="margin + x * cellSize + 4 * scale"
               :y2="margin + 6 * cellSize + 10 * scale"
-              stroke="#d32f2f"
+              stroke="rgba(211, 47, 47, 0.7)"
               :stroke-width="1 * scale"
             />
           </g>
@@ -644,16 +642,24 @@ const getAttackTargetPiece = (pos: Position) => {
 .chess-board-container {
   display: inline-block;
   padding: 20px;
-  background: linear-gradient(135deg, #f4e4bc, #e6d5a8);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 15px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 8px 25px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .board-wrapper {
   position: relative;
-  border: 3px solid #8b4513;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .chess-board {
