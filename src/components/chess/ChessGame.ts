@@ -638,6 +638,11 @@ export class ChessGame {
 
     const capturedPiece = this.getPieceAt(to)
 
+    console.log('执行移动:', piece.type, piece.camp, '从', from, '到', to)
+    if (capturedPiece) {
+      console.log('吃掉棋子:', capturedPiece.type, capturedPiece.camp)
+    }
+
     // 记录移动
     const move: Move = {
       from: { ...from },
@@ -652,22 +657,39 @@ export class ChessGame {
 
     // 如果有被吃的棋子，先将其设为不活跃
     if (capturedPiece) {
-      console.log('设置被吃棋子为不活跃:', capturedPiece.type, '在位置:', capturedPiece.position)
       capturedPiece.alive = false
-      console.log('被吃棋子alive状态:', capturedPiece.alive)
     }
 
     // 将棋子移动到新位置
     this.state.board[to.y][to.x] = piece
-    piece.position = to
+    piece.position = { ...to }
+
+    // 强制清理棋盘状态，确保被吃的棋子不会残留
+    if (capturedPiece) {
+      // 清理棋盘上的死棋子
+      for (let y = 0; y < 10; y++) {
+        for (let x = 0; x < 9; x++) {
+          const boardPiece = this.state.board[y][x]
+          if (boardPiece && !boardPiece.alive) {
+            this.state.board[y][x] = null
+          }
+        }
+      }
+
+      // 注意：不要从pieces数组中移除死棋子，保留用于悔棋
+      // this.state.pieces = this.state.pieces.filter(p => p.alive)
+    }
+
+    // 全面验证棋盘一致性
+    this.validateBoardConsistency()
 
     this.state.moveHistory.push(move)
 
-    // 检查游戏状态
-    this.updateGameStatus()
-
     // 切换玩家
     this.state.currentPlayer = this.state.currentPlayer === 'red' ? 'black' : 'red'
+
+    // 检查游戏状态
+    this.updateGameStatus()
 
     return true
   }
@@ -694,20 +716,33 @@ export class ChessGame {
     // 将棋子移回原位置
     this.state.board[lastMove.to.y][lastMove.to.x] = null
     this.state.board[lastMove.from.y][lastMove.from.x] = piece
-    piece.position = lastMove.from
+    piece.position = { ...lastMove.from }
 
     // 如果有被吃的棋子，恢复它
     if (lastMove.capturedPiece) {
       const capturedPiece = this.state.pieces.find((p) => p.id === lastMove.capturedPiece!.id)
       if (capturedPiece) {
+        // 恢复被吃棋子的状态
         capturedPiece.alive = true
+        capturedPiece.position = { ...lastMove.to }
         this.state.board[lastMove.to.y][lastMove.to.x] = capturedPiece
         console.log('恢复被吃棋子:', capturedPiece.type, '在位置:', capturedPiece.position)
+      } else {
+        // 如果在pieces数组中找不到，说明可能被意外删除了，重新添加
+        const restoredPiece = { ...lastMove.capturedPiece }
+        restoredPiece.alive = true
+        restoredPiece.position = { ...lastMove.to }
+        this.state.pieces.push(restoredPiece)
+        this.state.board[lastMove.to.y][lastMove.to.x] = restoredPiece
+        console.log('重新创建被吃棋子:', restoredPiece.type, '在位置:', restoredPiece.position)
       }
     }
 
     // 切换回上一个玩家
     this.state.currentPlayer = this.state.currentPlayer === 'red' ? 'black' : 'red'
+
+    // 验证棋盘一致性
+    this.validateBoardConsistency()
 
     // 重新检查游戏状态
     this.state.gameStatus = 'playing' // 悔棋后游戏继续
@@ -719,7 +754,7 @@ export class ChessGame {
 
   // 更新游戏状态
   private updateGameStatus() {
-    const currentCamp = this.state.currentPlayer === 'red' ? 'black' : 'red' // 下一个要移动的阵营
+    const currentCamp = this.state.currentPlayer // 当前要移动的阵营
 
     this.state.isInCheck = this.isInCheck(currentCamp)
 
@@ -742,6 +777,30 @@ export class ChessGame {
   private restoreFromState(savedState: GameState): GameState {
     // 深拷贝状态以避免引用问题
     const state = JSON.parse(JSON.stringify(savedState))
+
+    // 确保棋盘数组正确初始化
+    if (!state.board || state.board.length !== 10) {
+      state.board = Array(10)
+        .fill(null)
+        .map(() => Array(9).fill(null))
+    }
+
+    // 重建棋盘状态 - 只清空棋盘
+    for (let y = 0; y < 10; y++) {
+      for (let x = 0; x < 9; x++) {
+        state.board[y][x] = null
+      }
+    }
+
+    // 保留所有棋子（包括死棋子用于悔棋），但只把活棋子放在棋盘上
+    const alivePieces = state.pieces.filter((piece: ChessPiece) => piece.alive)
+
+    for (const piece of alivePieces) {
+      const { x, y } = piece.position
+      if (x >= 0 && x < 9 && y >= 0 && y < 10) {
+        state.board[y][x] = piece
+      }
+    }
 
     // 恢复移动历史中的时间戳和棋子引用
     if (state.moveHistory) {
@@ -768,5 +827,24 @@ export class ChessGame {
   // 获取当前状态的深拷贝（用于保存）
   getStateForSaving(): GameState {
     return JSON.parse(JSON.stringify(this.state))
+  }
+
+  // 验证棋盘一致性
+  private validateBoardConsistency(): void {
+    // 清空棋盘
+    for (let y = 0; y < 10; y++) {
+      for (let x = 0; x < 9; x++) {
+        this.state.board[y][x] = null
+      }
+    }
+
+    // 只把活着的棋子放在棋盘上
+    const alivePieces = this.state.pieces.filter((p) => p.alive)
+    for (const piece of alivePieces) {
+      const { x, y } = piece.position
+      if (x >= 0 && x < 9 && y >= 0 && y < 10) {
+        this.state.board[y][x] = piece
+      }
+    }
   }
 }

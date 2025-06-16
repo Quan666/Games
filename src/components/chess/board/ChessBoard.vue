@@ -443,19 +443,22 @@
       <!-- 棋子 -->
       <div class="pieces-container">
         <!-- 渲染所有存活的棋子 -->
-        <ChessPiece
-          v-for="piece in alivePieces"
-          :key="piece.id"
-          :piece="piece"
-          :x="piece.position.x"
-          :y="piece.position.y"
-          :is-black="piece.camp === 'black'"
-          :is-selected="isPieceSelected(piece)"
-          :cell-size="cellSize"
-          :margin="margin"
-          :scale="scale"
-          @click="onPieceClick(piece)"
-        />
+        <template v-for="(piece, index) in alivePieces" :key="`piece-${piece?.id || index}`">
+          <ChessPiece
+            v-if="piece && piece.alive && piece.position"
+            :key="`piece-${piece.id}-${piece.position.x}-${piece.position.y}-${piece.alive}-${index}`"
+            :piece="piece"
+            :x="piece.position.x"
+            :y="piece.position.y"
+            :is-black="piece.camp === 'black'"
+            :is-selected="isPieceSelected(piece)"
+            :cell-size="cellSize"
+            :margin="margin"
+            :scale="scale"
+            :z-index="50 + index"
+            @click="onPieceClick(piece)"
+          />
+        </template>
 
         <!-- 选中标记 -->
         <div
@@ -470,44 +473,51 @@
         ></div>
 
         <!-- 可移动位置提示 -->
-        <div
-          v-for="pos in props.availableMoves"
-          :key="`move-${pos.x}-${pos.y}`"
-          :class="[
-            'move-hint',
-            {
-              'attack-hint': isAttackPosition(pos),
-              'attack-red-target':
-                isAttackPosition(pos) && getAttackTargetPiece(pos)?.camp === 'red',
-              'attack-black-target':
-                isAttackPosition(pos) && getAttackTargetPiece(pos)?.camp === 'black',
-            },
-          ]"
-          :style="{
-            left: margin + pos.x * cellSize - 15 * scale + 'px',
-            top: margin + pos.y * cellSize - 15 * scale + 'px',
-            width: 30 * scale + 'px',
-            height: 30 * scale + 'px',
-          }"
-          @click="onMoveClick(pos)"
-        ></div>
+        <template
+          v-for="pos in props.availableMoves || []"
+          :key="`move-${pos?.x || 0}-${pos?.y || 0}`"
+        >
+          <div
+            v-if="pos && typeof pos.x === 'number' && typeof pos.y === 'number'"
+            :key="`move-${pos.x}-${pos.y}`"
+            :class="[
+              'move-hint',
+              {
+                'attack-hint': isAttackPosition(pos),
+                'attack-red-target':
+                  isAttackPosition(pos) && getAttackTargetPiece(pos)?.camp === 'red',
+                'attack-black-target':
+                  isAttackPosition(pos) && getAttackTargetPiece(pos)?.camp === 'black',
+              },
+            ]"
+            :style="{
+              left: margin + pos.x * cellSize - 15 * scale + 'px',
+              top: margin + pos.y * cellSize - 15 * scale + 'px',
+              width: 30 * scale + 'px',
+              height: 30 * scale + 'px',
+            }"
+            @click="onMoveClick(pos)"
+          ></div>
+        </template>
 
         <!-- 可被吃掉的棋子高亮提示 -->
-        <div
-          v-for="piece in attackablePieces"
-          :key="`attackable-${piece.id}`"
-          :class="[
-            'attackable-piece-highlight',
-            { 'attackable-red-piece': piece.camp === 'red' },
-            { 'attackable-black-piece': piece.camp === 'black' },
-          ]"
-          :style="{
-            left: margin + piece.position.x * cellSize - pieceRadius - 4 * scale + 'px',
-            top: margin + piece.position.y * cellSize - pieceRadius - 4 * scale + 'px',
-            width: (pieceRadius + 4 * scale) * 2 + 'px',
-            height: (pieceRadius + 4 * scale) * 2 + 'px',
-          }"
-        ></div>
+        <template v-for="piece in attackablePieces" :key="`attackable-${piece?.id || 'unknown'}`">
+          <div
+            v-if="piece && piece.position"
+            :key="`attackable-${piece.id}`"
+            :class="[
+              'attackable-piece-highlight',
+              { 'attackable-red-piece': piece.camp === 'red' },
+              { 'attackable-black-piece': piece.camp === 'black' },
+            ]"
+            :style="{
+              left: margin + piece.position.x * cellSize - pieceRadius - 4 * scale + 'px',
+              top: margin + piece.position.y * cellSize - pieceRadius - 4 * scale + 'px',
+              width: (pieceRadius + 4 * scale) * 2 + 'px',
+              height: (pieceRadius + 4 * scale) * 2 + 'px',
+            }"
+          ></div>
+        </template>
 
         <!-- 棋盘交叉点点击区域 -->
         <div
@@ -553,6 +563,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   width: 540,
   height: 600,
+  availableMoves: () => [],
 })
 
 // 棋盘尺寸计算
@@ -579,19 +590,45 @@ const pieceRadius = computed(() => STANDARD_PIECE_RADIUS * scale.value)
 const attackablePieces = computed(() => {
   if (!props.selectedPiece) return []
 
-  return props.gameState.pieces.filter((piece: any) => {
-    if (!piece.alive || piece.camp === props.selectedPiece?.camp) return false
+  const pieces = props.gameState?.pieces || []
+  const availableMoves = props.availableMoves || []
+
+  return pieces.filter((piece: any) => {
+    if (!piece || !piece.alive || piece.camp === props.selectedPiece?.camp) return false
 
     // 检查这个棋子的位置是否在可移动位置中
-    return props.availableMoves.some(
-      (move) => move.x === piece.position.x && move.y === piece.position.y,
+    return availableMoves.some(
+      (move) => move && move.x === piece.position.x && move.y === piece.position.y,
     )
   })
 })
 
 // 计算棋子列表用于渲染
 const alivePieces = computed(() => {
-  return props.gameState.pieces.filter((piece: any) => piece.alive)
+  // 确保 pieces 数组存在并且过滤掉所有无效的棋子
+  const pieces = props.gameState?.pieces || []
+  const alive = pieces.filter(
+    (piece: any) =>
+      piece &&
+      piece.alive === true &&
+      piece.id &&
+      piece.type &&
+      piece.position &&
+      typeof piece.position.x === 'number' &&
+      typeof piece.position.y === 'number',
+  )
+
+  // 按照固定的顺序排序，确保渲染顺序一致
+  // 先按阵营排序（黑方在前），再按棋子类型，最后按ID
+  return alive.sort((a: any, b: any) => {
+    if (a.camp !== b.camp) {
+      return a.camp === 'black' ? -1 : 1
+    }
+    if (a.type !== b.type) {
+      return a.type.localeCompare(b.type)
+    }
+    return a.id.localeCompare(b.id)
+  })
 })
 
 // 事件发射
@@ -603,7 +640,10 @@ const emit = defineEmits<{
 
 // 棋子点击事件
 const onPieceClick = (piece: ChessPieceType) => {
-  emit('pieceClick', piece)
+  // 只处理活着的棋子点击
+  if (piece.alive) {
+    emit('pieceClick', piece)
+  }
 }
 
 // 棋盘点击事件（空位移动）
@@ -618,23 +658,23 @@ const onMoveClick = (pos: Position) => {
 
 // 棋子是否被选中
 const isPieceSelected = (piece: ChessPieceType) => {
-  return props.selectedPiece?.id === piece.id
+  return piece && piece.alive && props.selectedPiece?.id === piece.id
 }
 
 // 检查位置是否是攻击位置（有敌方棋子）
 const isAttackPosition = (pos: Position) => {
   // 直接检查这个位置是否有敌方棋子
-  const targetPiece = props.gameState.pieces.find(
-    (p: any) => p.position.x === pos.x && p.position.y === pos.y && p.alive,
+  const pieces = props.gameState?.pieces || []
+  const targetPiece = pieces.find(
+    (p: any) => p && p.position.x === pos.x && p.position.y === pos.y && p.alive,
   )
   return targetPiece && props.selectedPiece && targetPiece.camp !== props.selectedPiece.camp
 }
 
 // 获取攻击位置上的棋子
 const getAttackTargetPiece = (pos: Position) => {
-  return props.gameState.pieces.find(
-    (p: any) => p.position.x === pos.x && p.position.y === pos.y && p.alive,
-  )
+  const pieces = props.gameState?.pieces || []
+  return pieces.find((p: any) => p && p.position.x === pos.x && p.position.y === pos.y && p.alive)
 }
 </script>
 

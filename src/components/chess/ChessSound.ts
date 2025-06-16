@@ -30,7 +30,7 @@ export class ChessSoundGenerator {
   }
 
   // 语音播放功能
-  private async speak(text: string, volume: number = 0.8, rate: number = 1.2): Promise<void> {
+  private async speak(text: string, volume: number = 0.8, rate: number = 1.0): Promise<void> {
     if (!this.isSoundEnabled() || !this.isVoiceEnabled() || !this.speechSynth) return
 
     return new Promise((resolve) => {
@@ -40,13 +40,24 @@ export class ChessSoundGenerator {
       utterance.rate = rate
       utterance.pitch = 1.0
 
-      // 尝试选择中文语音
+      // 尝试选择中文语音，优先选择女声或标准中文语音
       const voices = this.speechSynth!.getVoices()
-      const chineseVoice = voices.find(
+      const chineseVoices = voices.filter(
         (voice) => voice.lang.includes('zh') || voice.lang.includes('CN'),
       )
-      if (chineseVoice) {
-        utterance.voice = chineseVoice
+
+      // 优先选择女声或包含特定关键词的中文语音
+      const preferredVoice =
+        chineseVoices.find(
+          (voice) =>
+            voice.name.includes('Female') ||
+            voice.name.includes('女') ||
+            voice.name.includes('Xiaoxiao') ||
+            voice.name.includes('Huihui'),
+        ) || chineseVoices[0]
+
+      if (preferredVoice) {
+        utterance.voice = preferredVoice
       }
 
       utterance.onend = () => resolve()
@@ -108,6 +119,25 @@ export class ChessSoundGenerator {
     // 普通移动不播放语音
   }
 
+  // 标准化棋子名称，用于语音播报
+  private normalizePieceName(pieceType: string): string {
+    const normalizeMap: { [key: string]: string } = {
+      帥: '帅',
+      將: '将',
+      仕: '士',
+      士: '士',
+      相: '相',
+      象: '象',
+      馬: '马',
+      車: '车',
+      炮: '炮',
+      砲: '炮', // 统一读作"炮"
+      兵: '兵',
+      卒: '卒', // 统一读作"卒"
+    }
+    return normalizeMap[pieceType] || pieceType
+  }
+
   // 吃子音效 + 语音
   //@ts-ignore
   async playCaptureSound(movingPiece?: string, capturedPiece?: string): Promise<void> {
@@ -140,9 +170,10 @@ export class ChessSoundGenerator {
     if (this.isVoiceEnabled()) {
       setTimeout(() => {
         if (capturedPiece) {
-          this.speak(`吃${capturedPiece}`)
+          const normalizedPiece = this.normalizePieceName(capturedPiece)
+          this.speak(`吃${normalizedPiece}`)
         } else {
-          this.speak('吃')
+          this.speak('吃子')
         }
       }, 150)
     }
@@ -182,7 +213,7 @@ export class ChessSoundGenerator {
 
     // 播放语音
     if (this.isVoiceEnabled()) {
-      setTimeout(() => this.speak('将军'), 300)
+      setTimeout(() => this.speak('将军', 0.9, 0.9), 300)
     }
   }
 
@@ -221,7 +252,7 @@ export class ChessSoundGenerator {
 
       // 播放语音
       if (this.isVoiceEnabled()) {
-        setTimeout(() => this.speak('胜利'), 500)
+        setTimeout(() => this.speak('胜利', 0.9, 0.8), 500)
       }
     } else {
       // 失败音效 - 下降音调
@@ -248,7 +279,7 @@ export class ChessSoundGenerator {
 
       // 播放语音
       if (this.isVoiceEnabled()) {
-        setTimeout(() => this.speak('失败'), 200)
+        setTimeout(() => this.speak('失败', 0.9, 0.8), 200)
       }
     }
   }
@@ -316,7 +347,7 @@ export class ChessSoundGenerator {
   }
 
   // 将死语音
-  async playCheckmateSound(winner: string): Promise<void> {
+  async playCheckmateSound(winner: string, capturedPiece?: string): Promise<void> {
     if (!this.isSoundEnabled()) return
     await this.ensureAudioContext()
 
@@ -346,7 +377,13 @@ export class ChessSoundGenerator {
     // 播放语音
     if (this.isVoiceEnabled()) {
       setTimeout(() => {
-        this.speak(`${winner === 'red' ? '红方' : '黑方'}胜利`)
+        let announcement = ''
+        if (capturedPiece) {
+          announcement = `吃${capturedPiece}将死，${winner}获胜`
+        } else {
+          announcement = `将死，${winner}获胜`
+        }
+        this.speak(announcement, 0.9, 0.8)
       }, 800)
     }
   }
@@ -382,7 +419,7 @@ export class ChessSoundGenerator {
 
     // 播放语音
     if (this.isVoiceEnabled()) {
-      setTimeout(() => this.speak('游戏开始'), 600)
+      setTimeout(() => this.speak('游戏开始', 0.9, 0.8), 600)
     }
   }
 
@@ -445,7 +482,7 @@ export class ChessSoundGenerator {
 
     // 播放语音
     if (this.isVoiceEnabled()) {
-      setTimeout(() => this.speak('悔棋'), 100)
+      setTimeout(() => this.speak('悔棋', 0.9, 0.8), 100)
     }
   }
 }

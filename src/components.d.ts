@@ -16,6 +16,7 @@ declare module 'vue' {
     ConfirmDialog: typeof import('./components/gomoku/ConfirmDialog.vue')['default']
     GameControlPanel: typeof import('./components/gomoku/GameControlPanel.vue')['default']
     GameInfoHeader: typeof import('./components/gomoku/GameInfoHeader.vue')['default']
+    GameOverDialog: typeof import('./components/chess/GameOverDialog.vue')['default']
     GameSettings: typeof import('./components/gomoku/GameSettings.vue')['default']
     GlobalSettings: typeof import('./components/GlobalSettings.vue')['default']
     Gomoku: typeof import('./components/gomoku/Gomoku.vue')['default']

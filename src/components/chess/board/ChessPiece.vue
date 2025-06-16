@@ -12,6 +12,7 @@
       top: margin + y * cellSize - 22 * scale + 'px',
       width: 44 * scale + 'px',
       height: 44 * scale + 'px',
+      zIndex: zIndex || 10,
     }"
     @click="$emit('click')"
   >
@@ -41,6 +42,7 @@ interface Props {
   cellSize: number
   margin: number
   scale: number
+  zIndex?: number
 }
 
 const props = defineProps<Props>()
@@ -50,7 +52,7 @@ defineEmits<{
 }>()
 
 // 解构 props 以便在模板中使用
-const { piece, x, y, isBlack, isSelected, cellSize, margin, scale } = toRefs(props)
+const { piece, x, y, isBlack, isSelected, cellSize, margin, scale, zIndex } = toRefs(props)
 </script>
 
 <style scoped>
@@ -58,12 +60,11 @@ const { piece, x, y, isBlack, isSelected, cellSize, margin, scale } = toRefs(pro
   position: absolute;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 10;
 }
 
 .chess-piece.hover-effect:hover {
   transform: scale(1.08) translateZ(0);
-  z-index: 15;
+  z-index: 999 !important;
 }
 
 .piece-shadow {
@@ -160,7 +161,7 @@ const { piece, x, y, isBlack, isSelected, cellSize, margin, scale } = toRefs(pro
 
 .chess-piece.selected {
   animation: selected-pulse 1.5s infinite;
-  z-index: 20;
+  z-index: 1000 !important;
 }
 
 .chess-piece.selected .piece-circle {

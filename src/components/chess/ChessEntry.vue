@@ -181,16 +181,14 @@
       </div>
     </div>
 
-    <!-- 游戏结束对话框 -->
-    <div v-if="gameStatus !== 'playing'" class="game-over-modal">
-      <div class="modal-content">
-        <h3>游戏结束</h3>
-        <p>{{ gameStatusText }}</p>
-        <div class="modal-actions">
-          <button @click="resetGame" class="primary-btn">重新开始</button>
-        </div>
-      </div>
-    </div>
+    <!-- 游戏结束弹窗 -->
+    <GameOverDialog
+      :show="showGameOverDialog"
+      :gameStatus="gameStatus"
+      :currentPlayer="currentPlayer"
+      :isInCheck="gameState.isInCheck"
+      @close="hideGameOverDialog"
+    />
   </div>
 </template>
 
@@ -200,6 +198,7 @@ import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { useStore } from 'vuex'
 import ChessBoard from './board/ChessBoard.vue'
 import HomeButton from '../HomeButton.vue'
+import GameOverDialog from './GameOverDialog.vue'
 import { createChessSoundGenerator } from './ChessSound'
 import { ChessGame, type ChessPiece as ChessPieceType, type Position, type Move } from './ChessGame'
 
@@ -262,13 +261,16 @@ const initializeGame = () => {
 
 const game = initializeGame()
 const gameState = reactive(game.getState())
-const gameStatus = ref('playing')
-const currentPlayer = ref('red')
+const gameStatus = ref<'playing' | 'checkmate' | 'stalemate' | 'draw'>('playing')
+const currentPlayer = ref<'red' | 'black'>('red')
 const moveHistory = ref<Move[]>([])
 
 // 选中的棋子和可移动位置
 const selectedPiece = ref<ChessPieceType | null>(null)
 const availableMoves = ref<Position[]>([])
+
+// 游戏结束弹窗控制
+const showGameOverDialog = ref(false)
 
 // 响应式屏幕尺寸
 const windowWidth = ref(window.innerWidth)
@@ -368,7 +370,7 @@ const canUndo = computed(() => moveHistory.value.length > 0)
 // 初始化游戏状态
 const updateGameState = () => {
   const newState = game.getState()
-  console.log('更新游戏状态 - 新状态棋子数量:', newState.pieces.filter((p) => p.alive).length)
+  console.log('更新游戏状态 - 存活棋子数量:', newState.pieces.filter((p) => p.alive).length)
 
   // 深度更新响应式状态
   Object.assign(gameState, {
@@ -384,6 +386,13 @@ const updateGameState = () => {
   currentPlayer.value = newState.currentPlayer
   moveHistory.value = [...newState.moveHistory]
 
+  // 显示游戏结束弹窗
+  if (newState.gameStatus !== 'playing') {
+    showGameOverDialog.value = true
+  } else {
+    showGameOverDialog.value = false
+  }
+
   // 自动保存完整游戏状态（包括悔棋后的状态）
   if (chessSettings.value.autoSave) {
     try {
@@ -393,12 +402,21 @@ const updateGameState = () => {
       console.warn('保存游戏状态失败:', error)
     }
   }
-
-  console.log('更新后存活棋子数量:', newState.pieces.filter((p) => p.alive).length)
 }
 
 // 棋子点击事件
 const onPieceClick = (piece: ChessPieceType) => {
+  // 首先检查棋子是否存活
+  if (!piece.alive) {
+    console.warn('尝试点击已死亡的棋子:', piece)
+    return
+  }
+
+  // 如果游戏已结束，不允许操作
+  if (gameState.gameStatus !== 'playing') {
+    return
+  }
+
   // 如果没有选中棋子，只能选中自己的棋子
   if (!selectedPiece.value) {
     if (piece.camp !== gameState.currentPlayer) {
@@ -463,20 +481,24 @@ const onPieceClick = (piece: ChessPieceType) => {
       if (success) {
         const newState = game.getState()
 
-        // 播放音效
-        soundGenerator.playCaptureSound(movingPieceType, piece.type)
-        if (newState.isInCheck) {
-          soundGenerator.playCheckSound()
-        }
-
+        // 立即清除选中状态和移动提示，无论游戏是否结束
         selectedPiece.value = null
         availableMoves.value = []
-        updateGameState()
 
         // 游戏结束检查
         if (newState.gameStatus === 'checkmate') {
-          soundGenerator.playGameOverSound(false)
+          const winner = newState.currentPlayer === 'red' ? '黑方' : '红方'
+          soundGenerator.playCheckmateSound(winner, piece?.type)
+        } else {
+          // 只有在非将死情况下才播放普通音效
+          // 播放音效
+          soundGenerator.playCaptureSound(movingPieceType, piece.type)
+          if (newState.isInCheck) {
+            soundGenerator.playCheckSound()
+          }
         }
+
+        updateGameState()
 
         console.log('吃子完成，清除选中状态和移动提示')
       }
@@ -505,25 +527,27 @@ const onBoardClick = (x: number, y: number) => {
     if (success) {
       const newState = game.getState()
 
-      // 播放音效
-      if (targetPiece) {
-        soundGenerator.playCaptureSound(movingPieceType, targetPiece.type)
+      // 游戏结束检查
+      if (newState.gameStatus === 'checkmate') {
+        const winner = newState.currentPlayer === 'red' ? '黑方' : '红方'
+        soundGenerator.playCheckmateSound(winner, targetPiece?.type)
       } else {
-        soundGenerator.playMoveSound()
-      }
+        // 只有在非将死情况下才播放普通音效
+        // 播放音效
+        if (targetPiece) {
+          soundGenerator.playCaptureSound(movingPieceType, targetPiece.type)
+        } else {
+          soundGenerator.playMoveSound()
+        }
 
-      if (newState.isInCheck) {
-        soundGenerator.playCheckSound()
+        if (newState.isInCheck) {
+          soundGenerator.playCheckSound()
+        }
       }
 
       selectedPiece.value = null
       availableMoves.value = []
       updateGameState()
-
-      // 游戏结束检查
-      if (newState.gameStatus === 'checkmate') {
-        soundGenerator.playGameOverSound(false)
-      }
     }
   }
 }
@@ -565,6 +589,11 @@ const undoMove = () => {
       console.log('悔棋失败')
     }
   }
+}
+
+// 隐藏游戏结束弹窗
+const hideGameOverDialog = () => {
+  showGameOverDialog.value = false
 }
 
 // 处理窗口尺寸变化
@@ -1051,66 +1080,6 @@ onUnmounted(() => {
 .move-text {
   color: #495057;
   flex: 1;
-}
-
-/* 游戏结束对话框 */
-.game-over-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  max-width: 400px;
-  width: 90%;
-}
-
-.modal-content h3 {
-  margin: 0 0 15px 0;
-  color: #2c3e50;
-  font-size: 24px;
-}
-
-.modal-content p {
-  margin: 0 0 20px 0;
-  color: #495057;
-  font-size: 16px;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-}
-
-.primary-btn {
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #007bff, #0056b3);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-}
-
-.primary-btn:hover {
-  background: linear-gradient(135deg, #0056b3, #004085);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
 }
 
 /* 响应式调整 */
