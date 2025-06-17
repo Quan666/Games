@@ -1,130 +1,133 @@
 <template>
-  <div class="chinese-chess-game">
+  <div class="chess-game relative">
     <!-- 回到首页按钮 -->
     <HomeButton />
 
-    <!-- 竖屏布局 -->
-    <div v-if="!isLandscape" class="portrait-layout">
-      <!-- 顶部游戏标题和状态 -->
-      <div class="game-header">
-        <h2>中国象棋</h2>
-        <div class="game-status">
-          <div class="status-text">{{ gameStatusText }}</div>
-          <div
-            class="current-player-indicator"
-            :class="{ red: currentPlayer === 'red', black: currentPlayer === 'black' }"
-          >
-            <div class="player-circle"></div>
-            <span class="player-text">{{ currentPlayer === 'red' ? '红方' : '黑方' }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 棋盘区域 -->
-      <div class="board-container-portrait">
-        <ChessBoard
-          ref="chessBoardRef"
-          :width="boardSize.width"
-          :height="boardSize.height"
-          :gameState="gameState"
-          :selectedPiece="selectedPiece"
-          :availableMoves="availableMoves"
-          :showCoordinates="showCoordinates"
-          @piece-click="onPieceClick"
-          @board-click="onBoardClick"
-          @move-click="onMoveClick"
-        />
-      </div>
-
-      <!-- 底部控制区域 -->
-      <div class="controls-portrait">
-        <div class="control-buttons-grid">
-          <!-- 第一行：游戏控制 -->
-          <div class="control-row">
-            <button @click="resetGame" class="control-btn primary">重新开始</button>
-            <button @click="undoMove" class="control-btn" :disabled="!canUndo">悔棋</button>
-          </div>
-
-          <!-- 第二行：设置 -->
-          <div class="control-row">
-            <button @click="showSettings = true" class="control-btn settings">⚙️ 设置</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 横屏布局 -->
-    <div v-else class="landscape-layout">
-      <!-- 左侧控制面板 -->
-      <div class="controls-landscape">
-        <!-- 标题和状态 -->
-        <div class="controls-header">
-          <h2>中国象棋</h2>
-          <div class="game-status-compact">
-            <div class="status-text">{{ gameStatusText }}</div>
-            <div
-              class="current-player-indicator"
-              :class="{ red: currentPlayer === 'red', black: currentPlayer === 'black' }"
-            >
-              <div class="player-circle"></div>
-              <span class="player-text">{{ currentPlayer === 'red' ? '红方' : '黑方' }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 控制按钮 -->
-        <div class="control-buttons-landscape">
-          <div class="control-row">
-            <button @click="resetGame" class="control-btn primary">重新开始</button>
-            <button @click="undoMove" class="control-btn" :disabled="!canUndo">悔棋</button>
-          </div>
-          <div class="control-row">
-            <button @click="showSettings = true" class="control-btn settings">⚙️ 设置</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 右侧棋盘区域 - 占满剩余空间和高度 -->
-      <div class="board-container-landscape">
-        <ChessBoard
-          ref="chessBoardRef"
-          :width="boardSize.width"
-          :height="boardSize.height"
-          :gameState="gameState"
-          :selectedPiece="selectedPiece"
-          :availableMoves="availableMoves"
-          :showCoordinates="showCoordinates"
-          @piece-click="onPieceClick"
-          @board-click="onBoardClick"
-          @move-click="onMoveClick"
-        />
-      </div>
-    </div>
-
-    <!-- 游戏结束弹窗 -->
+    <!-- 胜利弹窗 -->
     <GameOverDialog
       :show="showGameOverDialog"
       :gameStatus="gameStatus"
       :currentPlayer="currentPlayer"
       :isInCheck="gameState.isInCheck"
-      @close="hideGameOverDialog"
+      @close="closeGameOverDialog"
     />
 
-    <!-- 走法历史弹窗 -->
+    <!-- 游戏设置弹窗 -->
+    <GameSettings
+      :show="showGameSettings"
+      @close="showGameSettings = false"
+      @apply-settings="onApplySettings"
+      @open-move-history="openMoveHistory"
+    />
+
+    <!-- AI设置弹窗 -->
+    <ChessAISettings
+      :show="showAISettings"
+      :config="gameConfig"
+      :aiStatus="aiStatus"
+      @update:config="onConfigUpdate"
+      @stop-ai="onStopAI"
+      @close="showAISettings = false"
+    />
+
+    <!-- 棋谱弹窗 -->
     <MoveHistoryDialog
-      :show="chessSettings.showMoveHistory"
-      :moveHistory="moveHistory"
-      :gameStartTime="gameStartTime"
-      @close="closeMoveHistoryDialog"
+      :show="showMoveHistory"
+      :move-history="moveHistory"
+      :game-start-time="gameStartTime"
+      @close="closeMoveHistory"
     />
 
-    <!-- 象棋设置弹窗 -->
-    <ChessSettings
-      :show="showSettings"
-      @close="showSettings = false"
-      @apply-settings="applySettings"
-      @open-move-history="openMoveHistoryFromSettings"
-    />
+    <!-- 竖屏布局 -->
+    <div
+      v-if="isPortrait"
+      class="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col"
+    >
+      <!-- 顶部信息 -->
+      <ChessGameInfoHeader
+        :current-player="currentPlayer"
+        :move-count="moveHistory.length"
+        :game-mode="gameConfig.gameMode || 'pvp'"
+        :player-camp="gameConfig.playerCamp"
+        :ai-thinking="aiStatus?.thinking || false"
+        :ai-status="aiStatus"
+        :ai-config="gameConfig.aiConfig"
+        :game-result="gameResult"
+        :is-in-check="gameState.isInCheck"
+        :is-checkmate="gameStatus === 'checkmate'"
+      />
+
+      <!-- 棋盘区域 -->
+      <div class="flex flex-col items-stretch flex-1">
+        <div class="flex justify-center">
+          <ChessBoard
+            ref="chessBoardRef"
+            :width="boardSize.width"
+            :height="boardSize.height"
+            :gameState="gameState"
+            :selectedPiece="selectedPiece"
+            :availableMoves="availableMoves"
+            :showCoordinates="showCoordinates"
+            @piece-click="onPieceClick"
+            @board-click="onBoardClick"
+            @move-click="onMoveClick"
+          />
+        </div>
+        <div class="flex-1 flex flex-col justify-stretch">
+          <!-- 底部控制区 -->
+          <ChessGameControlPanel
+            :can-undo="canUndo"
+            @reset-game="resetGame"
+            @undo-move="undoMove"
+            @toggle-ai-vs-ai="toggleAiVsAi"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- 横屏布局 -->
+    <div v-else class="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex">
+      <!-- 左侧区域 -->
+      <div class="w-80 bg-white/95 backdrop-blur-sm p-6 shadow-lg flex flex-col gap-6">
+        <!-- 顶部信息 -->
+        <ChessGameInfoHeader
+          :current-player="currentPlayer"
+          :move-count="moveHistory.length"
+          :game-mode="gameConfig.gameMode || 'pvp'"
+          :player-camp="gameConfig.playerCamp"
+          :ai-thinking="aiStatus?.thinking || false"
+          :ai-status="aiStatus"
+          :ai-config="gameConfig.aiConfig"
+          :game-result="gameResult"
+          :is-in-check="gameState.isInCheck"
+          :is-checkmate="gameStatus === 'checkmate'"
+        />
+
+        <!-- 左侧控制面板 -->
+        <ChessGameControlPanel
+          :can-undo="canUndo"
+          @reset-game="resetGame"
+          @undo-move="undoMove"
+          @toggle-ai-vs-ai="toggleAiVsAi"
+        />
+      </div>
+
+      <!-- 中间棋盘 -->
+      <div class="flex-1 flex items-center justify-center">
+        <ChessBoard
+          ref="chessBoardRef"
+          :width="boardSize.width"
+          :height="boardSize.height"
+          :gameState="gameState"
+          :selectedPiece="selectedPiece"
+          :availableMoves="availableMoves"
+          :showCoordinates="showCoordinates"
+          @piece-click="onPieceClick"
+          @board-click="onBoardClick"
+          @move-click="onMoveClick"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -133,24 +136,29 @@ import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 // @ts-ignore
 import { useStore } from 'vuex'
 import ChessBoard from './board/ChessBoard.vue'
-import HomeButton from '../HomeButton.vue'
 import GameOverDialog from './GameOverDialog.vue'
 import MoveHistoryDialog from './MoveHistoryDialog.vue'
-import ChessSettings from './ChessSettings.vue'
+import HomeButton from '../HomeButton.vue'
+import ChessGameControlPanel from './ChessGameControlPanel.vue'
+import ChessGameInfoHeader from './ChessGameInfoHeader.vue'
+import GameSettings from './ChessSettings.vue'
+import ChessAISettings from './ChessAISettings.vue'
+import { ChessGame, type Position, type GameConfig, type ChessPiece } from './ChessGame'
 import { createChessSoundGenerator } from './ChessSound'
-import { ChessGame, type ChessPiece as ChessPieceType, type Position, type Move } from './ChessGame'
 
 const store = useStore()
 const chessBoardRef = ref()
 
-// 设置弹窗状态
-const showSettings = ref(false)
+// 响应式状态
+const windowWidth = ref(window.innerWidth)
+const windowHeight = ref(window.innerHeight)
 
 // 从 store 获取设置，如果不存在则使用默认值
 const chessSettings = computed(
   () =>
     store.state.chess?.settings || {
       gameMode: 'pvp',
+      playerCamp: 'red',
       showCoordinates: true,
       showMoveHistory: false,
       enableSound: true,
@@ -167,6 +175,20 @@ const globalSettings = computed(
     },
 )
 
+// 弹窗状态 - 从store获取
+const showGameSettings = computed({
+  get: () => store.state.chess?.ui?.showGameSettings || false,
+  set: (value) => store.commit('chess/setShowGameSettings', value),
+})
+const showAISettings = computed({
+  get: () => store.state.chess?.ui?.showAISettings || false,
+  set: (value) => store.commit('chess/setShowAISettings', value),
+})
+const showGameOverDialog = ref(false)
+
+// 从 store 读取走法记录显示状态
+const showMoveHistory = computed(() => store.state.chess?.settings?.showMoveHistory || false)
+
 // 使用计算属性从 store 获取设置
 const showCoordinates = computed(() => chessSettings.value.showCoordinates)
 const soundEnabled = computed(
@@ -176,53 +198,15 @@ const voiceEnabled = computed(
   () =>
     globalSettings.value.soundEnabled &&
     globalSettings.value.voiceEnabled &&
-    chessSettings.value.enableSound &&
     chessSettings.value.enableVoice,
 )
 
-// 游戏实例 - 从store恢复或创建新游戏
-const initializeGame = () => {
-  const savedGame = store.state.chess?.gameState?.currentGame
-  const autoSave = store.state.chess?.settings?.autoSave ?? true // 默认启用自动保存
-  if (savedGame && autoSave) {
-    try {
-      console.log('尝试恢复游戏状态:', savedGame)
-      return new ChessGame(savedGame)
-    } catch (error) {
-      console.warn('恢复游戏状态失败，创建新游戏:', error)
-      return new ChessGame()
-    }
-  }
-  console.log('创建新游戏')
-  return new ChessGame()
-}
-
-const game = initializeGame()
-const gameState = reactive(game.getState())
-const gameStatus = ref<'playing' | 'checkmate' | 'stalemate' | 'draw'>('playing')
-const currentPlayer = ref<'red' | 'black'>('red')
-const moveHistory = ref<Move[]>([])
-
-// 选中的棋子和可移动位置
-const selectedPiece = ref<ChessPieceType | null>(null)
-const availableMoves = ref<Position[]>([])
-
-// 游戏结束弹窗控制
-const showGameOverDialog = ref(false)
-
-// 游戏开始时间
-const gameStartTime = ref(new Date())
-
-// 响应式屏幕尺寸
-const windowWidth = ref(window.innerWidth)
-const windowHeight = ref(window.innerHeight)
-
-// 判断是否为横屏
-const isLandscape = computed(() => windowWidth.value > windowHeight.value)
+// 计算属性
+const isPortrait = computed(() => windowWidth.value < windowHeight.value)
 
 // 根据屏幕大小计算棋盘尺寸
 const boardSize = computed(() => {
-  if (isLandscape.value) {
+  if (!isPortrait.value) {
     // 横屏时棋盘占满可用空间，左侧留给控制面板
     // 根据屏幕宽度确定控制面板宽度
     let controlPanelWidth = 280 // 默认控制面板宽度
@@ -311,8 +295,68 @@ const boardSize = computed(() => {
   }
 })
 
+// 游戏实例和状态
+const initializeGame = () => {
+  const savedGame = store.state.chess?.gameState?.currentGame
+  const autoSave = store.state.chess?.settings?.autoSave ?? true
+  if (savedGame && autoSave) {
+    try {
+      console.log('尝试恢复游戏状态:', savedGame)
+      return new ChessGame(savedGame)
+    } catch (error) {
+      console.warn('恢复游戏状态失败，创建新游戏:', error)
+      return new ChessGame()
+    }
+  }
+  console.log('创建新游戏')
+  return new ChessGame()
+}
+
+const game = initializeGame()
+const gameState = reactive(game.getState())
+const gameStatus = ref<'playing' | 'checkmate' | 'stalemate' | 'draw'>('playing')
+const currentPlayer = ref<'red' | 'black'>('red')
+const moveHistory = ref<any[]>([])
+
+// 选中的棋子和可移动位置
+const selectedPiece = ref<ChessPiece | null>(null)
+const availableMoves = ref<Position[]>([])
+
+// 游戏开始时间
+const gameStartTime = ref(new Date())
+
+// AI相关状态
+const aiStatus = ref<any>(null)
+const aiVsAiRunning = ref(false)
+
+// 游戏配置
+const gameConfig = reactive<GameConfig>({
+  gameMode: 'pvp',
+  playerCamp: 'red',
+  enableAI: false,
+  aiConfig: {
+    engine: 'pikafish',
+    difficulty: 'medium',
+    thinkingTime: 5,
+    depth: 8,
+    threads: 1,
+    hashSize: 16,
+    // Pikafish完整的UCI选项
+    skillLevel: 20, // Skill Level: 0-20, 默认20
+    multiPV: 1, // MultiPV: 1-128, 默认1
+    moveOverhead: 10, // Move Overhead: 0-5000ms, 默认10
+    repetitionRule: 'AsianRule', // Repetition Rule
+    drawRule: 'None', // Draw Rule
+    sixtyMoveRule: true, // Sixty Move Rule, 默认true
+    maxCheckCount: 0, // MaxCheckCount: 0-1000, 默认0
+    limitStrength: false, // UCI_LimitStrength, 默认false
+    uciElo: 1280, // UCI_Elo: 1280-3133, 默认1280
+    ponder: false, // Ponder, 默认false
+  },
+})
+
 // 音效管理器
-const soundGenerator = createChessSoundGenerator(
+const chessSound = createChessSoundGenerator(
   () => soundEnabled.value,
   () => voiceEnabled.value,
 )
@@ -336,7 +380,15 @@ const gameStatusText = computed(() => {
 })
 
 // 是否可以悔棋
-const canUndo = computed(() => moveHistory.value.length > 0)
+const canUndo = computed(
+  () =>
+    moveHistory.value.length > 0 &&
+    !aiStatus.value?.thinking &&
+    !store.state.chess?.gameState?.aiVsAiRunning,
+)
+
+// 游戏结果
+const gameResult = computed(() => gameStatusText.value)
 
 // 初始化游戏状态
 const updateGameState = () => {
@@ -356,6 +408,13 @@ const updateGameState = () => {
   gameStatus.value = newState.gameStatus
   currentPlayer.value = newState.currentPlayer
   moveHistory.value = [...newState.moveHistory]
+
+  // 同步更新store中的游戏状态
+  store.commit('chess/updateGameState', {
+    moveHistory: [...newState.moveHistory],
+    gameOver: newState.gameStatus !== 'playing',
+    aiThinking: false,
+  })
 
   // 显示游戏结束弹窗
   if (newState.gameStatus !== 'playing') {
@@ -377,8 +436,64 @@ const updateGameState = () => {
   }
 }
 
+// 初始化
+onMounted(() => {
+  // 显示上次游戏的基本信息（如果有的话）
+  const savedGame = store.state.chess?.gameState?.currentGame
+  const autoSave = store.state.chess?.settings?.autoSave ?? true
+  if (savedGame && autoSave) {
+    console.log('上次游戏信息:', savedGame)
+  }
+
+  updateGameState()
+  window.addEventListener('resize', handleResize)
+
+  // 从store加载配置
+  const savedConfig = store.state.chess?.gameConfig
+  if (savedConfig) {
+    Object.assign(gameConfig, savedConfig)
+  }
+
+  // 同步store中的gameMode到本地gameConfig
+  if (chessSettings.value.gameMode) {
+    gameConfig.gameMode = chessSettings.value.gameMode
+    gameConfig.enableAI = chessSettings.value.gameMode !== 'pvp'
+  }
+})
+
+// 监听store中的gameMode变化并同步到gameConfig
+watch(
+  () => chessSettings.value.gameMode,
+  (newGameMode) => {
+    if (newGameMode && gameConfig.gameMode !== newGameMode) {
+      gameConfig.gameMode = newGameMode
+      gameConfig.enableAI = newGameMode !== 'pvp'
+      console.log('GameMode已同步:', newGameMode)
+    }
+  },
+  { immediate: true },
+)
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
+
+// 响应式处理
+const handleResize = () => {
+  windowWidth.value = window.innerWidth
+  windowHeight.value = window.innerHeight
+}
+
+const updateAvailableMoves = () => {
+  if (selectedPiece.value && chessSettings.value) {
+    availableMoves.value = game.getValidMoves(selectedPiece.value)
+  } else {
+    availableMoves.value = []
+  }
+}
+
 // 棋子点击事件
-const onPieceClick = (piece: ChessPieceType) => {
+const onPieceClick = (piece: ChessPiece) => {
   // 首先检查棋子是否存活
   if (!piece.alive) {
     console.warn('尝试点击已死亡的棋子:', piece)
@@ -397,7 +512,7 @@ const onPieceClick = (piece: ChessPieceType) => {
     }
     // 选中棋子
     selectedPiece.value = piece
-    availableMoves.value = game.getValidMoves(piece)
+    updateAvailableMoves()
     console.log(
       '选中棋子:',
       piece.type,
@@ -406,7 +521,7 @@ const onPieceClick = (piece: ChessPieceType) => {
       '可移动位置:',
       availableMoves.value,
     )
-    soundGenerator.playPiecePlaceSound(piece.type)
+    chessSound.playPiecePlaceSound(piece.type)
     return
   }
 
@@ -419,7 +534,7 @@ const onPieceClick = (piece: ChessPieceType) => {
     } else {
       // 选中其他自己的棋子
       selectedPiece.value = piece
-      availableMoves.value = game.getValidMoves(piece)
+      updateAvailableMoves()
       console.log(
         '重新选中棋子:',
         piece.type,
@@ -428,7 +543,7 @@ const onPieceClick = (piece: ChessPieceType) => {
         '可移动位置:',
         availableMoves.value,
       )
-      soundGenerator.playPiecePlaceSound(piece.type)
+      chessSound.playPiecePlaceSound(piece.type)
     }
     return
   }
@@ -461,13 +576,13 @@ const onPieceClick = (piece: ChessPieceType) => {
         // 游戏结束检查
         if (newState.gameStatus === 'checkmate') {
           const winner = newState.currentPlayer === 'red' ? '黑方' : '红方'
-          soundGenerator.playCheckmateSound(winner, piece?.type)
+          chessSound.playCheckmateSound(winner, piece?.type)
         } else {
           // 只有在非将死情况下才播放普通音效
           // 播放音效
-          soundGenerator.playCaptureSound(movingPieceType, piece.type)
+          chessSound.playCaptureSound(movingPieceType, piece.type)
           if (newState.isInCheck) {
-            soundGenerator.playCheckSound()
+            chessSound.playCheckSound()
           }
         }
 
@@ -503,18 +618,18 @@ const onBoardClick = (x: number, y: number) => {
       // 游戏结束检查
       if (newState.gameStatus === 'checkmate') {
         const winner = newState.currentPlayer === 'red' ? '黑方' : '红方'
-        soundGenerator.playCheckmateSound(winner, targetPiece?.type)
+        chessSound.playCheckmateSound(winner, targetPiece?.type)
       } else {
         // 只有在非将死情况下才播放普通音效
         // 播放音效
         if (targetPiece) {
-          soundGenerator.playCaptureSound(movingPieceType, targetPiece.type)
+          chessSound.playCaptureSound(movingPieceType, targetPiece.type)
         } else {
-          soundGenerator.playMoveSound()
+          chessSound.playMoveSound()
         }
 
         if (newState.isInCheck) {
-          soundGenerator.playCheckSound()
+          chessSound.playCheckSound()
         }
       }
 
@@ -538,7 +653,7 @@ const resetGame = () => {
   availableMoves.value = []
   showGameOverDialog.value = false
   updateGameState()
-  soundGenerator.playGameStartSound()
+  chessSound.playGameStartSound()
 
   // 清除保存的游戏状态
   store.commit('clearChessGame')
@@ -557,7 +672,7 @@ const undoMove = () => {
       updateGameState()
 
       // 播放悔棋音效
-      soundGenerator.playUndoSound()
+      chessSound.playUndoSound()
 
       console.log('悔棋成功')
     } else {
@@ -566,781 +681,70 @@ const undoMove = () => {
   }
 }
 
-// 隐藏游戏结束弹窗
-const hideGameOverDialog = () => {
+const openMoveHistory = () => {
+  store.commit('toggleChessMoveHistory')
+}
+
+const closeMoveHistory = () => {
+  store.commit('toggleChessMoveHistory')
+}
+
+// 弹窗控制
+const closeGameOverDialog = () => {
   showGameOverDialog.value = false
 }
 
-// 处理窗口尺寸变化
-// 响应式布局处理
-const handleResize = () => {
-  windowWidth.value = window.innerWidth
-  windowHeight.value = window.innerHeight
-}
-
-// TODO: 这些事件处理器可能在未来版本中使用
-// const onGameStatusChange = (status: string) => {
-//   gameStatus.value = status
-//   // 播放游戏结束音效
-//   if (status === 'checkmate') {
-//     soundGenerator.playGameOverSound(false)
-//   }
-// }
-
-// const onPlayerChange = (player: string) => {
-//   currentPlayer.value = player
-// }
-
-// const onMovePerformed = (data: any) => {
-//   const { isCapture, isCheck, pieceType, capturedPieceType } = data
-//   // 播放音效
-//   if (isCapture && capturedPieceType) {
-//     soundGenerator.playCaptureSound(pieceType, capturedPieceType)
-//   } else {
-//     soundGenerator.playMoveSound()
-//   }
-//   if (isCheck) {
-//     soundGenerator.playCheckSound()
-//   }
-// }
-
-// const onPieceSelected = () => {
-//   // 棋子选中时的处理
-// }
-
-// 设置应用
-const applySettings = (settings: any, globalSettings: any) => {
+// 游戏设置
+const onApplySettings = (
+  chessSettings: any,
+  globalSettings: any,
+  aiVsAiConfig?: any,
+  aiConfig?: any,
+) => {
   // 更新象棋设置
-  store.commit('updateChessSettings', settings)
+  store.commit('updateChessSettings', chessSettings)
   // 更新全局设置
   store.commit('updateGlobalSettings', globalSettings)
-}
-
-// 从设置中打开走法记录
-const openMoveHistoryFromSettings = () => {
-  // 走法记录弹窗的显示已经由设置控制，这里不需要额外操作
-}
-
-// 关闭走法历史弹窗（将设置中的开关关闭）
-const closeMoveHistoryDialog = () => {
-  store.commit('updateChessSettings', { showMoveHistory: false })
-}
-
-onMounted(() => {
-  // 显示上次游戏的基本信息（如果有的话）
-  const savedGame = store.state.chess?.gameState?.currentGame
-  const autoSave = store.state.chess?.settings?.autoSave ?? true
-  if (savedGame && autoSave) {
-    console.log('上次游戏信息:', savedGame)
-    // 只显示统计信息，不恢复游戏状态
+  // 更新AI对战AI配置
+  if (aiVsAiConfig) {
+    store.commit('chess/updateAiVsAiConfig', aiVsAiConfig)
   }
+  // 更新人机模式AI配置
+  if (aiConfig) {
+    store.commit('chess/updateAiConfig', aiConfig)
+  }
+}
 
-  updateGameState()
-  window.addEventListener('resize', handleResize)
-})
+const onConfigUpdate = async (newConfig: GameConfig) => {
+  Object.assign(gameConfig, newConfig)
 
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-})
+  // 保存到store
+  store.commit('saveChessGameConfig', gameConfig)
+}
+
+const onStopAI = () => {
+  // TODO: 实现停止AI思考的功能
+  console.log('停止AI思考')
+}
+
+const toggleAiVsAi = () => {
+  aiVsAiRunning.value = !aiVsAiRunning.value
+  // TODO: 实现AI对战功能
+  console.log('AI对战模式:', aiVsAiRunning.value ? '开启' : '关闭')
+}
 </script>
 
 <style scoped>
-/* 基础样式 */
-.chinese-chess-game {
-  font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: auto;
-}
-
-/* 竖屏布局 */
-.portrait-layout {
-  display: flex;
-  flex-direction: column;
-}
-
-.game-header {
-  text-align: center;
-  padding: 10px 0;
-  flex-shrink: 0;
-}
-
-.game-header h2 {
-  margin: 0 0 15px 0;
-  color: #2c3e50;
-  font-size: 24px;
-  font-weight: bold;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.game-status {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  flex-wrap: wrap;
-}
-
-.status-text {
-  font-size: 16px;
-  font-weight: bold;
-  color: #34495e;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.current-player-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: bold;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-}
-
-.current-player-indicator.red {
-  background: linear-gradient(135deg, #dc3545, #a71e2a);
-  color: white;
-  border-color: #dc3545;
-  box-shadow: 0 0 15px rgba(220, 53, 69, 0.4);
-}
-
-.current-player-indicator.black {
-  background: linear-gradient(135deg, #4a4a4a, #1a1a1a);
-  color: white;
-  border-color: #4a4a4a;
-  box-shadow: 0 0 15px rgba(74, 74, 74, 0.4);
-}
-
-.player-circle {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: pulse-player 2s infinite;
-}
-
-@keyframes pulse-player {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.2);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.board-container-portrait {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px 0;
-  width: 100%;
-}
-
-.controls-portrait {
-  flex-shrink: 0;
-  padding: 20px 0;
-  margin-bottom: 20px;
-}
-
-.control-buttons-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.control-row {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  width: 100%;
-}
-
-/* 竖屏版本的声音控制和历史记录行 */
-.sound-history-row-portrait {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px;
-  background: rgba(248, 249, 250, 0.8);
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 400px;
-}
-
-.switch-group-portrait {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-/* 竖屏版本的游戏控制按钮行 */
-.game-control-row-portrait {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.control-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 15px;
-}
-
-/* 横屏布局 */
-.landscape-layout {
-  height: 100vh;
-  display: flex;
-  gap: 20px;
-}
-
-.controls-landscape {
-  width: 280px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  flex-shrink: 0;
-  overflow-y: auto;
-}
-
-/* 超大屏幕优化 */
-@media (min-width: 1440px) {
-  .controls-landscape {
-    width: 320px;
-    padding: 24px;
-  }
-
-  .controls-header h2 {
-    font-size: 22px;
-  }
-
-  .control-btn {
-    padding: 12px 18px;
-    font-size: 15px;
-  }
-}
-
-@media (min-width: 1920px) {
-  .controls-landscape {
-    width: 360px;
-    padding: 28px;
-  }
-}
-
-.controls-header {
-  text-align: center;
-}
-
-.controls-header h2 {
-  margin: 0 0 15px 0;
-  color: #2c3e50;
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.game-status-compact {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
-}
-
-.control-buttons-landscape {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-/* 声音控制和历史记录行 */
-.sound-history-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px;
-  background: rgba(248, 249, 250, 0.8);
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.switch-group {
-  display: flex;
-  gap: 20px;
-}
-
-.switch-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.switch-label {
-  font-size: 12px;
-  color: #495057;
-  font-weight: 500;
-  text-align: center;
-}
-
-/* Switch 样式 */
-.switch {
-  position: relative;
-  width: 40px;
-  height: 20px;
-  background-color: #ccc;
-  border-radius: 20px;
-  transition: background-color 0.3s ease;
-  cursor: pointer;
-}
-
-.switch.switch-on {
-  background-color: #28a745;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-  position: absolute;
-}
-
-.slider {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background-color: white;
-  transition: transform 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.switch-on .slider {
-  transform: translateX(20px);
-}
-
-/* 走法历史按钮样式 */
-.history-btn {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin: 0 3px;
-  min-width: 80px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.history-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
-}
-
-.history-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* 新增设置按钮样式 */
-.control-btn.settings {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: white;
-}
-
-.control-btn.settings:hover {
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-}
-
-.control-btn.history {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  color: white;
-}
-
-.control-btn.history:hover {
-  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
-}
-
-/* 游戏控制按钮行 */
-.game-control-row {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-}
-
-.board-container-landscape {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  width: 100%;
-  overflow: auto; /* 如果棋盘太大，允许滚动 */
-}
-
-/* 控制按钮样式 */
-.control-btn {
-  padding: 10px 16px;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: linear-gradient(135deg, #6c757d, #495057);
-  color: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  min-width: 80px;
-}
-
-.control-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.control-btn:active {
-  transform: translateY(0);
-}
-
-.control-btn.primary {
-  background: linear-gradient(135deg, #007bff, #0056b3);
-}
-
-.control-btn.primary:hover {
-  background: linear-gradient(135deg, #0056b3, #004085);
-}
-
-.control-btn.active {
-  background: linear-gradient(135deg, #28a745, #1e7e34);
-}
-
-.control-btn:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.control-btn:disabled:hover {
-  transform: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* 历史记录样式 */
-.move-history,
-.move-history-landscape {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 10px;
-  padding: 15px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.move-history h3,
-.move-history-landscape h3 {
-  margin: 0 0 10px 0;
-  color: #2c3e50;
-  font-size: 16px;
-  text-align: center;
-}
-
-.history-list,
-.history-list-landscape {
-  max-height: 200px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.history-list-landscape {
-  max-height: 300px;
-}
-
-.move-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 6px;
-  font-size: 12px;
-  transition: all 0.2s ease;
-}
-
-.move-item:hover {
-  background: rgba(255, 255, 255, 0.9);
-  transform: translateX(3px);
-}
-
-.move-number {
-  font-weight: bold;
-  color: #007bff;
-  min-width: 20px;
-}
-
-.move-text {
-  color: #495057;
-  flex: 1;
-}
-
-/* 走法历史日志样式 */
-.move-history,
-.move-history-landscape {
-  .bg-gradient-to-br {
-    background-image: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
-  }
-
-  .font-mono {
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  }
-
-  .overflow-y-auto::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .overflow-y-auto::-webkit-scrollbar-track {
-    background: #2d3748;
-    border-radius: 3px;
-  }
-
-  .overflow-y-auto::-webkit-scrollbar-thumb {
-    background: #4a5568;
-    border-radius: 3px;
-  }
-
-  .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background: #718096;
-  }
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .landscape-layout {
-    flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-    padding: 5px;
-    gap: 10px;
-  }
-
-  .controls-landscape {
-    width: 100%;
-    order: 2;
-    padding: 15px;
-  }
-
-  .board-container-landscape {
-    order: 1;
-    height: 65vh;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .sound-history-row {
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-    padding: 10px;
-  }
-
-  .switch-group {
-    justify-content: center;
-    gap: 15px;
-  }
-
-  .switch-item {
-    gap: 6px;
-  }
-
-  .switch-label {
-    font-size: 11px;
-  }
-
-  .game-control-row {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  /* 竖屏布局的响应式调整 */
-  .sound-history-row-portrait {
-    padding: 10px;
-    max-width: 100%;
-  }
-
-  .switch-group-portrait {
-    gap: 15px;
-  }
-
-  .game-control-row-portrait {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-}
-
-/* 针对平板横屏的优化 */
-@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
-  .landscape-layout {
-    padding: 8px;
-    gap: 15px;
-  }
-
-  .controls-landscape {
-    width: 260px;
-    padding: 18px;
-  }
-
-  .controls-header h2 {
-    font-size: 19px;
-  }
-
-  .control-btn {
-    padding: 9px 14px;
-    font-size: 13px;
-  }
-}
-
-/* 针对小屏幕横屏设备的特殊优化 */
-@media (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
-  .landscape-layout {
-    padding: 5px;
-    gap: 10px;
-  }
-
-  .controls-landscape {
-    width: 240px;
-    padding: 12px;
-    overflow-y: auto;
-    max-height: calc(100vh - 10px);
-  }
-
-  .board-container-landscape {
-    flex: 1;
-    min-width: 0; /* 允许flex项目缩小 */
-    min-height: 0;
-  }
-}
-
-@media (max-height: 600px) {
-  .landscape-layout {
-    padding: 5px;
-    gap: 10px;
-  }
-
-  .controls-landscape {
-    width: 250px;
-    padding: 15px;
-  }
-
-  .controls-header h2 {
-    font-size: 18px;
-    margin-bottom: 10px;
-  }
-
-  .control-btn {
-    padding: 8px 12px;
-    font-size: 12px;
-  }
-
-  .sound-history-row {
-    padding: 8px;
-  }
-
-  .switch-group {
-    gap: 12px;
-  }
-
-  .switch-item {
-    gap: 5px;
-  }
-
-  .switch-label {
-    font-size: 10px;
-  }
-
-  .switch {
-    width: 32px;
-    height: 16px;
-  }
-
-  .slider {
-    width: 12px;
-    height: 12px;
-    top: 2px;
-    left: 2px;
-  }
-
-  .switch-on .slider {
-    transform: translateX(16px);
-  }
-
-  /* 竖屏布局的小屏幕高度调整 */
-  .sound-history-row-portrait {
-    padding: 8px;
-  }
-
-  .switch-group-portrait {
-    gap: 12px;
-  }
-}
-
-/* 禁用状态样式 */
-.control-btn.disabled,
-.control-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.switch-item.disabled {
-  opacity: 0.5;
-}
-
-.switch.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.switch.disabled input {
-  cursor: not-allowed;
-}
-
-.switch.disabled .slider {
-  cursor: not-allowed;
+/* 移除焦点边框 */
+button:focus,
+input:focus,
+select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 确保所有交互元素都没有焦点边框 */
+*:focus {
+  outline: none !important;
 }
 </style>

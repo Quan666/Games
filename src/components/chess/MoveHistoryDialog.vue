@@ -35,6 +35,10 @@
             v-for="(move, index) in moveHistory"
             :key="index"
             class="mb-1 leading-relaxed hover:bg-gray-800 px-1 rounded transition-colors"
+            :class="{
+              'bg-yellow-900/30': move.isCheck && !move.isCheckmate,
+              'bg-red-900/50': move.isCheckmate,
+            }"
           >
             <span class="text-gray-500 text-[10px]">[{{ formatMoveTimestamp(move) }}]</span>
             <span class="text-gray-400 ml-1">[{{ String(index + 1).padStart(2, '0') }}]</span>
@@ -47,6 +51,9 @@
             >
               {{ formatMove(move) }}
             </span>
+            <!-- 将军和将死标记 -->
+            <span v-if="move.isCheckmate" class="ml-1 text-red-400 font-bold"> 将死💀 </span>
+            <span v-else-if="move.isCheck" class="ml-1 text-yellow-400"> 将军⚡ </span>
           </div>
           <div v-if="moveHistory.length === 0" class="text-green-400 text-center py-8">
             🤔 暂无走法记录
@@ -61,8 +68,19 @@
             <span>⏱️ 游戏时长: {{ formatGameDuration }}</span>
             <span>🎯 总步数: {{ moveHistory.length }}</span>
           </div>
-          <div v-if="moveHistory.length > 0" class="mt-1 text-xs text-gray-500">
-            最后一步: {{ formatLastMoveTime }}
+          <div
+            v-if="moveHistory.length > 0"
+            class="mt-1 text-xs text-gray-500 flex justify-between"
+          >
+            <span>最后一步: {{ formatLastMoveTime }}</span>
+            <div v-if="checkStats.total > 0" class="flex items-center gap-2">
+              <span v-if="checkStats.checks > 0" class="text-yellow-500">
+                ⚡ {{ checkStats.checks }}
+              </span>
+              <span v-if="checkStats.checkmates > 0" class="text-red-500">
+                💀 {{ checkStats.checkmates }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -255,6 +273,17 @@ const formatMoveTimestamp = (move: Move) => {
 
   return `${hours}:${minutes}:${seconds}`
 }
+
+// 计算将军和将死统计
+const checkStats = computed(() => {
+  const checks = props.moveHistory.filter((move) => move.isCheck && !move.isCheckmate).length
+  const checkmates = props.moveHistory.filter((move) => move.isCheckmate).length
+  return {
+    checks,
+    checkmates,
+    total: checks + checkmates,
+  }
+})
 </script>
 
 <style scoped>

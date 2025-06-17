@@ -26,7 +26,7 @@
     />
 
     <!-- AI设置弹窗 -->
-    <AISettings
+    <GomokuAISettings
       :show="store.state.gomoku.ui.showAISettings"
       :ai-settings="aiSettings"
       :ai-player="aiPlayer"
@@ -39,7 +39,7 @@
     <!-- 竖屏布局 -->
     <div v-if="isPortrait" class="min-h-screen bg-gradient-to-br flex flex-col">
       <!-- 顶部信息 -->
-      <GameInfoHeader />
+      <GomokuGameInfoHeader />
 
       <!-- 棋盘区域 -->
       <div class="flex flex-col items-stretch flex-1">
@@ -54,7 +54,7 @@
         </div>
         <div class="flex-1 flex flex-col justify-stretch">
           <!-- 底部控制区紧贴棋盘 -->
-          <GameControlPanel
+          <GomokuGameControlPanel
             @reset-game="resetGame"
             @undo-move="undoMove"
             @toggle-ai-vs-ai="toggleAiVsAi"
@@ -69,9 +69,9 @@
       <!-- 左侧区域 -->
       <div class="w-80 bg-white/95 backdrop-blur-sm p-6 shadow-lg flex flex-col gap-6">
         <!-- 顶部信息 -->
-        <GameInfoHeader />
+        <GomokuGameInfoHeader />
         <!-- 左侧控制面板 -->
-        <GameControlPanel
+        <GomokuGameControlPanel
           @reset-game="resetGame"
           @undo-move="undoMove"
           @toggle-ai-vs-ai="toggleAiVsAi"

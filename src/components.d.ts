@@ -8,24 +8,28 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AISettings: typeof import('./components/gomoku/AISettings.vue')['default']
     AIStatusPanel: typeof import('./components/gomoku/AIStatusPanel.vue')['default']
+    ChessAISettings: typeof import('./components/chess/ChessAISettings.vue')['default']
     ChessBoard: typeof import('./components/chess/board/ChessBoard.vue')['default']
     ChessEntry: typeof import('./components/chess/ChessEntry.vue')['default']
+    ChessGameControlPanel: typeof import('./components/chess/ChessGameControlPanel.vue')['default']
+    ChessGameInfoHeader: typeof import('./components/chess/ChessGameInfoHeader.vue')['default']
     ChessPiece: typeof import('./components/chess/board/ChessPiece.vue')['default']
     ChessSettings: typeof import('./components/chess/ChessSettings.vue')['default']
     ConfirmDialog: typeof import('./components/ConfirmDialog.vue')['default']
-    GameControlPanel: typeof import('./components/gomoku/GameControlPanel.vue')['default']
-    GameInfoHeader: typeof import('./components/gomoku/GameInfoHeader.vue')['default']
     GameOverDialog: typeof import('./components/chess/GameOverDialog.vue')['default']
     GameSettings: typeof import('./components/gomoku/GameSettings.vue')['default']
     GlobalSettings: typeof import('./components/GlobalSettings.vue')['default']
     Gomoku: typeof import('./components/gomoku/Gomoku.vue')['default']
+    GomokuAISettings: typeof import('./components/gomoku/GomokuAISettings.vue')['default']
     GomokuBoard: typeof import('./components/gomoku/GomokuBoard.vue')['default']
+    GomokuGameControlPanel: typeof import('./components/gomoku/GomokuGameControlPanel.vue')['default']
+    GomokuGameInfoHeader: typeof import('./components/gomoku/GomokuGameInfoHeader.vue')['default']
     HomeButton: typeof import('./components/HomeButton.vue')['default']
     MoveHistoryDialog: typeof import('./components/chess/MoveHistoryDialog.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SettingsDialog: typeof import('./components/SettingsDialog.vue')['default']
     WinDialog: typeof import('./components/gomoku/WinDialog.vue')['default']
   }
 }

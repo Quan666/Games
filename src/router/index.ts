@@ -23,5 +23,7 @@ const routes = [
 
 export default createRouter({
   history: createWebHistory(),
+  // 如果需要使用 hash 模式，可以切换到下面这行
+  // history: createWebHashHistory(),
   routes,
 })

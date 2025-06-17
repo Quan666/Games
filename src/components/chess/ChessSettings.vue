@@ -1,222 +1,429 @@
 <template>
-  <div
-    v-if="show"
-    class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+  <SettingsDialog
+    v-model="show"
+    title="🎮 象棋设置"
+    max-width="500px"
+    :apply-callback="handleApply"
+    :cancel-callback="handleCancel"
+    :old-data="originalData"
+    :new-data="currentData"
   >
-    <div
-      class="bg-white rounded-xl p-0 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl hide-scrollbar"
-    >
-      <div
-        class="flex items-center justify-between px-6 py-4 border-b-2 border-gray-200 sticky top-0 bg-white z-10"
-      >
-        <h3 class="text-xl font-bold text-gray-800 flex items-center">🎮 象棋设置</h3>
+    <!-- 游戏模式 -->
+    <div class="space-y-4 mb-6">
+      <h4 class="font-semibold text-gray-700 border-b pb-1">🕹️ 游戏模式</h4>
+      <div class="grid grid-cols-3 gap-2">
         <button
-          @click="handleClose"
-          class="ml-2 w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-gray-100 transition-colors text-2xl font-bold focus:outline-none"
-          aria-label="关闭"
+          @click="localSettings.gameMode = 'pvp'"
+          :class="
+            localSettings.gameMode === 'pvp'
+              ? 'bg-green-500 text-white'
+              : 'bg-gray-200 text-gray-700'
+          "
+          class="w-full py-3 rounded-lg font-semibold transition-all duration-200 text-sm"
         >
-          ×
+          🎮 双人对战
+        </button>
+        <button
+          @click="localSettings.gameMode = 'pve'"
+          :class="
+            localSettings.gameMode === 'pve'
+              ? 'bg-blue-500 text-white'
+              : 'bg-gray-200 text-gray-700'
+          "
+          class="w-full py-3 rounded-lg font-semibold transition-all duration-200 text-sm"
+        >
+          🤖 人机对战
+        </button>
+        <button
+          @click="localSettings.gameMode = 'ai-vs-ai'"
+          :class="
+            localSettings.gameMode === 'ai-vs-ai'
+              ? 'bg-purple-500 text-white'
+              : 'bg-gray-200 text-gray-700'
+          "
+          class="w-full py-3 rounded-lg font-semibold transition-all duration-200 text-sm"
+        >
+          🎯 AI对战
         </button>
       </div>
-      <div class="p-6 pt-4">
-        <!-- 游戏模式 -->
-        <div class="space-y-4 mb-6">
-          <h4 class="font-semibold text-gray-700 border-b pb-1">🕹️ 游戏模式</h4>
-          <div class="grid grid-cols-2 gap-3">
-            <button
-              @click="localSettings.gameMode = 'pvp'"
-              :class="
-                localSettings.gameMode === 'pvp'
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-200 text-gray-700'
-              "
-              class="w-full py-3 rounded-lg font-semibold transition-all duration-200"
-            >
-              🎮 双人对战
-            </button>
-            <button
-              @click="localSettings.gameMode = 'pve'"
-              :class="
-                localSettings.gameMode === 'pve'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 text-gray-700'
-              "
-              class="w-full py-3 rounded-lg font-semibold transition-all duration-200"
-            >
-              🤖 人机对战
-            </button>
+    </div>
+
+    <!-- 玩家执棋选择 (仅在人机对战模式下显示) -->
+    <div v-if="localSettings.gameMode === 'pve'" class="space-y-4 mb-6">
+      <h4 class="font-semibold text-gray-700 border-b pb-1">♟️ 玩家执棋</h4>
+      <div class="grid grid-cols-2 gap-3">
+        <button
+          @click="localSettings.playerCamp = 'red'"
+          :class="
+            localSettings.playerCamp === 'red'
+              ? 'bg-red-500 text-white'
+              : 'bg-gray-200 text-gray-700'
+          "
+          class="w-full py-3 rounded-lg font-semibold transition-all duration-200"
+        >
+          🔴 红方 (先手)
+        </button>
+        <button
+          @click="localSettings.playerCamp = 'black'"
+          :class="
+            localSettings.playerCamp === 'black'
+              ? 'bg-gray-800 text-white'
+              : 'bg-gray-200 text-gray-700'
+          "
+          class="w-full py-3 rounded-lg font-semibold transition-all duration-200"
+        >
+          ⚫ 黑方 (后手)
+        </button>
+      </div>
+    </div>
+
+    <!-- AI棋力设置 (仅在人机对战模式下显示) -->
+    <div v-if="localSettings.gameMode === 'pve'" class="space-y-4 mb-6">
+      <h4 class="font-semibold text-gray-700 border-b pb-1">🤖 AI棋力设置</h4>
+
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-blue-700 mb-2">
+              AI棋力水平: {{ localAiConfig.skillLevel }}
+            </label>
+            <input
+              v-model.number="localAiConfig.skillLevel"
+              type="range"
+              min="0"
+              max="20"
+              step="1"
+              class="w-full"
+            />
+            <div class="flex justify-between text-xs text-blue-600 mt-1">
+              <span>0 (最弱)</span>
+              <span>20 (最强)</span>
+            </div>
+            <p class="text-xs text-blue-600 mt-1">控制AI的棋力强度，数值越高棋力越强</p>
           </div>
-        </div>
 
-        <!-- 显示设置 -->
-        <div class="space-y-4 mb-6">
-          <h4 class="font-semibold text-gray-700 border-b pb-1">📺 显示设置</h4>
-          <div class="space-y-3">
-            <label class="flex items-center justify-between">
-              <span class="text-sm font-medium">显示棋盘坐标</span>
-              <div class="relative">
-                <input
-                  v-model="localSettings.showCoordinates"
-                  type="checkbox"
-                  class="sr-only peer"
-                />
-                <div
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
-                ></div>
-              </div>
+          <div>
+            <label class="block text-sm font-medium text-blue-700 mb-2">
+              AI思考时间: {{ localAiConfig.thinkingTime }}秒
             </label>
-            <label class="flex items-center justify-between">
-              <span class="text-sm font-medium">显示走法记录</span>
-              <div class="relative">
-                <input
-                  v-model="localSettings.showMoveHistory"
-                  @change="handleMoveHistoryToggle"
-                  type="checkbox"
-                  class="sr-only peer"
-                />
-                <div
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
-                ></div>
-              </div>
-            </label>
-            <p class="text-xs text-gray-500">显示ICCS格式的棋盘坐标和走法历史记录</p>
+            <input
+              v-model.number="localAiConfig.thinkingTime"
+              type="range"
+              min="1"
+              max="30"
+              step="1"
+              class="w-full"
+            />
+            <div class="flex justify-between text-xs text-blue-600 mt-1">
+              <span>1秒 (快)</span>
+              <span>30秒 (慢)</span>
+            </div>
+            <p class="text-xs text-blue-600 mt-1">AI每步棋的思考时间</p>
           </div>
-        </div>
 
-        <!-- 游戏设置 -->
-        <div class="space-y-4 mb-6">
-          <h4 class="font-semibold text-gray-700 border-b pb-1">💾 游戏设置</h4>
-          <div class="space-y-3">
-            <label class="flex items-center justify-between">
-              <span class="text-sm font-medium">自动保存游戏</span>
-              <div class="relative">
-                <input v-model="localSettings.autoSave" type="checkbox" class="sr-only peer" />
-                <div
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
-                ></div>
-              </div>
+          <!-- 等级制限制选项 -->
+          <div class="pt-2">
+            <label class="flex items-center gap-2">
+              <input type="checkbox" v-model="localAiConfig.limitStrength" class="rounded" />
+              <span class="text-sm font-medium text-blue-700">启用等级制限制</span>
             </label>
-            <p class="text-xs text-gray-500">开启后，游戏状态会自动保存，刷新页面后可以继续游戏</p>
+            <p class="text-xs text-blue-600 mt-1">开启后可设置具体的ELO等级</p>
           </div>
-        </div>
 
-        <!-- 音效设置 -->
-        <div class="space-y-4 mb-6">
-          <h4 class="font-semibold text-gray-700 border-b pb-1">🔊 音效设置</h4>
-          <div class="space-y-3">
-            <label class="flex items-center justify-between">
-              <span class="text-sm font-medium">全局音效总开关</span>
-              <div class="relative">
-                <input
-                  v-model="localGlobalSettings.soundEnabled"
-                  type="checkbox"
-                  class="sr-only peer"
-                />
-                <div
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"
-                ></div>
-              </div>
+          <!-- UCI Elo设置 (当启用等级制限制时) -->
+          <div v-if="localAiConfig.limitStrength" class="pt-2">
+            <label class="block text-sm font-medium text-blue-700 mb-2">
+              ELO等级: {{ localAiConfig.uciElo }}
             </label>
-            <label class="flex items-center justify-between">
-              <span class="text-sm font-medium">全局语音播报</span>
-              <div class="relative">
-                <input
-                  v-model="localGlobalSettings.voiceEnabled"
-                  type="checkbox"
-                  :disabled="!localGlobalSettings.soundEnabled"
-                  class="sr-only peer disabled:cursor-not-allowed"
-                />
-                <div
-                  :class="!localGlobalSettings.soundEnabled ? 'opacity-50 cursor-not-allowed' : ''"
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
-                ></div>
-              </div>
-            </label>
-            <label class="flex items-center justify-between">
-              <span class="text-sm font-medium">象棋音效</span>
-              <div class="relative">
-                <input
-                  v-model="localSettings.enableSound"
-                  type="checkbox"
-                  :disabled="!localGlobalSettings.soundEnabled"
-                  class="sr-only peer disabled:cursor-not-allowed"
-                />
-                <div
-                  :class="!localGlobalSettings.soundEnabled ? 'opacity-50 cursor-not-allowed' : ''"
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"
-                ></div>
-              </div>
-            </label>
-            <label class="flex items-center justify-between">
-              <span class="text-sm font-medium">象棋语音播报</span>
-              <div class="relative">
-                <input
-                  v-model="localSettings.enableVoice"
-                  type="checkbox"
-                  :disabled="!localGlobalSettings.soundEnabled || !localGlobalSettings.voiceEnabled"
-                  class="sr-only peer disabled:cursor-not-allowed"
-                />
-                <div
-                  :class="
-                    !localGlobalSettings.soundEnabled || !localGlobalSettings.voiceEnabled
-                      ? 'opacity-50 cursor-not-allowed'
-                      : ''
-                  "
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"
-                ></div>
-              </div>
-            </label>
-
-            <p class="text-xs text-gray-500">
-              全局开关控制所有游戏的音效，关闭后各游戏的音效也会被禁用。象棋语音播报需要同时开启全局音效和全局语音播报。
-            </p>
+            <input
+              v-model.number="localAiConfig.uciElo"
+              type="range"
+              min="1280"
+              max="3133"
+              step="50"
+              class="w-full"
+            />
+            <div class="flex justify-between text-xs text-blue-600 mt-1">
+              <span>1280 (初学者)</span>
+              <span>3133 (大师级)</span>
+            </div>
+            <p class="text-xs text-blue-600 mt-1">AI的具体ELO棋力等级</p>
           </div>
-        </div>
-
-        <!-- 按钮组 -->
-        <div class="flex gap-3">
-          <button
-            @click="handleClose"
-            class="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-          >
-            取消
-          </button>
-          <button
-            @click="handleApply"
-            class="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            应用
-          </button>
         </div>
       </div>
     </div>
 
-    <!-- 确认弹窗 -->
-    <ConfirmDialog
-      :show="showConfirm"
-      title="保存设置"
-      message="设置已修改，是否保存更改？"
-      confirm-text="保存"
-      cancel-text="不保存"
-      @confirm="handleConfirmSave"
-      @cancel="handleCancelSave"
-    />
-  </div>
+    <!-- AI对战AI设置 (仅在AI对战模式下显示) -->
+    <div v-if="localSettings.gameMode === 'ai-vs-ai'" class="space-y-4 mb-6">
+      <h4 class="font-semibold text-gray-700 border-b pb-1">🤖 AI对战设置</h4>
+
+      <!-- 红方AI设置 -->
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <h5 class="font-medium text-red-800 mb-3 flex items-center">🔴 红方AI (先手)</h5>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-red-700 mb-2">
+              棋力水平: {{ localAiVsAiConfig.redAI.skillLevel }}
+            </label>
+            <input
+              v-model.number="localAiVsAiConfig.redAI.skillLevel"
+              type="range"
+              min="0"
+              max="20"
+              step="1"
+              class="w-full"
+            />
+            <div class="flex justify-between text-xs text-red-600 mt-1">
+              <span>0 (最弱)</span>
+              <span>20 (最强)</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-red-700 mb-2">
+              思考时间: {{ localAiVsAiConfig.redAI.thinkingTime }}秒
+            </label>
+            <input
+              v-model.number="localAiVsAiConfig.redAI.thinkingTime"
+              type="range"
+              min="1"
+              max="30"
+              step="1"
+              class="w-full"
+            />
+            <div class="flex justify-between text-xs text-red-600 mt-1">
+              <span>1秒</span>
+              <span>30秒</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 黑方AI设置 -->
+      <div class="bg-gray-50 border border-gray-300 rounded-lg p-4">
+        <h5 class="font-medium text-gray-800 mb-3 flex items-center">⚫ 黑方AI (后手)</h5>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              棋力水平: {{ localAiVsAiConfig.blackAI.skillLevel }}
+            </label>
+            <input
+              v-model.number="localAiVsAiConfig.blackAI.skillLevel"
+              type="range"
+              min="0"
+              max="20"
+              step="1"
+              class="w-full"
+            />
+            <div class="flex justify-between text-xs text-gray-600 mt-1">
+              <span>0 (最弱)</span>
+              <span>20 (最强)</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              思考时间: {{ localAiVsAiConfig.blackAI.thinkingTime }}秒
+            </label>
+            <input
+              v-model.number="localAiVsAiConfig.blackAI.thinkingTime"
+              type="range"
+              min="1"
+              max="30"
+              step="1"
+              class="w-full"
+            />
+            <div class="flex justify-between text-xs text-gray-600 mt-1">
+              <span>1秒</span>
+              <span>30秒</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 对战速度设置 -->
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h5 class="font-medium text-blue-800 mb-3">⚡ 对战速度</h5>
+        <div>
+          <label class="block text-sm font-medium text-blue-700 mb-2">
+            AI下棋间隔: {{ localAiVsAiConfig.gameSpeed / 1000 }}秒
+          </label>
+          <input
+            v-model.number="localAiVsAiConfig.gameSpeed"
+            type="range"
+            min="500"
+            max="5000"
+            step="500"
+            class="w-full"
+          />
+          <div class="flex justify-between text-xs text-blue-600 mt-1">
+            <span>0.5秒 (快)</span>
+            <span>5秒 (慢)</span>
+          </div>
+          <p class="text-xs text-blue-600 mt-1">控制AI之间下棋的间隔时间</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 显示设置 -->
+    <div class="space-y-4 mb-6">
+      <h4 class="font-semibold text-gray-700 border-b pb-1">📺 显示设置</h4>
+      <div class="space-y-3">
+        <label class="flex items-center justify-between">
+          <span class="text-sm font-medium">显示棋盘坐标</span>
+          <div class="relative">
+            <input v-model="localSettings.showCoordinates" type="checkbox" class="sr-only peer" />
+            <div
+              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
+            ></div>
+          </div>
+        </label>
+        <label class="flex items-center justify-between">
+          <span class="text-sm font-medium">显示走法记录</span>
+          <div class="relative">
+            <input v-model="localSettings.showMoveHistory" type="checkbox" class="sr-only peer" />
+            <div
+              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
+            ></div>
+          </div>
+        </label>
+        <p class="text-xs text-gray-500">显示ICCS格式的棋盘坐标和走法历史记录</p>
+      </div>
+    </div>
+
+    <!-- 游戏设置 -->
+    <div class="space-y-4 mb-6">
+      <h4 class="font-semibold text-gray-700 border-b pb-1">💾 游戏设置</h4>
+      <div class="space-y-3">
+        <label class="flex items-center justify-between">
+          <span class="text-sm font-medium">自动保存游戏</span>
+          <div class="relative">
+            <input v-model="localSettings.autoSave" type="checkbox" class="sr-only peer" />
+            <div
+              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
+            ></div>
+          </div>
+        </label>
+        <p class="text-xs text-gray-500">开启后，游戏状态会自动保存，刷新页面后可以继续游戏</p>
+      </div>
+    </div>
+
+    <!-- 音效设置 -->
+    <div class="space-y-4 mb-6">
+      <h4 class="font-semibold text-gray-700 border-b pb-1">🔊 音效设置</h4>
+      <div class="space-y-3">
+        <label class="flex items-center justify-between">
+          <span class="text-sm font-medium">全局音效总开关</span>
+          <div class="relative">
+            <input
+              v-model="localGlobalSettings.soundEnabled"
+              type="checkbox"
+              class="sr-only peer"
+            />
+            <div
+              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"
+            ></div>
+          </div>
+        </label>
+        <label class="flex items-center justify-between">
+          <span class="text-sm font-medium">全局语音播报</span>
+          <div class="relative">
+            <input
+              v-model="localGlobalSettings.voiceEnabled"
+              type="checkbox"
+              :disabled="!localGlobalSettings.soundEnabled"
+              class="sr-only peer disabled:cursor-not-allowed"
+            />
+            <div
+              :class="!localGlobalSettings.soundEnabled ? 'opacity-50 cursor-not-allowed' : ''"
+              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
+            ></div>
+          </div>
+        </label>
+        <label class="flex items-center justify-between">
+          <span class="text-sm font-medium">象棋音效</span>
+          <div class="relative">
+            <input
+              v-model="localSettings.enableSound"
+              type="checkbox"
+              :disabled="!localGlobalSettings.soundEnabled"
+              class="sr-only peer disabled:cursor-not-allowed"
+            />
+            <div
+              :class="!localGlobalSettings.soundEnabled ? 'opacity-50 cursor-not-allowed' : ''"
+              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"
+            ></div>
+          </div>
+        </label>
+        <label class="flex items-center justify-between">
+          <span class="text-sm font-medium">象棋语音播报</span>
+          <div class="relative">
+            <input
+              v-model="localSettings.enableVoice"
+              type="checkbox"
+              :disabled="!localGlobalSettings.soundEnabled || !localGlobalSettings.voiceEnabled"
+              class="sr-only peer disabled:cursor-not-allowed"
+            />
+            <div
+              :class="
+                !localGlobalSettings.soundEnabled || !localGlobalSettings.voiceEnabled
+                  ? 'opacity-50 cursor-not-allowed'
+                  : ''
+              "
+              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"
+            ></div>
+          </div>
+        </label>
+
+        <p class="text-xs text-gray-500">
+          全局开关控制所有游戏的音效，关闭后各游戏的音效也会被禁用。象棋语音播报需要同时开启全局音效和全局语音播报。
+        </p>
+      </div>
+    </div>
+
+    <!-- 按钮组已移至 SettingsDialog 组件内部 -->
+  </SettingsDialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 // @ts-ignore
 import { useStore } from 'vuex'
-import ConfirmDialog from '../ConfirmDialog.vue'
+import SettingsDialog from '../SettingsDialog.vue'
 
 interface ChessSettings {
-  gameMode: 'pvp' | 'pve'
+  gameMode: 'pvp' | 'pve' | 'ai-vs-ai'
+  playerCamp?: 'red' | 'black'
   showCoordinates: boolean
   showMoveHistory: boolean
   enableSound: boolean
   enableVoice: boolean
   autoSave: boolean
+}
+
+interface AIConfig {
+  engine: string
+  difficulty: string
+  thinkingTime: number
+  depth: number
+  threads: number
+  hashSize: number
+  skillLevel: number
+  multiPV: number
+  moveOverhead: number
+  repetitionRule: string
+  drawRule: string
+  sixtyMoveRule: boolean
+  maxCheckCount: number
+  limitStrength: boolean
+  uciElo: number
+  ponder: boolean
+}
+
+interface AIVsAIConfig {
+  redAI: AIConfig
+  blackAI: AIConfig
+  gameSpeed: number
 }
 
 interface GlobalSettings {
@@ -228,24 +435,49 @@ interface Props {
   show: boolean
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  close: []
-  'apply-settings': [settings: ChessSettings, globalSettings: GlobalSettings]
+  'update:show': [value: boolean]
+  'apply-settings': [
+    settings: ChessSettings,
+    globalSettings: GlobalSettings,
+    aiVsAiConfig?: AIVsAIConfig,
+    aiConfig?: AIConfig,
+  ]
   'open-move-history': []
 }>()
 
+// 创建双向绑定的 show 计算属性
+const show = computed({
+  get: () => props.show,
+  set: (value: boolean) => emit('update:show', value),
+})
+
 const store = useStore()
 
-// 确认弹窗状态
-const showConfirm = ref(false)
+// 本地临时设置 - 使用响应式 ref
+const localSettings = ref<ChessSettings>({
+  gameMode: 'pvp',
+  showCoordinates: true,
+  showMoveHistory: true,
+  enableSound: true,
+  enableVoice: true,
+  autoSave: true,
+})
+const localGlobalSettings = ref<GlobalSettings>({
+  soundEnabled: true,
+  voiceEnabled: true,
+})
+const localAiVsAiConfig = ref<AIVsAIConfig>({} as AIVsAIConfig)
+const localAiConfig = ref<AIConfig>({} as AIConfig)
 
-// 获取当前设置
+// 获取当前设置的响应式计算属性
 const currentSettings = computed(
   () =>
     store.state.chess?.settings || {
       gameMode: 'pvp',
+      playerCamp: 'red',
       showCoordinates: true,
       showMoveHistory: false,
       enableSound: true,
@@ -262,67 +494,126 @@ const currentGlobalSettings = computed(
     },
 )
 
-// 本地临时设置
-const localSettings = ref<ChessSettings>({ ...currentSettings.value })
-const localGlobalSettings = ref<GlobalSettings>({ ...currentGlobalSettings.value })
+// 获取当前AI对战AI配置
+const currentAiVsAiConfig = computed(() => {
+  const defaultConfig = {
+    redAI: {
+      engine: 'pikafish',
+      difficulty: 'medium',
+      thinkingTime: 5,
+      depth: 8,
+      threads: 1,
+      hashSize: 16,
+      skillLevel: 18,
+      multiPV: 1,
+      moveOverhead: 10,
+      repetitionRule: 'AsianRule',
+      drawRule: 'None',
+      sixtyMoveRule: true,
+      maxCheckCount: 0,
+      limitStrength: false,
+      uciElo: 1280,
+      ponder: false,
+    },
+    blackAI: {
+      engine: 'pikafish',
+      difficulty: 'medium',
+      thinkingTime: 5,
+      depth: 8,
+      threads: 1,
+      hashSize: 16,
+      skillLevel: 16,
+      multiPV: 1,
+      moveOverhead: 10,
+      repetitionRule: 'AsianRule',
+      drawRule: 'None',
+      sixtyMoveRule: true,
+      maxCheckCount: 0,
+      limitStrength: false,
+      uciElo: 1280,
+      ponder: false,
+    },
+    gameSpeed: 2000,
+  }
 
-// 设置是否有变更
-const hasChanges = computed(() => {
-  return (
-    JSON.stringify(localSettings.value) !== JSON.stringify(currentSettings.value) ||
-    JSON.stringify(localGlobalSettings.value) !== JSON.stringify(currentGlobalSettings.value)
-  )
+  return store.state.chess?.gameConfig?.aiVsAiConfig || defaultConfig
 })
 
-// 监听props变化，重置本地设置
-watch(
-  () => currentSettings.value,
-  (newVal) => {
-    localSettings.value = { ...newVal }
-  },
-  { deep: true },
-)
-
-watch(
-  () => currentGlobalSettings.value,
-  (newVal) => {
-    localGlobalSettings.value = { ...newVal }
-  },
-  { deep: true },
-)
-
-// 处理走法记录开关变化
-const handleMoveHistoryToggle = () => {
-  if (localSettings.value.showMoveHistory) {
-    // 如果开启走法记录，立即打开走法记录弹窗
-    emit('open-move-history')
+// 获取当前AI配置（人机模式）
+const currentAiConfig = computed(() => {
+  const defaultConfig = {
+    engine: 'pikafish',
+    difficulty: 'medium',
+    thinkingTime: 5,
+    depth: 8,
+    threads: 1,
+    hashSize: 16,
+    skillLevel: 20,
+    multiPV: 1,
+    moveOverhead: 10,
+    repetitionRule: 'AsianRule',
+    drawRule: 'None',
+    sixtyMoveRule: true,
+    maxCheckCount: 0,
+    limitStrength: false,
+    uciElo: 1280,
+    ponder: false,
   }
-}
 
-const handleClose = () => {
-  if (hasChanges.value) {
-    showConfirm.value = true
-  } else {
-    emit('close')
-  }
-}
+  return store.state.chess?.gameConfig?.aiConfig || defaultConfig
+})
 
-const handleConfirmSave = () => {
-  showConfirm.value = false
-  handleApply()
-}
+// 原始数据（用于对比）
+const originalData = computed(() => ({
+  settings: currentSettings.value,
+  globalSettings: currentGlobalSettings.value,
+  aiVsAiConfig: currentAiVsAiConfig.value,
+  aiConfig: currentAiConfig.value,
+}))
 
-const handleCancelSave = () => {
-  showConfirm.value = false
-  // 重置本地设置
+// 当前数据（用于对比）
+const currentData = computed(() => ({
+  settings: localSettings.value,
+  globalSettings: localGlobalSettings.value,
+  aiVsAiConfig: localAiVsAiConfig.value,
+  aiConfig: localAiConfig.value,
+}))
+
+// 重置本地设置到当前存储状态
+const resetLocalSettings = () => {
   localSettings.value = { ...currentSettings.value }
   localGlobalSettings.value = { ...currentGlobalSettings.value }
-  emit('close')
+  localAiVsAiConfig.value = { ...currentAiVsAiConfig.value }
+  localAiConfig.value = { ...currentAiConfig.value }
 }
 
+// 初始化本地设置
+resetLocalSettings()
+
+// 监听弹窗显示状态，每次打开时重新同步最新的 store 状态
+watch(
+  () => props.show,
+  (newShow) => {
+    if (newShow) {
+      // 弹窗打开时，重新同步最新的 store 状态
+      resetLocalSettings()
+    }
+  },
+)
+
 const handleApply = () => {
-  emit('apply-settings', localSettings.value, localGlobalSettings.value)
-  emit('close')
+  emit(
+    'apply-settings',
+    localSettings.value,
+    localGlobalSettings.value,
+    localAiVsAiConfig.value,
+    localAiConfig.value,
+  )
+}
+
+const handleCancel = () => {
+  // 重置本地设置
+  resetLocalSettings()
 }
 </script>
 

@@ -78,22 +78,93 @@ const store = createStore({
       // 中国象棋游戏设置
       chess: {
         settings: {
-          gameMode: 'pvp', // 游戏模式: pvp=双人对战, pve=人机对战
+          gameMode: 'pvp', // 游戏模式: pvp=双人对战, pve=人机对战, ai-vs-ai=AI对战
+          playerCamp: 'red', // 玩家执棋颜色
           showCoordinates: true, // 显示棋盘坐标
           showMoveHistory: false, // 显示走法记录开关
           enableSound: true, // 音效开关
           enableVoice: false, // 语音播报开关
           autoSave: true, // 自动保存游戏状态
         },
+        gameConfig: {
+          gameMode: 'pvp',
+          playerCamp: 'red',
+          enableAI: false,
+          aiConfig: {
+            engine: 'pikafish',
+            difficulty: 'medium',
+            thinkingTime: 5,
+            depth: 8,
+            threads: 1,
+            hashSize: 16,
+            // Pikafish完整的UCI选项
+            skillLevel: 20, // Skill Level: 0-20, 默认20
+            multiPV: 1, // MultiPV: 1-128, 默认1
+            moveOverhead: 10, // Move Overhead: 0-5000ms, 默认10
+            repetitionRule: 'AsianRule', // Repetition Rule
+            drawRule: 'None', // Draw Rule
+            sixtyMoveRule: true, // Sixty Move Rule, 默认true
+            maxCheckCount: 0, // MaxCheckCount: 0-1000, 默认0
+            limitStrength: false, // UCI_LimitStrength, 默认false
+            uciElo: 1280, // UCI_Elo: 1280-3133, 默认1280
+            ponder: false, // Ponder, 默认false
+          },
+          // AI对战AI模式的配置
+          aiVsAiConfig: {
+            redAI: {
+              engine: 'pikafish',
+              difficulty: 'medium',
+              thinkingTime: 5,
+              depth: 8,
+              threads: 1,
+              hashSize: 16,
+              skillLevel: 18, // 红方AI棋力
+              multiPV: 1,
+              moveOverhead: 10,
+              repetitionRule: 'AsianRule',
+              drawRule: 'None',
+              sixtyMoveRule: true,
+              maxCheckCount: 0,
+              limitStrength: false,
+              uciElo: 1280,
+              ponder: false,
+            },
+            blackAI: {
+              engine: 'pikafish',
+              difficulty: 'medium',
+              thinkingTime: 5,
+              depth: 8,
+              threads: 1,
+              hashSize: 16,
+              skillLevel: 16, // 黑方AI棋力
+              multiPV: 1,
+              moveOverhead: 10,
+              repetitionRule: 'AsianRule',
+              drawRule: 'None',
+              sixtyMoveRule: true,
+              maxCheckCount: 0,
+              limitStrength: false,
+              uciElo: 1280,
+              ponder: false,
+            },
+            gameSpeed: 2000, // AI对战速度（毫秒）
+          },
+        },
         gameState: {
           // 当前游戏状态将动态保存
           currentGame: null, // 当前游戏的序列化状态
           savedGames: [], // 已保存的游戏列表
           lastPlayTime: null, // 最后游戏时间
+          moveHistory: [], // 走法历史
+          gameOver: false, // 游戏是否结束
+          aiThinking: false, // AI是否正在思考
+          aiVsAiRunning: false, // AI对战是否正在运行
         },
         ui: {
           showSettings: false,
           showSaveDialog: false,
+          showGameSettings: false,
+          showAISettings: false,
         },
       },
     }
@@ -232,6 +303,29 @@ const store = createStore({
     },
 
     // 中国象棋设置 mutations
+    'chess/updateGameMode'(state: any, mode: string) {
+      state.chess.settings.gameMode = mode
+    },
+    'chess/updateChessSettings'(state: any, payload: any) {
+      Object.assign(state.chess.settings, payload)
+    },
+    'chess/toggleChessSound'(state: any) {
+      state.chess.settings.enableSound = !state.chess.settings.enableSound
+    },
+    'chess/toggleChessVoice'(state: any) {
+      state.chess.settings.enableVoice = !state.chess.settings.enableVoice
+    },
+    'chess/toggleChessMoveHistory'(state: any) {
+      state.chess.settings.showMoveHistory = !state.chess.settings.showMoveHistory
+    },
+    'chess/setShowGameSettings'(state: any, show: boolean) {
+      state.chess.ui.showGameSettings = show
+    },
+    'chess/setShowAISettings'(state: any, show: boolean) {
+      state.chess.ui.showAISettings = show
+    },
+
+    // 兼容旧的mutation名称
     updateChessSettings(state: any, payload: any) {
       Object.assign(state.chess.settings, payload)
     },
@@ -246,6 +340,28 @@ const store = createStore({
     },
 
     // 中国象棋游戏状态 mutations
+    'chess/updateGameState'(state: any, payload: any) {
+      Object.assign(state.chess.gameState, payload)
+    },
+    'chess/setAiThinking'(state: any, thinking: boolean) {
+      state.chess.gameState.aiThinking = thinking
+    },
+    'chess/setAiVsAiRunning'(state: any, running: boolean) {
+      state.chess.gameState.aiVsAiRunning = running
+    },
+    'chess/addMoveToHistory'(state: any, move: any) {
+      state.chess.gameState.moveHistory.push(move)
+    },
+    'chess/removeLastMoveFromHistory'(state: any) {
+      if (state.chess.gameState.moveHistory.length > 0) {
+        state.chess.gameState.moveHistory.pop()
+      }
+    },
+    'chess/setGameOver'(state: any, gameOver: boolean) {
+      state.chess.gameState.gameOver = gameOver
+    },
+
+    // 兼容旧的mutation名称
     saveChessGame(state: any, gameData: any) {
       state.chess.gameState.currentGame = gameData
       state.chess.gameState.lastPlayTime = Date.now()
@@ -255,6 +371,24 @@ const store = createStore({
     },
     clearChessGame(state: any) {
       state.chess.gameState.currentGame = null
+    },
+    // 保存象棋AI配置
+    saveChessGameConfig(state: any, config: any) {
+      state.chess.gameConfig = { ...state.chess.gameConfig, ...config }
+    },
+    // 保存象棋AI对战AI配置
+    'chess/updateAiVsAiConfig'(state: any, config: any) {
+      if (!state.chess.gameConfig.aiVsAiConfig) {
+        state.chess.gameConfig.aiVsAiConfig = {}
+      }
+      Object.assign(state.chess.gameConfig.aiVsAiConfig, config)
+    },
+    // 保存象棋AI配置（人机模式）
+    'chess/updateAiConfig'(state: any, config: any) {
+      if (!state.chess.gameConfig.aiConfig) {
+        state.chess.gameConfig.aiConfig = {}
+      }
+      Object.assign(state.chess.gameConfig.aiConfig, config)
     },
     addSavedChessGame(state: any, gameData: any) {
       const savedGame = {

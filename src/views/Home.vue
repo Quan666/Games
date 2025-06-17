@@ -295,6 +295,21 @@ const goToGame = (path: string) => {
   border: 1px solid rgba(234, 179, 8, 0.3);
 }
 
+.test {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.test-card {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.test-card:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.1);
+}
+
 @keyframes float {
   0%,
   100% {

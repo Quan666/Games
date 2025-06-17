@@ -1,4 +1,6 @@
 // 中国象棋游戏逻辑
+import type { AIManager, AIManagerConfig } from './ai'
+
 export type PieceType =
   | '帥'
   | '將'
@@ -42,16 +44,45 @@ export interface Move {
   piece: ChessPiece
   capturedPiece?: ChessPiece
   timestamp: Date
+  isCheck?: boolean // 是否造成将军
+  isCheckmate?: boolean // 是否造成将死
+}
+
+export interface GameConfig {
+  enableAI?: boolean
+  aiConfig?: AIManagerConfig
+  gameMode?: 'pvp' | 'pve' | 'ai-vs-ai'
+  playerCamp?: Camp // 玩家执棋颜色（PVE模式下）
+  aiVsAiConfig?: {
+    redAI: AIManagerConfig
+    blackAI: AIManagerConfig
+    gameSpeed?: number
+  }
 }
 
 export class ChessGame {
   private state: GameState
+  private config: GameConfig
+  private aiManager: AIManager | null = null
+  private isAIThinking = false
 
-  constructor(savedState?: GameState) {
+  constructor(savedState?: GameState, config: GameConfig = {}) {
+    this.config = {
+      enableAI: false,
+      gameMode: 'pvp',
+      playerCamp: 'red',
+      ...config,
+    }
+
     if (savedState) {
       this.state = this.restoreFromState(savedState)
     } else {
       this.state = this.initializeGame()
+    }
+
+    // 如果启用AI，初始化AI管理器
+    if (this.config.enableAI && this.config.aiConfig) {
+      this.initAI()
     }
   }
 
@@ -683,13 +714,27 @@ export class ChessGame {
     // 全面验证棋盘一致性
     this.validateBoardConsistency()
 
-    this.state.moveHistory.push(move)
-
     // 切换玩家
     this.state.currentPlayer = this.state.currentPlayer === 'red' ? 'black' : 'red'
 
-    // 检查游戏状态
+    // 检查游戏状态，获取将军和将死信息
     this.updateGameStatus()
+
+    // 在走法记录中添加将军和将死信息
+    move.isCheck = this.state.isInCheck
+    move.isCheckmate = this.state.gameStatus === 'checkmate'
+
+    this.state.moveHistory.push(move)
+
+    // 如果游戏还在进行且启用了AI，检查是否需要AI走棋
+    if (this.state.gameStatus === 'playing' && this.shouldAIMove()) {
+      // 延迟一点时间让UI更新，然后触发AI走棋
+      setTimeout(() => {
+        this.makeAIMove().catch((error) => {
+          console.error('AI走棋出错:', error)
+        })
+      }, 500)
+    }
 
     return true
   }
@@ -817,6 +862,8 @@ export class ChessGame {
           piece: piece || move.piece,
           capturedPiece: capturedPiece || move.capturedPiece,
           timestamp: typeof move.timestamp === 'string' ? new Date(move.timestamp) : move.timestamp,
+          isCheck: move.isCheck || false,
+          isCheckmate: move.isCheckmate || false,
         }
       })
     }
@@ -846,5 +893,153 @@ export class ChessGame {
         this.state.board[y][x] = piece
       }
     }
+  }
+
+  // AI相关方法
+
+  /**
+   * 初始化AI管理器
+   */
+  private async initAI(): Promise<void> {
+    if (!this.config.aiConfig) return
+
+    try {
+      const { AIManager } = await import('./ai')
+      this.aiManager = new AIManager(this.config.aiConfig)
+      await this.aiManager.init()
+    } catch (error) {
+      console.error('AI初始化失败:', error)
+    }
+  }
+
+  /**
+   * 启用AI
+   */
+  async enableAI(aiConfig: AIManagerConfig): Promise<void> {
+    this.config.enableAI = true
+    this.config.aiConfig = aiConfig
+
+    if (this.aiManager) {
+      this.aiManager.destroy()
+    }
+
+    await this.initAI()
+  }
+
+  /**
+   * 禁用AI
+   */
+  disableAI(): void {
+    this.config.enableAI = false
+    if (this.aiManager) {
+      this.aiManager.destroy()
+      this.aiManager = null
+    }
+  }
+
+  /**
+   * 销毁游戏实例
+   */
+  destroy(): void {
+    if (this.aiManager) {
+      this.aiManager.destroy()
+      this.aiManager = null
+    }
+  }
+
+  /**
+   * 检查是否应该AI走棋
+   */
+  shouldAIMove(): boolean {
+    if (!this.config.enableAI || !this.aiManager || this.isAIThinking) {
+      return false
+    }
+
+    switch (this.config.gameMode) {
+      case 'pve':
+        return this.state.currentPlayer !== this.config.playerCamp
+      case 'ai-vs-ai':
+        return true
+      default:
+        return false
+    }
+  }
+
+  /**
+   * 请求AI走棋
+   */
+  async requestAIMove(): Promise<Move | null> {
+    if (!this.shouldAIMove()) {
+      return null
+    }
+
+    try {
+      this.isAIThinking = true
+      const move = await this.aiManager!.getAIMove(this.state)
+      return move
+    } catch (error) {
+      console.error('AI走棋失败:', error)
+      return null
+    } finally {
+      this.isAIThinking = false
+    }
+  }
+
+  /**
+   * 执行AI走棋
+   */
+  async makeAIMove(): Promise<boolean> {
+    const aiMove = await this.requestAIMove()
+    if (aiMove) {
+      return this.makeMove(aiMove.from, aiMove.to)
+    }
+    return false
+  }
+
+  /**
+   * 停止AI思考
+   */
+  stopAIThinking(): void {
+    if (this.aiManager) {
+      this.aiManager.stopThinking()
+    }
+    this.isAIThinking = false
+  }
+
+  /**
+   * 获取AI状态
+   */
+  getAIStatus() {
+    return {
+      enabled: this.config.enableAI,
+      thinking: this.isAIThinking,
+      ready: this.aiManager?.isReady() || false,
+      status: this.aiManager?.getStatus() || 'idle',
+      stats: this.aiManager?.getStats() || null,
+    }
+  }
+
+  /**
+   * 更新AI配置
+   */
+  updateAIConfig(newConfig: Partial<AIManagerConfig>): void {
+    if (this.aiManager && this.config.aiConfig) {
+      this.config.aiConfig = { ...this.config.aiConfig, ...newConfig }
+      this.aiManager.updateConfig(newConfig)
+    }
+  }
+
+  /**
+   * 获取游戏配置
+   */
+  getConfig(): GameConfig {
+    return { ...this.config }
+  }
+
+  /**
+   * 更新游戏配置
+   */
+  updateConfig(newConfig: Partial<GameConfig>): void {
+    this.config = { ...this.config, ...newConfig }
   }
 }
