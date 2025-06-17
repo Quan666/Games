@@ -59,7 +59,7 @@
 
       <!-- 棋盘区域 -->
       <div class="flex flex-col items-stretch flex-1">
-        <div class="flex justify-center">
+        <div class="flex justify-center px-1">
           <ChessBoard
             ref="chessBoardRef"
             :width="boardSize.width"
@@ -263,21 +263,36 @@ const boardSize = computed(() => {
       height: Math.floor(height),
     }
   } else {
-    // 竖屏时优化布局，不占满屏幕高度
-    const availableWidth = windowWidth.value * 0.95 // 减少宽度占比，确保有足够边距
+    // 竖屏时让棋盘占满宽度，但要考虑头部和底部组件的高度
+    const availableWidth = windowWidth.value * 0.98 // 留出极少边距，基本占满宽度
 
-    // 基于屏幕宽度计算合适的棋盘尺寸，而不是依赖屏幕高度
+    // 估算头部和底部组件占用的高度
+    const headerHeight = 120 // ChessGameInfoHeader 大约高度
+    const controlPanelHeight = 80 // ChessGameControlPanel 大约高度
+    const layoutPadding = 20 // 上下边距
+    const reservedHeight = headerHeight + controlPanelHeight + layoutPadding
+
+    // 计算棋盘可用的最大高度
+    const availableHeight = windowHeight.value - reservedHeight
+
+    // 基于屏幕宽度和可用高度计算合适的棋盘尺寸
     const aspectRatio = 600 / 660
 
     let width = availableWidth
     let height = width / aspectRatio
 
+    // 如果按宽度计算的高度超过可用高度，则按高度重新计算
+    if (height > availableHeight) {
+      height = availableHeight * 0.95 // 留5%的缓冲空间
+      width = height * aspectRatio
+    }
+
     // 确保最小尺寸
     const minWidth = 280
     const minHeight = minWidth / aspectRatio
 
-    // 确保最大尺寸，避免棋盘过大
-    const maxWidth = Math.min(windowWidth.value * 0.95, 450)
+    // 确保不超过屏幕宽度
+    const maxWidth = windowWidth.value * 0.95
     const maxHeight = maxWidth / aspectRatio
 
     if (width < minWidth) {
@@ -286,6 +301,12 @@ const boardSize = computed(() => {
     } else if (width > maxWidth) {
       width = maxWidth
       height = maxHeight
+    }
+
+    // 最终检查高度是否合适
+    if (height > availableHeight * 0.95) {
+      height = availableHeight * 0.95
+      width = height * aspectRatio
     }
 
     return {
