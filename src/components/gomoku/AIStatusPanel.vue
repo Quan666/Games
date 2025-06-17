@@ -2,7 +2,7 @@
   <div
     v-if="showStatusPanel && (gameMode === 'pve' || gameMode === 'ave')"
     ref="elementRef"
-    class="fixed top-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl p-3 max-w-xs w-full max-h-[85vh] overflow-y-auto shadow-xl z-30 border border-gray-200 md:max-w-xs md:top-4 md:right-4 md:w-80 max-md:top-2 max-md:right-2 max-md:left-auto max-md:max-w-[280px] max-md:w-[280px]"
+    class="fixed top-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl p-3 max-w-xs w-full max-h-[85vh] overflow-y-auto shadow-xl z-40 border border-gray-200 md:max-w-xs md:top-4 md:right-4 md:w-80 max-md:top-2 max-md:right-2 max-md:left-auto max-md:max-w-[280px] max-md:w-[280px]"
     :class="{ 'cursor-move': isDragging }"
   >
     <div

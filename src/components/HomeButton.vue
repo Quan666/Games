@@ -63,11 +63,11 @@ const goHome = () => {
   position: fixed;
   top: 1rem;
   right: 1rem;
-  z-index: 1000;
+  z-index: 40;
 }
 
 .home-button-container.dragging {
-  z-index: 1001;
+  z-index: 45;
 }
 
 .home-button {
@@ -101,13 +101,18 @@ const goHome = () => {
 /* 移动端适配 */
 @media (max-width: 768px) {
   .home-button-container {
-    top: 0.8rem;
-    right: 0.8rem;
+    top: 1rem;
+    right: 1rem;
   }
 
   .home-button {
-    width: 2.2rem;
-    height: 2.2rem;
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .home-button svg {
+    width: 22px;
+    height: 22px;
   }
 }
 
@@ -132,18 +137,18 @@ const goHome = () => {
 /* 超小屏幕适配 */
 @media (max-width: 480px) {
   .home-button-container {
-    top: 0.6rem;
-    right: 0.6rem;
+    top: 0.8rem;
+    right: 0.8rem;
   }
 
   .home-button {
-    width: 2rem;
-    height: 2rem;
+    width: 2.8rem;
+    height: 2.8rem;
   }
 
   .home-button svg {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
   }
 }
 </style>
