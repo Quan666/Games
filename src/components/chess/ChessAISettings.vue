@@ -513,7 +513,8 @@ const syncCommonSettings = () => {
     if (setting in localConfig.value.aiConfig!) {
       ;(localConfig.value.aiVsAiConfig!.redAI as any)[setting] = (
         localConfig.value.aiConfig! as any
-      )[setting](localConfig.value.aiVsAiConfig!.blackAI as any)[setting] = (
+      )[setting]
+      ;(localConfig.value.aiVsAiConfig!.blackAI as any)[setting] = (
         localConfig.value.aiConfig! as any
       )[setting]
     }
