@@ -1,4 +1,5 @@
 // 中国象棋游戏逻辑
+// @ts-ignore
 import { AIManager, gameStateToFEN, moveToUCI } from './ai'
 import type { AIManagerConfig } from './ai'
 
@@ -1592,7 +1593,9 @@ export class ChessGame {
   // 获取当前FEN字符串包含移动历史
   private getFenWithMoves(): string {
     // 使用gameStateToFEN获取当前棋盘状态
-    const fen = gameStateToFEN(this.state)
+    // const fen = gameStateToFEN(this.state)
+    //不应该使用 gameStateToFEN，因为要包含移动历史，应该发默认的
+    let fen = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1'
 
     if (this.uciMoveHistory.length === 0) {
       return fen

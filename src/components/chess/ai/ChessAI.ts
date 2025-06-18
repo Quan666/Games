@@ -37,17 +37,27 @@ export class ChessAI implements AIEngine {
    */
   async init(): Promise<void> {
     if (this._status !== 'idle') {
+      console.log(`AI引擎已初始化，当前状态: ${this._status}`)
       return
     }
 
     this.setStatus('initializing')
+    console.log('开始初始化AI引擎...')
 
     try {
       await this.loadScript()
+      console.log('✓ 脚本加载完成')
+      
       await this.createEngine()
+      console.log('✓ 引擎实例创建完成')
+      
       await this.initUCI()
+      console.log('✓ UCI协议初始化完成')
+      
       this.setStatus('ready')
+      console.log('✓ AI引擎初始化成功完成')
     } catch (error) {
+      console.error('AI引擎初始化失败:', error)
       this.setStatus('error')
       this.emit('error', error)
       throw error
@@ -108,7 +118,7 @@ export class ChessAI implements AIEngine {
     this.engine = await new Promise<PikafishEngine>((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('引擎初始化超时'))
-      }, 45000) // 增加到45秒
+      }, 45000)
 
       const config = {
         locateFile: (path: string) => {
@@ -117,13 +127,15 @@ export class ChessAI implements AIEngine {
           return fullPath
         },
         wasmBinaryFile: `${base}chess-ai/pikafish.wasm`,
-        print: (text: string) => this.handleEngineOutput(text),
-        printErr: (text: string) => console.error('Pikafish错误:', text),
-        onRuntimeInitialized: function () {
-          console.log('Pikafish 运行时初始化完成')
-          clearTimeout(timeout)
-          resolve(this as unknown as PikafishEngine)
+        onReceiveStdout: (text: string) => {
+          console.log('Pikafish引擎输出:', text)
+          
+          // 确保输出处理器已设置后再调用
+          if (this.handleEngineOutput) {
+            this.handleEngineOutput(text)
+          }
         },
+        onReceiveStderr: (text: string) => console.error('Pikafish错误:', text),
         onAbort: (what: string) => {
           console.error('Pikafish 中止:', what)
           clearTimeout(timeout)
@@ -138,7 +150,11 @@ export class ChessAI implements AIEngine {
 
       try {
         console.log('调用 window.Pikafish...')
-        window.Pikafish(config).catch((error: Error) => {
+        window.Pikafish(config).then((instance: PikafishEngine) => {
+          console.log('✓ Pikafish 实例创建完成')
+          clearTimeout(timeout)
+          resolve(instance)
+        }).catch((error: Error) => {
           console.error('Pikafish 初始化失败:', error)
           clearTimeout(timeout)
           reject(error)
@@ -163,35 +179,94 @@ export class ChessAI implements AIEngine {
 
     return new Promise((resolve, reject) => {
       let uciOkReceived = false
+      let readyOkReceived = false
+      let isResolved = false
 
       const timeout = setTimeout(() => {
-        console.error('UCI 初始化超时，可能的原因：')
-        console.error('1. 引擎未响应 uci 命令')
-        console.error('2. 引擎初始化时间过长')
-        console.error('3. 网络连接问题')
-        reject(new Error('UCI初始化超时'))
-      }, 20000) // 增加到20秒
+        if (!isResolved) {
+          console.error('UCI 初始化超时，当前状态:')
+          console.error(`uciOk=${uciOkReceived}, readyOk=${readyOkReceived}`)
+          isResolved = true
+          reject(new Error('UCI初始化超时'))
+        }
+      }, 10000) // 减少到10秒
+
+      // 如果收到 uciok 但长时间没有收到 readyok，自动完成初始化
+      let readyTimeout: number | null = null
 
       const originalHandler = this.handleEngineOutput.bind(this)
 
       this.handleEngineOutput = (text: string) => {
-        console.log('UCI 初始化阶段收到引擎输出:', text)
+        const trimmedText = text.trim()
+        console.log('UCI 初始化阶段收到引擎输出:', trimmedText)
 
-        if (text.includes('uciok')) {
-          console.log('收到 uciok，发送 isready 命令')
+        // 检查 uciok - 可能是单独一行，也可能包含在其他文本中
+        if (trimmedText === 'uciok' || trimmedText.includes('uciok')) {
+          console.log('✓ 收到 uciok，发送 isready 命令')
           uciOkReceived = true
-          setTimeout(() => this.engine!.sendCommand('isready'), 10)
-        } else if (text.includes('readyok') && uciOkReceived) {
-          console.log('收到 readyok，UCI 初始化完成')
-          clearTimeout(timeout)
-          this.handleEngineOutput = originalHandler
-          setTimeout(() => resolve(), 10)
+          
+          // 使用 setTimeout 避免阻塞 UI 线程
+          setTimeout(() => {
+            try {
+              this.engine!.sendCommand('isready')
+              console.log('✓ 已发送 isready 命令')
+              
+              // 设置一个备用超时，如果3秒内没有收到 readyok 就自动完成
+              readyTimeout = setTimeout(() => {
+                console.log('⚠️ 未收到 readyok，但已收到 uciok，自动完成初始化')
+                if (!isResolved) {
+                  isResolved = true
+                  clearTimeout(timeout)
+                  this.handleEngineOutput = originalHandler
+                  console.log('✓ UCI 协议初始化完成（备用机制）')
+                  resolve()
+                }
+              }, 3000)
+              
+            } catch (error) {
+              console.error('发送 isready 命令失败:', error)
+              if (!isResolved) {
+                isResolved = true
+                clearTimeout(timeout)
+                reject(new Error(`发送 isready 命令失败: ${error}`))
+              }
+            }
+          }, 0)
+        } 
+        // 检查 readyok - 只有在收到 uciok 之后才处理
+        else if ((trimmedText === 'readyok' || trimmedText.includes('readyok')) && uciOkReceived) {
+          console.log('✓ 收到 readyok，UCI 初始化完成')
+          readyOkReceived = true
+          
+          if (!isResolved) {
+            isResolved = true
+            clearTimeout(timeout)
+            if (readyTimeout) {
+              clearTimeout(readyTimeout)
+            }
+            this.handleEngineOutput = originalHandler
+            console.log('✓ UCI 协议初始化成功完成')
+            resolve()
+          }
         }
+
+        // 调用原始处理器
         originalHandler(text)
       }
 
       console.log('发送 uci 命令到引擎')
-      setTimeout(() => this.engine!.sendCommand('uci'), 10)
+      // 使用 setTimeout 避免阻塞 UI 线程
+      setTimeout(() => {
+        try {
+          this.engine!.sendCommand('uci')
+          console.log('✓ 已发送 uci 命令')
+        } catch (error) {
+          console.error('发送 uci 命令失败:', error)
+          isResolved = true
+          clearTimeout(timeout)
+          reject(new Error(`发送 uci 命令失败: ${error}`))
+        }
+      }, 0)
     })
   }
 
@@ -199,9 +274,12 @@ export class ChessAI implements AIEngine {
    * 处理引擎输出
    */
   private handleEngineOutput(text: string): void {
+    const trimmedText = text.trim()
+    if (!trimmedText) return
+
     // 解析引擎输出，提取统计信息
-    if (text.includes('info')) {
-      const stats = this.parseInfoLine(text)
+    if (trimmedText.includes('info')) {
+      const stats = this.parseInfoLine(trimmedText)
       if (stats) {
         this.currentStats = stats
         console.log(
@@ -218,8 +296,8 @@ export class ChessAI implements AIEngine {
           )
         }
       }
-    } else if (text.includes('bestmove')) {
-      const move = this.parseBestMove(text)
+    } else if (trimmedText.includes('bestmove')) {
+      const move = this.parseBestMove(trimmedText)
       console.log(`AI找到最佳走法: ${move ? move.from + move.to : 'null'}`)
 
       this.isThinking = false
@@ -232,9 +310,18 @@ export class ChessAI implements AIEngine {
 
       // 触发 move 事件
       this.emit('move', move)
-    } else if (text.includes('string')) {
+    } else if (trimmedText.includes('string')) {
       // 引擎信息字符串，如NNUE评估信息
-      console.log(`引擎信息: ${text}`)
+      console.log(`引擎信息: ${trimmedText}`)
+    } else if (trimmedText.includes('id name') || trimmedText.includes('id author')) {
+      // 引擎标识信息
+      console.log(`引擎标识: ${trimmedText}`)
+    } else if (trimmedText.includes('option name')) {
+      // 引擎选项信息，不打印详细内容避免日志过多
+      // console.log(`引擎选项: ${trimmedText}`)
+    } else {
+      // 其他引擎输出（包括 uciok, readyok 等）
+      console.log(`引擎输出: ${trimmedText}`)
     }
   }
 
