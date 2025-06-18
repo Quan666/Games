@@ -384,16 +384,12 @@ export class ChessGame {
       if (this.getPieceAt(blockPos)) continue // 马腿被绊
 
       const targetPiece = this.getPieceAt(newPos)
-      let res = (!targetPiece ||
-        targetPiece.camp !==
-        this.state.pieces.find((p) => p.position.x === position.x && p.position.y === position.y)
-          ?.camp
-      )
-      console.log('计算马的移动: %s 在位置: %o ,结果：%o, 新位置: %o', targetPiece?.type, newPos, res, targetPiece);
+  
+      // 如果目标位置没有棋子，或者是敌方棋子，则可以移动, 且position处的棋子必须是活着的
       if (
         !targetPiece ||
         targetPiece.camp !==
-        this.state.pieces.find((p) => p.position.x === position.x && p.position.y === position.y)
+        this.state.pieces.find((p) => p.position.x === position.x && p.position.y === position.y && p.alive)
           ?.camp
       ) {
         moves.push(newPos)
@@ -450,7 +446,7 @@ export class ChessGame {
     const piece = this.getPieceAt(position)
     if (!piece) return moves
 
-    console.log('计算炮的移动:', piece.type, '在位置:', position)
+    //console.log('计算炮的移动:', piece.type, '在位置:', position)
 
     for (const dir of directions) {
       let hasJumped = false
@@ -464,7 +460,7 @@ export class ChessGame {
 
         if (!hasJumped) {
           if (targetPiece) {
-            console.log('炮遇到架子:', targetPiece.type, '在位置:', newPos)
+            //console.log('炮遇到架子:', targetPiece.type, '在位置:', newPos)
             hasJumped = true
           } else {
             moves.push(newPos) // 炮可以移动到空位
@@ -472,10 +468,10 @@ export class ChessGame {
         } else {
           if (targetPiece) {
             if (targetPiece.camp !== piece.camp) {
-              console.log('炮可以吃掉:', targetPiece.type, '在位置:', newPos)
+              //console.log('炮可以吃掉:', targetPiece.type, '在位置:', newPos)
               moves.push(newPos) // 炮可以吃掉敌方棋子
             } else {
-              console.log('炮不能吃掉己方棋子:', targetPiece.type, '在位置:', newPos)
+              //console.log('炮不能吃掉己方棋子:', targetPiece.type, '在位置:', newPos)
             }
             break
           }
@@ -483,7 +479,7 @@ export class ChessGame {
       }
     }
 
-    console.log('炮的可移动位置:', moves)
+    //console.log('炮的可移动位置:', moves)
     return moves
   }
 
