@@ -1,12 +1,24 @@
 // 配置管理器 - 监听store配置变化并应用到AI引擎
 
-import type { Store } from 'vuex'
 import type { AIManager } from './AIManager'
+import type { RootState, ChessGameConfig } from '../../../types/store'
+
+// Vuex Store 类型定义
+interface Store<S = any> {
+  state: S
+  getters: any
+  commit(type: string, payload?: any): void
+  watch<T>(
+    getter: (state: S) => T,
+    cb: (value: T, oldValue: T) => void,
+    options?: { deep?: boolean; immediate?: boolean },
+  ): () => void
+}
 
 export interface AIConfigWatcher {
   redAIManager?: AIManager
   blackAIManager?: AIManager
-  store: Store<any>
+  store: Store<RootState>
   unsubscribe?: () => void
 }
 
@@ -18,16 +30,16 @@ export class AIConfigManager {
    */
   registerWatcher(watcher: AIConfigWatcher): void {
     this.watchers.push(watcher)
-    
+
     // 监听store配置变化
     const unsubscribe = watcher.store.watch(
-      (state) => state.chess.gameConfig,
-      (newConfig, oldConfig) => {
-        this.handleConfigChange(watcher, newConfig, oldConfig)
+      (state: RootState) => state.chess.gameConfig,
+      (newConfig: ChessGameConfig) => {
+        this.handleConfigChange(watcher, newConfig)
       },
-      { deep: true, immediate: true }
+      { deep: true, immediate: true },
     )
-    
+
     watcher.unsubscribe = unsubscribe
   }
 
@@ -47,7 +59,7 @@ export class AIConfigManager {
   /**
    * 处理配置变化
    */
-  private handleConfigChange(watcher: AIConfigWatcher, newConfig: any, oldConfig: any): void {
+  private handleConfigChange(watcher: AIConfigWatcher, newConfig: ChessGameConfig): void {
     const { store } = watcher
 
     // 获取当前游戏模式
@@ -65,7 +77,7 @@ export class AIConfigManager {
   /**
    * 应用AI对战配置
    */
-  private applyAiVsAiConfig(watcher: AIConfigWatcher, store: Store<any>): void {
+  private applyAiVsAiConfig(watcher: AIConfigWatcher, store: Store<RootState>): void {
     // 获取红方完整配置
     const redConfig = store.getters['chess/getRedAiFullConfig']
     if (watcher.redAIManager && redConfig) {
@@ -84,11 +96,11 @@ export class AIConfigManager {
   /**
    * 应用人机配置
    */
-  private applyPveConfig(watcher: AIConfigWatcher, store: Store<any>): void {
+  private applyPveConfig(watcher: AIConfigWatcher, store: Store<RootState>): void {
     // 人机模式只有一个AI实例
     const aiConfig = store.getters['chess/getCurrentAiConfig']
     const aiManager = watcher.redAIManager || watcher.blackAIManager
-    
+
     if (aiManager && aiConfig) {
       console.log('应用人机AI配置:', aiConfig)
       aiManager.updateConfig(aiConfig)
@@ -98,19 +110,20 @@ export class AIConfigManager {
   /**
    * 获取指定方的完整配置（公共 + 特定配置）
    */
-  static getFullConfig(store: Store<any>, side: 'red' | 'black'): any {
+  static getFullConfig(store: Store<RootState>, side: 'red' | 'black'): any {
     const commonConfig = store.state.chess.gameConfig.aiConfig || {}
-    const specificConfig = side === 'red' 
-      ? store.state.chess.gameConfig.aiVsAiConfig?.redAI || {}
-      : store.state.chess.gameConfig.aiVsAiConfig?.blackAI || {}
-    
+    const specificConfig =
+      side === 'red'
+        ? store.state.chess.gameConfig.aiVsAiConfig?.redAI || {}
+        : store.state.chess.gameConfig.aiVsAiConfig?.blackAI || {}
+
     return { ...commonConfig, ...specificConfig }
   }
 
   /**
    * 更新指定方的非公共配置
    */
-  static updateSideConfig(store: Store<any>, side: 'red' | 'black', config: any): void {
+  static updateSideConfig(store: Store<RootState>, side: 'red' | 'black', config: any): void {
     const mutation = side === 'red' ? 'chess/updateRedAiConfig' : 'chess/updateBlackAiConfig'
     store.commit(mutation, config)
   }
@@ -119,7 +132,7 @@ export class AIConfigManager {
    * 清理所有监听器
    */
   cleanup(): void {
-    this.watchers.forEach(watcher => {
+    this.watchers.forEach((watcher) => {
       if (watcher.unsubscribe) {
         watcher.unsubscribe()
       }

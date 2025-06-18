@@ -6,11 +6,9 @@ import {
   type GameState,
   type Position,
   type ChessPiece,
-  type Move,
 } from './core'
-import { AIManager, type AIManagerConfig } from './ai/AIManager'
+import { AIManager } from './ai/AIManager'
 import { aiConfigManager, type AIConfigWatcher } from './ai/ConfigManager'
-import type { Store } from 'vuex'
 
 export type {
   PieceType,
@@ -26,7 +24,7 @@ export interface EnhancedGameConfig {
   enableAI?: boolean
   gameMode?: 'pvp' | 'pve' | 'ai-vs-ai'
   playerCamp?: 'red' | 'black'
-  store?: Store<any> // Vuex store for configuration management
+  store?: any // Vuex store for configuration management
 }
 
 export class EnhancedChessGame {
@@ -62,6 +60,15 @@ export class EnhancedChessGame {
       this.setupConfigWatcher()
     }
 
+    // 恢复AI对AI运行状态（如果从保存状态中恢复）
+    if (savedState && this.config.store) {
+      const savedAiVsAiRunning = this.config.store.state.chess?.gameState?.aiVsAiRunning
+      if (savedAiVsAiRunning && this.config.gameMode === 'ai-vs-ai') {
+        console.log('从保存状态恢复AI对AI运行状态')
+        this.aiVsAiRunning = true
+      }
+    }
+
     // 初始化AI（如果需要）
     this.initializeAIManagers()
   }
@@ -79,6 +86,27 @@ export class EnhancedChessGame {
     this.coreGame.updateSettings(settings)
   }
 
+  // 更新游戏配置
+  async updateConfig(newConfig: Partial<EnhancedGameConfig>): Promise<void> {
+    // 更新本地配置
+    this.config = { ...this.config, ...newConfig }
+
+    // 如果游戏模式发生变化，重新初始化AI
+    if (newConfig.gameMode) {
+      // 清理现有AI
+      this.destroyAIManagers()
+      // 重新初始化AI
+      await this.initializeAIManagers()
+    }
+
+    // 如果玩家执棋发生变化，可能需要触发AI思考
+    if (newConfig.playerCamp && this.config.gameMode === 'pve') {
+      setTimeout(() => {
+        this._checkAndMakeAIMove()
+      }, 100)
+    }
+  }
+
   getPieceAt(position: Position): ChessPiece | null {
     return this.coreGame.getPieceAt(position)
   }
@@ -91,10 +119,9 @@ export class EnhancedChessGame {
     const success = this.coreGame.makeMove(from, to)
 
     if (success) {
-      // 走棋成功后检查是否需要AI走棋
-      setTimeout(() => {
-        this.checkAndMakeAIMove()
-      }, 100)
+      // 走棋成功后，不在这里直接触发AI走棋
+      // AI走棋逻辑由外部的onAnimationComplete统一管理
+      console.log('走棋成功，等待外部逻辑处理后续AI操作')
     }
 
     return success
@@ -174,12 +201,9 @@ export class EnhancedChessGame {
 
     try {
       const aiConfig = this.config.store.getters['chess/getCurrentAiConfig']
-      console.log('初始化单AI实例，配置:', aiConfig)
 
       this.redAIManager = new AIManager(aiConfig)
       await this.redAIManager.init()
-      
-      console.log('单AI实例初始化完成')
     } catch (error) {
       console.error('单AI初始化失败:', error)
       throw error
@@ -193,10 +217,6 @@ export class EnhancedChessGame {
       // 获取红方和黑方配置
       const redConfig = this.config.store.getters['chess/getRedAiFullConfig']
       const blackConfig = this.config.store.getters['chess/getBlackAiFullConfig']
-      
-      console.log('初始化双AI实例')
-      console.log('红方配置:', redConfig)
-      console.log('黑方配置:', blackConfig)
 
       // 初始化红方AI
       this.redAIManager = new AIManager(redConfig)
@@ -205,8 +225,6 @@ export class EnhancedChessGame {
       // 初始化黑方AI
       this.blackAIManager = new AIManager(blackConfig)
       await this.blackAIManager.init()
-
-      console.log('双AI实例初始化完成')
     } catch (error) {
       console.error('双AI初始化失败:', error)
       throw error
@@ -226,30 +244,52 @@ export class EnhancedChessGame {
 
   // 游戏逻辑相关方法
   private _shouldAIMove(): boolean {
+    // 首先检查AI是否正在思考
     if (this._isAIThinking) {
+      console.log('AI正在思考中，不能重复走棋')
+      return false
+    }
+
+    // 检查store中的AI思考状态，确保双重保护
+    if (this.config.store?.state.chess?.gameState?.aiThinking) {
+      console.log('Store中AI思考状态为true，不能重复走棋')
       return false
     }
 
     const state = this.coreGame.getState()
     if (state.gameStatus !== 'playing') {
+      console.log('游戏不在进行中，AI不能走棋')
       return false
     }
 
-    const gameMode = this.config.store?.state.chess.gameConfig.gameMode
+    // 优先使用store中的配置，如果没有则使用本地配置
+    const gameMode = this.config.store?.state.chess?.gameConfig?.gameMode || this.config.gameMode
 
     switch (gameMode) {
       case 'pve':
-        return state.currentPlayer !== this.config.playerCamp && this.redAIManager?.isReady()
+        const shouldMove =
+          state.currentPlayer !== this.config.playerCamp && !!this.redAIManager?.isReady()
+        console.log(
+          `人机模式AI走棋检查: 当前玩家=${state.currentPlayer}, 玩家执棋=${this.config.playerCamp}, AI就绪=${!!this.redAIManager?.isReady()}, 应该走棋=${shouldMove}`,
+        )
+        return shouldMove
       case 'ai-vs-ai':
-        return this.aiVsAiRunning && this.getCurrentAIManager()?.isReady()
+        const aiReady = !!this.getCurrentAIManager()?.isReady()
+        const shouldMoveAI = this.aiVsAiRunning && aiReady
+        console.log(
+          `AI对战模式AI走棋检查: AI对战运行=${this.aiVsAiRunning}, AI就绪=${aiReady}, 当前玩家=${state.currentPlayer}, 应该走棋=${shouldMoveAI}`,
+        )
+        return shouldMoveAI
       default:
+        console.log(`${gameMode}模式不需要AI走棋`)
         return false
     }
   }
 
   private getCurrentAIManager(): AIManager | null {
     const state = this.coreGame.getState()
-    const gameMode = this.config.store?.state.chess.gameConfig.gameMode
+    // 优先使用store中的配置，如果没有则使用本地配置
+    const gameMode = this.config.store?.state.chess?.gameConfig?.gameMode || this.config.gameMode
 
     if (gameMode === 'pve') {
       return this.redAIManager
@@ -260,57 +300,110 @@ export class EnhancedChessGame {
     return null
   }
 
-  private async checkAndMakeAIMove(): Promise<void> {
-    if (this._shouldAIMove()) {
-      try {
-        await this._makeAIMove()
-      } catch (error) {
-        console.error('AI走棋失败:', error)
+  checkAndMakeAIMove(): Promise<void> {
+    return this._checkAndMakeAIMove()
+  }
+
+  private async _checkAndMakeAIMove(): Promise<void> {
+    // 严格检查AI走棋条件
+    if (!this._shouldAIMove()) {
+      return
+    }
+
+    // 防止并发调用：如果已经在执行AI走棋，则跳过
+    if (this._isAIThinking) {
+      console.log('AI走棋已在进行中，跳过重复调用')
+      return
+    }
+
+    try {
+      const success = await this._makeAIMove()
+      if (success) {
+        console.log('AI走棋成功')
+      } else {
+        console.log('AI走棋失败')
       }
+    } catch (error) {
+      console.error('AI走棋过程中发生错误:', error)
     }
   }
 
-  private async _makeAIMove(): Promise<boolean> {
+  /**
+   * AI走子，失败自动重试（默认重试2次）
+   */
+  private async _makeAIMove(retryCount = 2): Promise<boolean> {
+    // 双重检查：确保AI可以走棋
+    if (!this._shouldAIMove()) {
+      console.log('AI走棋条件不满足，取消走棋')
+      return false
+    }
+
     const aiManager = this.getCurrentAIManager()
     if (!aiManager) {
       console.error('没有可用的AI管理器')
       return false
     }
 
-    try {
-      this._isAIThinking = true
-      console.log('开始AI思考...')
+    // 防止重复走棋：立即设置思考状态
+    if (this._isAIThinking) {
+      console.log('AI正在思考中，取消重复走棋')
+      return false
+    }
 
+    try {
+      // 立即设置思考状态，防止重复调用
+      this._isAIThinking = true
+      // 立即同步AI思考状态到store
+      if (this.config.store) {
+        this.config.store.commit('chess/setAiThinking', true)
+      }
+
+      // 再次检查游戏状态，确保在设置思考状态后游戏仍然可以继续
       const gameState = this.coreGame.getState()
+      if (gameState.gameStatus !== 'playing') {
+        console.log('游戏已结束，取消AI走棋')
+        return false
+      }
+
+      console.log(`AI开始思考... 当前玩家: ${gameState.currentPlayer}`)
+
       const fenWithMoves = this.getCurrentFenWithMoves()
-      
       // 在AI思考前应用当前配置（确保使用最新配置）
       await this.applyCurrentConfigToAI(aiManager, gameState.currentPlayer)
-      
       const move = await aiManager.getAIMove(gameState, fenWithMoves)
 
       if (move) {
-        console.log('AI返回走法:', move)
-        
+        console.log(`AI找到走法: ${move.from.x},${move.from.y} -> ${move.to.x},${move.to.y}`)
         const success = this.externalMoveHandler
           ? this.externalMoveHandler(move.from, move.to)
           : this.makeMove(move.from, move.to)
 
-        if (success && this.config.store?.state.chess.gameConfig.gameMode === 'ai-vs-ai' && this.aiVsAiRunning) {
-          // AI对战模式，安排下一步
-          this.scheduleNextAIMove()
-        }
-
+        // 移除原来的自动调度逻辑，现在由onAnimationComplete统一处理
         return success
       } else {
         console.warn('AI未返回有效走法')
+        // 失败时重试
+        if (retryCount > 0) {
+          console.log(`AI走棋失败，重试 ${retryCount} 次`)
+          return await this._makeAIMove(retryCount - 1)
+        }
         return false
       }
     } catch (error) {
       console.error('AI走棋失败:', error)
+      // 异常时重试
+      if (retryCount > 0) {
+        console.log(`AI走棋异常，重试 ${retryCount} 次`)
+        return await this._makeAIMove(retryCount - 1)
+      }
       return false
     } finally {
       this._isAIThinking = false
+      // 立即同步AI思考状态到store
+      if (this.config.store) {
+        this.config.store.commit('chess/setAiThinking', false)
+      }
+      console.log('AI思考状态已重置')
     }
   }
 
@@ -324,46 +417,32 @@ export class EnhancedChessGame {
 
     if (gameMode === 'ai-vs-ai') {
       // AI对战模式，获取对应方的完整配置
-      const fullConfig = currentPlayer === 'red'
-        ? this.config.store.getters['chess/getRedAiFullConfig']
-        : this.config.store.getters['chess/getBlackAiFullConfig']
-      
-      console.log(`应用${currentPlayer}方AI配置:`, fullConfig)
+      const fullConfig =
+        currentPlayer === 'red'
+          ? this.config.store.getters['chess/getRedAiFullConfig']
+          : this.config.store.getters['chess/getBlackAiFullConfig']
+
       aiManager.updateConfig(fullConfig)
     } else {
       // 人机模式，使用通用配置
       const aiConfig = this.config.store.getters['chess/getCurrentAiConfig']
-      console.log('应用人机AI配置:', aiConfig)
       aiManager.updateConfig(aiConfig)
     }
-  }
-
-  private scheduleNextAIMove(): void {
-    const gameSpeed = this.config.store?.getters['chess/getGameSpeed'] || 2000
-    
-    console.log(`AI走棋完成，等待 ${gameSpeed}ms 后继续`)
-    
-    this.aiVsAiTimer = window.setTimeout(() => {
-      if (this.aiVsAiRunning && this._shouldAIMove()) {
-        this.checkAndMakeAIMove()
-      }
-    }, gameSpeed)
   }
 
   // 外部接口方法
   async updateGameMode(gameMode: 'pvp' | 'pve' | 'ai-vs-ai'): Promise<void> {
     this.config.gameMode = gameMode
-    
     // 停止当前AI活动
     this.stopAiVsAi()
     this.destroyAIManagers()
-
     // 重新初始化AI（如果需要）
-    await this.initializeAIManagers()
-
+    if (gameMode !== 'pvp') {
+      await this.initializeAIManagers()
+    }
     // 检查是否需要立即AI走棋
     setTimeout(() => {
-      this.checkAndMakeAIMove()
+      this._checkAndMakeAIMove()
     }, 100)
   }
 
@@ -378,13 +457,11 @@ export class EnhancedChessGame {
       return
     }
 
-    console.log('开始AI对战')
     this.aiVsAiRunning = true
-    this.checkAndMakeAIMove()
+    this._checkAndMakeAIMove()
   }
 
   stopAiVsAi(): void {
-    console.log('停止AI对战')
     this.aiVsAiRunning = false
     if (this.aiVsAiTimer) {
       clearTimeout(this.aiVsAiTimer)
@@ -395,6 +472,10 @@ export class EnhancedChessGame {
 
   stopAIThinking(): void {
     this._isAIThinking = false
+    // 立即同步AI思考状态到store
+    if (this.config.store) {
+      this.config.store.commit('chess/setAiThinking', false)
+    }
     if (this.redAIManager) {
       this.redAIManager.stopThinking()
     }
@@ -420,7 +501,24 @@ export class EnhancedChessGame {
     return this.aiVsAiRunning
   }
 
+  setAiVsAiRunning(running: boolean): void {
+    this.aiVsAiRunning = running
+  }
+
   getAIStatus(): any {
+    // pvp模式下AI全部禁用
+    if (
+      this.config.gameMode === 'pvp' ||
+      this.config.store?.state.chess?.gameConfig?.gameMode === 'pvp'
+    ) {
+      return {
+        enabled: false,
+        thinking: false,
+        ready: false,
+        status: 'disabled',
+        stats: null,
+      }
+    }
     const currentAIManager = this.getCurrentAIManager()
     return {
       enabled: this.isAIEnabled(),
@@ -465,6 +563,60 @@ export class EnhancedChessGame {
     // 配置会通过store自动应用，这里只需要更新store
     if (this.config.store) {
       this.config.store.commit('chess/updateAiConfig', aiConfig)
+    }
+  }
+
+  // 更新AI配置
+  updateAIConfig(aiConfig: any): void {
+    if (!this.config.store) {
+      console.warn('没有store，无法更新AI配置')
+      return
+    }
+
+    // 更新store中的AI配置
+    this.config.store.commit('chess/updateAiConfig', aiConfig)
+
+    // 立即应用配置到当前的AI管理器
+    try {
+      if (this.config.gameMode === 'pve' && this.redAIManager) {
+        this.redAIManager.updateConfig(aiConfig)
+      } else if (this.config.gameMode === 'ai-vs-ai') {
+        // 在AI对战模式下，根据当前玩家选择对应的AI管理器
+        const currentPlayer = this.coreGame.getState().currentPlayer
+        const aiManager = currentPlayer === 'red' ? this.redAIManager : this.blackAIManager
+
+        if (aiManager) {
+          aiManager.updateConfig(aiConfig)
+        }
+      }
+    } catch (error) {
+      console.error('应用AI配置到AI管理器失败:', error)
+    }
+  }
+
+  // 更新AI对战配置
+  updateAIVsAIConfig(aiVsAiConfig: any): void {
+    if (!this.config.store) {
+      console.warn('没有store，无法更新AI对战配置')
+      return
+    }
+
+    // 更新store中的AI对战配置
+    this.config.store.commit('chess/updateAiVsAiConfig', aiVsAiConfig)
+
+    // 立即应用配置到AI管理器
+    try {
+      if (this.config.gameMode === 'ai-vs-ai') {
+        const currentPlayer = this.coreGame.getState().currentPlayer
+        const currentAiConfig = currentPlayer === 'red' ? aiVsAiConfig.redAI : aiVsAiConfig.blackAI
+        const aiManager = currentPlayer === 'red' ? this.redAIManager : this.blackAIManager
+
+        if (aiManager && currentAiConfig) {
+          aiManager.updateConfig(currentAiConfig)
+        }
+      }
+    } catch (error) {
+      console.error('应用AI对战配置到AI管理器失败:', error)
     }
   }
 }

@@ -2,7 +2,8 @@
   <SettingsDialog
     v-model="show"
     title="🎮 象棋设置"
-    max-width="500px"
+    width="1400px"
+    max-width="90vw"
     :apply-callback="handleApply"
     :cancel-callback="handleCancel"
     :old-data="originalData"
@@ -569,7 +570,8 @@ const currentData = computed(() => ({
 const resetLocalSettings = () => {
   localSettings.value = { ...currentSettings.value }
   localGlobalSettings.value = { ...currentGlobalSettings.value }
-  localAiVsAiConfig.value = { ...currentAiVsAiConfig.value }
+  // 深拷贝AI对AI配置，确保修改不会影响store中的原始数据
+  localAiVsAiConfig.value = JSON.parse(JSON.stringify(currentAiVsAiConfig.value))
   localAiConfig.value = { ...currentAiConfig.value }
 }
 

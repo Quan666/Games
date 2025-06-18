@@ -23,10 +23,12 @@
 // > option name EvalFile type string default pikafish.nnue
 export interface AIEngineConfig {
   // 基础配置
+  engine?: string // 引擎名称，默认 pikafish
   threads?: number // Threads: 1-1024, 默认1
   hashSize?: number // Hash: 1-33554432MB, 默认16MB
   depth?: number // 搜索深度
-  timeLimit?: number // 思考时间限制(秒)
+  timeLimit?: number // 思考时间限制(秒) - 兼容旧版本
+  thinkingTime?: number // 思考时间限制(秒) - 新版本
 
   // Pikafish专用选项
   ponder?: boolean // Ponder, 默认false

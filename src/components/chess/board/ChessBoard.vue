@@ -1,5 +1,5 @@
 <template>
-  <div class="chess-board-container">
+  <div class="chess-board-container" :class="{ disabled: props.disabled }">
     <div class="board-wrapper">
       <!-- SVG 棋盘 -->
       <svg :width="boardWidth" :height="boardHeight" class="chess-board">
@@ -646,6 +646,7 @@ interface Props {
   selectedPiece: any
   availableMoves: any[]
   showCoordinates?: boolean
+  disabled?: boolean // 禁用点击属性
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -653,6 +654,7 @@ const props = withDefaults(defineProps<Props>(), {
   height: 660,
   availableMoves: () => [],
   showCoordinates: false,
+  disabled: false, // 默认不禁用
 })
 
 // 事件发射
@@ -664,6 +666,7 @@ const emit = defineEmits<{
   animationComplete: [
     moveData: { from: Position; to: Position; movingPiece: any; targetPiece: any },
   ]
+  disabledClick: [] // 在禁用状态下的点击事件
 }>()
 
 // 动画相关状态
@@ -775,6 +778,12 @@ const alivePieces = computed(() => {
 
 // 棋子点击事件
 const onPieceClick = (piece: ChessPieceType) => {
+  // 如果禁用点击，发射禁用点击事件并返回
+  if (props.disabled) {
+    emit('disabledClick')
+    return
+  }
+
   console.log('棋子点击:', piece)
   // 只处理活着的棋子点击
   if (piece.alive) {
@@ -784,11 +793,23 @@ const onPieceClick = (piece: ChessPieceType) => {
 
 // 棋盘点击事件（空位移动）
 const onBoardClick = (x: number, y: number) => {
+  // 如果禁用点击，发射禁用点击事件并返回
+  if (props.disabled) {
+    emit('disabledClick')
+    return
+  }
+
   emit('boardClick', x, y)
 }
 
 // 可移动位置点击
 const onMoveClick = (pos: Position) => {
+  // 如果禁用点击，发射禁用点击事件并返回
+  if (props.disabled) {
+    emit('disabledClick')
+    return
+  }
+
   emit('moveClick', pos)
 }
 
@@ -969,6 +990,15 @@ defineExpose({
   box-shadow:
     0 8px 25px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition:
+    opacity 0.3s ease,
+    filter 0.3s ease;
+}
+
+/* 禁用状态样式 */
+.chess-board-container.disabled {
+  pointer-events: none;
+  cursor: not-allowed;
 }
 
 .board-wrapper {

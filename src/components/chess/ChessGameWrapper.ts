@@ -165,7 +165,6 @@ export class ChessGame {
   }
 
   async enableAI(aiConfig: AIEngineConfig): Promise<void> {
-    console.log('启用AI，配置:', aiConfig)
     this.config.enableAI = true
     this.config.aiConfig = aiConfig
 
@@ -261,10 +260,36 @@ export class ChessGame {
       this.isAIThinking = true
       console.log('开始请求AI走棋...')
 
+      // 在AI对战模式下，根据当前轮到的玩家切换AI配置
+      if (this.config.gameMode === 'ai-vs-ai' && this.config.aiVsAiConfig) {
+        const currentPlayer = this.coreGame.getState().currentPlayer
+        const currentAiConfig =
+          currentPlayer === 'red'
+            ? this.config.aiVsAiConfig.redAI
+            : this.config.aiVsAiConfig.blackAI
+
+        console.log(`切换到${currentPlayer === 'red' ? '红方' : '黑方'}AI配置:`, currentAiConfig)
+        // 直接替换整个AI配置，因为每个AI的配置是独立的
+        this.config.aiConfig = { ...currentAiConfig }
+        if (this.aiManager) {
+          this.aiManager.updateConfig(this.config.aiConfig)
+        }
+
+        // 同时更新当前的AI配置引用，以便后续使用正确的深度和时间
+        this.config.aiConfig = currentAiConfig
+
+        // 等待配置生效
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+
       const fenWithMoves = this.getCurrentFenWithMoves()
       console.log('发送给AI的位置信息:', fenWithMoves)
 
-      const aiMove = await this.aiManager!.analyze(fenWithMoves, 8, 5)
+      // 使用配置中的深度和思考时间
+      const depth = this.config.aiConfig?.depth || 8
+      const timeLimit = this.config.aiConfig?.timeLimit || 5
+
+      const aiMove = await this.aiManager!.analyze(fenWithMoves, depth, timeLimit)
 
       if (aiMove) {
         console.log('AI返回移动:', aiMove)

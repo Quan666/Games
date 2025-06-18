@@ -5,38 +5,28 @@
       <!-- 基础控制按钮 -->
       <div class="flex gap-3">
         <button
-          @click="$emit('reset-game')"
+          @click="resetGame"
           class="flex-1 py-3 bg-white/20 backdrop-blur-sm text-gray-800 rounded-lg font-semibold hover:bg-white/30 transform hover:scale-102 transition-all duration-200 border border-gray-300"
         >
           重新开始
         </button>
         <button
-          @click="$emit('undo-move')"
-          :disabled="!canUndo"
+          @click="undoMove"
+          :disabled="!canUndoGame"
           class="flex-1 py-3 bg-white/20 backdrop-blur-sm text-gray-800 rounded-lg font-semibold hover:bg-white/30 transform hover:scale-102 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300"
         >
           悔棋
         </button>
         <!-- AI对战AI控制按钮 - 只在AI对战模式下显示 -->
         <button
-          @click="$emit('toggle-ai-vs-ai')"
+          @click="toggleAiVsAi"
           v-if="gameMode === 'ai-vs-ai'"
-          :disabled="aiThinking"
           :class="
             aiVsAiRunning ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'
           "
           class="flex-1 py-3 text-white rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-102"
         >
           {{ aiVsAiRunning ? '⏸️ 暂停' : '▶️ 开始' }}
-        </button>
-        <!-- AI调试按钮 - 在PVE模式下显示 -->
-        <button
-          @click="$emit('test-ai')"
-          v-if="gameMode === 'pve'"
-          :disabled="aiThinking"
-          class="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-102"
-        >
-          🔧 测试AI
         </button>
       </div>
 
@@ -97,23 +87,22 @@
     <div class="space-y-3">
       <div class="grid gap-2" :class="gameMode === 'ai-vs-ai' ? 'grid-cols-3' : 'grid-cols-2'">
         <button
-          @click="$emit('reset-game')"
+          @click="resetGame"
           class="w-full py-3 bg-white/20 backdrop-blur-sm text-gray-800 rounded-lg font-semibold hover:bg-white/30 transform hover:scale-105 transition-all duration-200 border border-gray-300"
         >
           重新开始
         </button>
         <button
-          @click="$emit('undo-move')"
-          :disabled="!canUndo"
+          @click="undoMove"
+          :disabled="!canUndoGame"
           class="w-full py-3 bg-white/20 backdrop-blur-sm text-gray-800 rounded-lg font-semibold hover:bg-white/30 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300"
         >
           悔棋
         </button>
         <!-- AI对战AI控制按钮 - 只在AI对战模式下显示 -->
         <button
-          @click="$emit('toggle-ai-vs-ai')"
+          @click="toggleAiVsAi"
           v-if="gameMode === 'ai-vs-ai'"
-          :disabled="aiThinking"
           :class="
             aiVsAiRunning ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'
           "
@@ -183,14 +172,11 @@ import { computed } from 'vue'
 // @ts-ignore
 import { useStore } from 'vuex'
 
-// 定义props
-interface Props {
-  canUndo?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  canUndo: false,
-})
+// 定义 emits
+const emit = defineEmits<{
+  'reset-game': []
+  'undo-move': []
+}>()
 
 const store = useStore()
 
@@ -199,11 +185,35 @@ const isPortrait = computed(() => {
   return window.innerHeight > window.innerWidth
 })
 
+// 从 store 读取状态
 const gameMode = computed(() => store.state.chess.settings.gameMode)
-// 使用传入的canUndo prop，而不是从store计算
-const canUndo = computed(() => props.canUndo)
+const canUndo = computed(() => store.state.chess.gameState.moveHistory.length > 0)
 const aiThinking = computed(() => store.state.chess.gameState.aiThinking)
 const aiVsAiRunning = computed(() => store.state.chess.gameState.aiVsAiRunning)
+
+// 计算是否可以悔棋：有历史记录 且 AI未在思考 且 (非AI对AI模式 或 AI对AI已暂停)
+const canUndoGame = computed(() => {
+  return (
+    canUndo.value && !aiThinking.value && (gameMode.value !== 'ai-vs-ai' || !aiVsAiRunning.value)
+  )
+})
+
+// 方法：通过 emit 调用父组件的方法
+function resetGame() {
+  emit('reset-game')
+}
+
+function undoMove() {
+  if (canUndoGame.value) {
+    emit('undo-move')
+  }
+}
+
+function toggleAiVsAi() {
+  store.commit('chess/updateGameState', {
+    aiVsAiRunning: !aiVsAiRunning.value,
+  })
+}
 
 function openGameSettings() {
   store.commit('chess/setShowGameSettings', true)

@@ -6,6 +6,9 @@ export class ChessSoundGenerator {
   private isVoiceEnabled: () => boolean
   private speechSynth: SpeechSynthesis | null = null
 
+  private static lastSpeakTimestamps: Map<string, number> = new Map()
+  private speakDebounceInterval = 1000 // ms，防抖间隔，可根据需要调整
+
   constructor(isSoundEnabled: () => boolean, isVoiceEnabled?: () => boolean) {
     this.isSoundEnabled = isSoundEnabled
     this.isVoiceEnabled = isVoiceEnabled || (() => true)
@@ -32,6 +35,14 @@ export class ChessSoundGenerator {
   // 语音播放功能
   private async speak(text: string, volume: number = 0.8, rate: number = 1.0): Promise<void> {
     if (!this.isSoundEnabled() || !this.isVoiceEnabled() || !this.speechSynth) return
+
+    // 防抖：同样内容短时间内只播一次
+    const now = Date.now()
+    const lastTime = ChessSoundGenerator.lastSpeakTimestamps.get(text)
+    if (lastTime && now - lastTime < this.speakDebounceInterval) {
+      return
+    }
+    ChessSoundGenerator.lastSpeakTimestamps.set(text, now)
 
     return new Promise((resolve) => {
       const utterance = new SpeechSynthesisUtterance(text)

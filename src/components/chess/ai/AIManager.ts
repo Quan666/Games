@@ -140,9 +140,8 @@ export class AIManager {
       // 其他UCI选项
       multiPV: this.config.multiPV,
       moveOverhead: this.config.moveOverhead,
-      repetitionRule: this.config.repetitionRule,
-      drawRule: this.config.drawRule,
-      sixtyMoveRule: this.config.sixtyMoveRule,
+      repetitionRule: this.config.repetitionRule as any,
+      drawRule: this.config.drawRule as any,
       maxCheckCount: this.config.maxCheckCount,
     }
 
@@ -163,9 +162,14 @@ export class AIManager {
       console.log('获取AI走法，当前玩家:', gameState.currentPlayer)
 
       if (fenWithMoves) {
-        // 使用提供的FEN+moves格式
+        // 使用提供的FEN+moves格式，
+        // 此时 固定为 fen rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w moves {fenWithMoves}
         console.log('使用FEN+moves格式:', fenWithMoves)
         return await this.getAIMoveFromFENWithMoves(fenWithMoves, gameState)
+        // const FEN_DEF = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w'
+        // const fen = `${FEN_DEF} moves ${fenWithMoves}`
+        // console.log('完整FEN:', fen)
+        // return await this.getAIMoveFromFENWithMoves(fen, gameState)
       } else {
         // 使用传统的gameState转FEN方式
         const fen = gameStateToFEN(gameState)
@@ -313,12 +317,14 @@ export class AIManager {
       console.log('处理包含走棋历史的FEN:', fenWithMoves)
 
       // 解析FEN和走棋历史
+      //@ts-ignore
       const { positionFEN, moves } = prepareFENForAI(fenWithMoves)
       console.log('解析结果 - FEN:', positionFEN)
       console.log('解析结果 - 走棋历史:', moves)
 
       // 构建完整的FEN字符串（包含走棋历史）
-      let fullFEN = positionFEN
+      // let fullFEN = positionFEN
+      let fullFEN = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w'
       if (moves.length > 0) {
         fullFEN += ` moves ${moves.join(' ')}`
       }

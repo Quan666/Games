@@ -37,25 +37,17 @@ export class ChessAI implements AIEngine {
    */
   async init(): Promise<void> {
     if (this._status !== 'idle') {
-      console.log(`AI引擎已初始化，当前状态: ${this._status}`)
       return
     }
 
     this.setStatus('initializing')
-    console.log('开始初始化AI引擎...')
 
     try {
       await this.loadScript()
-      console.log('✓ 脚本加载完成')
-      
       await this.createEngine()
-      console.log('✓ 引擎实例创建完成')
-      
       await this.initUCI()
-      console.log('✓ UCI协议初始化完成')
-      
+
       this.setStatus('ready')
-      console.log('✓ AI引擎初始化成功完成')
     } catch (error) {
       console.error('AI引擎初始化失败:', error)
       this.setStatus('error')
@@ -70,12 +62,9 @@ export class ChessAI implements AIEngine {
   private loadScript(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (typeof window.Pikafish === 'function') {
-        console.log('Pikafish 脚本已加载')
         resolve()
         return
       }
-
-      console.log('开始加载 Pikafish 脚本...')
 
       const script = document.createElement('script')
       const base = import.meta.env.BASE_URL || '/'
@@ -87,7 +76,6 @@ export class ChessAI implements AIEngine {
       }, 30000) // 增加到30秒
 
       script.onload = () => {
-        console.log('Pikafish 脚本加载完成')
         clearTimeout(timeout)
         if (typeof window.Pikafish === 'function') {
           resolve()
@@ -111,8 +99,6 @@ export class ChessAI implements AIEngine {
    * 创建引擎实例
    */
   private async createEngine(): Promise<void> {
-    console.log('开始创建 Pikafish 引擎实例...')
-
     const base = import.meta.env.BASE_URL || '/'
 
     this.engine = await new Promise<PikafishEngine>((resolve, reject) => {
@@ -129,7 +115,7 @@ export class ChessAI implements AIEngine {
         wasmBinaryFile: `${base}chess-ai/pikafish.wasm`,
         onReceiveStdout: (text: string) => {
           console.log('Pikafish引擎输出:', text)
-          
+
           // 确保输出处理器已设置后再调用
           if (this.handleEngineOutput) {
             this.handleEngineOutput(text)
@@ -150,15 +136,18 @@ export class ChessAI implements AIEngine {
 
       try {
         console.log('调用 window.Pikafish...')
-        window.Pikafish(config).then((instance: PikafishEngine) => {
-          console.log('✓ Pikafish 实例创建完成')
-          clearTimeout(timeout)
-          resolve(instance)
-        }).catch((error: Error) => {
-          console.error('Pikafish 初始化失败:', error)
-          clearTimeout(timeout)
-          reject(error)
-        })
+        window
+          .Pikafish(config)
+          .then((instance: PikafishEngine) => {
+            console.log('✓ Pikafish 实例创建完成')
+            clearTimeout(timeout)
+            resolve(instance)
+          })
+          .catch((error: Error) => {
+            console.error('Pikafish 初始化失败:', error)
+            clearTimeout(timeout)
+            reject(error)
+          })
       } catch (error) {
         console.error('调用 window.Pikafish 失败:', error)
         clearTimeout(timeout)
@@ -204,13 +193,13 @@ export class ChessAI implements AIEngine {
         if (trimmedText === 'uciok' || trimmedText.includes('uciok')) {
           console.log('✓ 收到 uciok，发送 isready 命令')
           uciOkReceived = true
-          
+
           // 使用 setTimeout 避免阻塞 UI 线程
           setTimeout(() => {
             try {
               this.engine!.sendCommand('isready')
               console.log('✓ 已发送 isready 命令')
-              
+
               // 设置一个备用超时，如果3秒内没有收到 readyok 就自动完成
               readyTimeout = setTimeout(() => {
                 console.log('⚠️ 未收到 readyok，但已收到 uciok，自动完成初始化')
@@ -222,7 +211,6 @@ export class ChessAI implements AIEngine {
                   resolve()
                 }
               }, 3000)
-              
             } catch (error) {
               console.error('发送 isready 命令失败:', error)
               if (!isResolved) {
@@ -232,12 +220,12 @@ export class ChessAI implements AIEngine {
               }
             }
           }, 0)
-        } 
+        }
         // 检查 readyok - 只有在收到 uciok 之后才处理
         else if ((trimmedText === 'readyok' || trimmedText.includes('readyok')) && uciOkReceived) {
           console.log('✓ 收到 readyok，UCI 初始化完成')
           readyOkReceived = true
-          
+
           if (!isResolved) {
             isResolved = true
             clearTimeout(timeout)
@@ -443,15 +431,17 @@ export class ChessAI implements AIEngine {
       this.isThinking = true
       this.setStatus('thinking')
 
+      console.log(`🤖 AI开始分析，深度: ${depth}, 时间限制: ${timeLimit}秒`)
+
       // 解析FEN和走棋历史
       const { fen, moves } = this.parseFENWithMoves(fenWithMoves)
 
       // 发送position命令
-      let positionCommand = `position fen ${fen}`
+      let positionCommand = `fen ${fen}`
       if (moves.length > 0) {
         positionCommand += ` moves ${moves.join(' ')}`
       }
-
+      console.log(`发送位置命令: ${positionCommand}`)
       this.engine!.sendCommand(positionCommand)
       await this.delay(50) // 等待命令处理
 
@@ -506,66 +496,89 @@ export class ChessAI implements AIEngine {
   updateConfig(config: AIEngineConfig): void {
     if (!this.engine) return
 
+    console.log('🔧 正在应用AI引擎配置:', config)
+
     // 基础配置
     if (config.threads !== undefined) {
+      console.log(`设置线程数: ${config.threads}`)
       this.engine.sendCommand(`setoption name Threads value ${config.threads}`)
     }
     if (config.hashSize !== undefined) {
+      console.log(`设置哈希大小: ${config.hashSize}MB`)
       this.engine.sendCommand(`setoption name Hash value ${config.hashSize}`)
     }
 
     // Pikafish专用配置
     if (config.ponder !== undefined) {
+      console.log(`设置Ponder: ${config.ponder}`)
       this.engine.sendCommand(`setoption name Ponder value ${config.ponder}`)
     }
     if (config.multiPV !== undefined) {
+      console.log(`设置MultiPV: ${config.multiPV}`)
       this.engine.sendCommand(`setoption name MultiPV value ${config.multiPV}`)
     }
     if (config.moveOverhead !== undefined) {
+      console.log(`设置Move Overhead: ${config.moveOverhead}ms`)
       this.engine.sendCommand(`setoption name Move Overhead value ${config.moveOverhead}`)
     }
     if (config.nodestime !== undefined) {
+      console.log(`设置nodestime: ${config.nodestime}`)
       this.engine.sendCommand(`setoption name nodestime value ${config.nodestime}`)
     }
     if (config.skillLevel !== undefined) {
+      console.log(`🎯 设置棋力等级: ${config.skillLevel}`)
       this.engine.sendCommand(`setoption name Skill Level value ${config.skillLevel}`)
     }
     if (config.mateThreatDepth !== undefined) {
+      console.log(`设置Mate Threat Depth: ${config.mateThreatDepth}`)
       this.engine.sendCommand(`setoption name Mate Threat Depth value ${config.mateThreatDepth}`)
     }
     if (config.repetitionRule !== undefined) {
+      console.log(`设置重复规则: ${config.repetitionRule}`)
       this.engine.sendCommand(`setoption name Repetition Rule value ${config.repetitionRule}`)
     }
     if (config.drawRule !== undefined) {
+      console.log(`设置和棋规则: ${config.drawRule}`)
       this.engine.sendCommand(`setoption name Draw Rule value ${config.drawRule}`)
     }
     if (config.sixtyMoveRule !== undefined) {
+      console.log(`设置60步规则: ${config.sixtyMoveRule}`)
       this.engine.sendCommand(`setoption name Sixty Move Rule value ${config.sixtyMoveRule}`)
     }
     if (config.rule60MaxPly !== undefined) {
+      console.log(`设置Rule60MaxPly: ${config.rule60MaxPly}`)
       this.engine.sendCommand(`setoption name Rule60MaxPly value ${config.rule60MaxPly}`)
     }
     if (config.maxCheckCount !== undefined) {
+      console.log(`设置最大将军次数: ${config.maxCheckCount}`)
       this.engine.sendCommand(`setoption name MaxCheckCount value ${config.maxCheckCount}`)
     }
     if (config.limitStrength !== undefined) {
+      console.log(`🎯 设置等级制限制: ${config.limitStrength}`)
       this.engine.sendCommand(`setoption name UCI_LimitStrength value ${config.limitStrength}`)
     }
     if (config.uciElo !== undefined) {
+      console.log(`🎯 设置ELO等级: ${config.uciElo}`)
       this.engine.sendCommand(`setoption name UCI_Elo value ${config.uciElo}`)
     }
     if (config.uciWDLCentipawn !== undefined) {
+      console.log(`设置UCI_WDLCentipawn: ${config.uciWDLCentipawn}`)
       this.engine.sendCommand(`setoption name UCI_WDLCentipawn value ${config.uciWDLCentipawn}`)
     }
     if (config.luOutput !== undefined) {
+      console.log(`设置LU_Output: ${config.luOutput}`)
       this.engine.sendCommand(`setoption name LU_Output value ${config.luOutput}`)
     }
     if (config.uciShowWDL !== undefined) {
+      console.log(`设置UCI_ShowWDL: ${config.uciShowWDL}`)
       this.engine.sendCommand(`setoption name UCI_ShowWDL value ${config.uciShowWDL}`)
     }
     if (config.evalFile !== undefined) {
+      console.log(`设置评估文件: ${config.evalFile}`)
       this.engine.sendCommand(`setoption name EvalFile value ${config.evalFile}`)
     }
+
+    console.log('✅ AI引擎配置更新完成')
   }
 
   /**
