@@ -279,8 +279,11 @@ const aiVsAiSettings = computed({
   set: (value: any) => store.commit('updateAiVsAiSettings', value),
 })
 
-// AI对战AI游戏控制状态
-const aiVsAiGameRunning = ref<boolean>(false)
+// AI对战AI游戏控制状态 - 使用store管理
+const aiVsAiGameRunning = computed({
+  get: () => store.state.gomoku.gameState.aiVsAiRunning,
+  set: (value: boolean) => store.commit('setAiVsAiRunning', value),
+})
 
 // AI状态信息
 const aiStatus = reactive({
@@ -1215,9 +1218,28 @@ onMounted(async () => {
     await initializeAI()
     console.log('AI engine initialized successfully')
     addAILog('info', 'AI引擎初始化完成')
+
+    // 检查是否需要自动恢复AI对AI模式
     if (gameMode.value === 'ave') {
-      // 重置AI对战AI控制状态，确保刷新后状态正确
-      aiVsAiGameRunning.value = false
+      console.log('检查AI对AI状态恢复:', {
+        gameMode: gameMode.value,
+        aiVsAiRunning: aiVsAiGameRunning.value,
+        gameInProgress: isGameInProgress(),
+        gameOver: gameOver.value,
+      })
+
+      // 如果游戏正在进行中且AI对AI模式之前在运行，自动恢复
+      if (aiVsAiGameRunning.value && isGameInProgress() && !gameOver.value) {
+        addAILog('info', '检测到AI对AI模式之前在运行，自动恢复对战')
+        // 延迟启动，确保AI完全初始化
+        setTimeout(() => {
+          startAiVsAiGame()
+        }, 1000)
+      } else {
+        // 确保状态正确重置
+        aiVsAiGameRunning.value = false
+        addAILog('info', 'AI对AI模式处于停止状态')
+      }
     }
   } catch (error) {
     console.warn('Failed to load AI script:', error)

@@ -10,6 +10,7 @@
         height: height || 'auto',
         maxWidth: maxWidth || '90vw',
         maxHeight: maxHeight || '90vh',
+        minWidth: width ? 'auto' : '600px',
       }"
     >
       <!-- 头部 -->

@@ -37,10 +37,8 @@ export class ChessGame {
     // 初始化游戏状态
     try {
       if (config.initialState) {
-        console.log('尝试从初始状态恢复游戏')
         this.state = this.restoreFromState(config.initialState)
       } else {
-        console.log('创建新游戏')
         this.state = this.initializeGame()
       }
     } catch (error) {
@@ -72,7 +70,6 @@ export class ChessGame {
 
   // 初始化游戏
   private initializeGame(): GameState {
-    console.log('=== 开始初始化游戏 ===')
     const pieces: ChessPiece[] = []
     const board: (ChessPiece | null)[][] = Array(10)
       .fill(null)
@@ -155,12 +152,7 @@ export class ChessGame {
       }
       pieces.push(piece)
       board[y][x] = piece
-      console.log(`创建黑方棋子: ${type} 在 (${x}, ${y})`)
     })
-
-    console.log(`=== 游戏初始化完成，共创建 ${pieces.length} 个棋子 ===`)
-    console.log('红方棋子数量:', pieces.filter((p) => p.camp === 'red').length)
-    console.log('黑方棋子数量:', pieces.filter((p) => p.camp === 'black').length)
 
     // 验证棋盘状态
     let boardPieceCount = 0
@@ -169,7 +161,6 @@ export class ChessGame {
         if (board[y][x]) boardPieceCount++
       }
     }
-    console.log('棋盘上的棋子数量:', boardPieceCount)
 
     const gameState = {
       board,
@@ -231,7 +222,6 @@ export class ChessGame {
   // 获取棋子的合法移动位置
   getValidMoves(piece: ChessPiece): Position[] {
     if (!piece.alive) return []
-
     const moves: Position[] = []
     const { position, type, camp } = piece
 
@@ -385,11 +375,14 @@ export class ChessGame {
       if (this.getPieceAt(blockPos)) continue // 马腿被绊
 
       const targetPiece = this.getPieceAt(newPos)
+
+      // 如果目标位置没有棋子，或者是敌方棋子，则可以移动, 且position处的棋子必须是活着的
       if (
         !targetPiece ||
         targetPiece.camp !==
-          this.state.pieces.find((p) => p.position.x === position.x && p.position.y === position.y)
-            ?.camp
+          this.state.pieces.find(
+            (p) => p.position.x === position.x && p.position.y === position.y && p.alive,
+          )?.camp
       ) {
         moves.push(newPos)
       }
@@ -445,7 +438,7 @@ export class ChessGame {
     const piece = this.getPieceAt(position)
     if (!piece) return moves
 
-    console.log('计算炮的移动:', piece.type, '在位置:', position)
+    //console.log('计算炮的移动:', piece.type, '在位置:', position)
 
     for (const dir of directions) {
       let hasJumped = false
@@ -459,7 +452,7 @@ export class ChessGame {
 
         if (!hasJumped) {
           if (targetPiece) {
-            console.log('炮遇到架子:', targetPiece.type, '在位置:', newPos)
+            //console.log('炮遇到架子:', targetPiece.type, '在位置:', newPos)
             hasJumped = true
           } else {
             moves.push(newPos) // 炮可以移动到空位
@@ -467,10 +460,10 @@ export class ChessGame {
         } else {
           if (targetPiece) {
             if (targetPiece.camp !== piece.camp) {
-              console.log('炮可以吃掉:', targetPiece.type, '在位置:', newPos)
+              //console.log('炮可以吃掉:', targetPiece.type, '在位置:', newPos)
               moves.push(newPos) // 炮可以吃掉敌方棋子
             } else {
-              console.log('炮不能吃掉己方棋子:', targetPiece.type, '在位置:', newPos)
+              //console.log('炮不能吃掉己方棋子:', targetPiece.type, '在位置:', newPos)
             }
             break
           }
@@ -478,7 +471,7 @@ export class ChessGame {
       }
     }
 
-    console.log('炮的可移动位置:', moves)
+    //console.log('炮的可移动位置:', moves)
     return moves
   }
 
@@ -614,42 +607,25 @@ export class ChessGame {
 
   // 执行移动
   makeMove(from: Position, to: Position): boolean {
-    console.log('=== 开始执行makeMove ===')
-    console.log('尝试移动从:', from, '到:', to)
-
     const piece = this.getPieceAt(from)
-    console.log('起始位置的棋子:', piece)
 
     if (!piece) {
-      console.log('无效移动：起始位置没有棋子')
       return false
     }
 
     if (piece.camp !== this.state.currentPlayer) {
-      console.log('无效移动：不是当前玩家的棋子')
-      console.log('当前玩家:', this.state.currentPlayer, '棋子阵营:', piece.camp)
       return false
     }
 
-    console.log('=== 棋子验证通过，检查有效移动 ===')
     const validMoves = this.getValidMoves(piece)
-    console.log('有效移动位置:', validMoves)
 
     const isValidMove = validMoves.some((move) => move.x === to.x && move.y === to.y)
-    console.log('移动是否有效:', isValidMove)
 
     if (!isValidMove) {
-      console.log('无效移动：目标位置不在有效移动范围内')
       return false
     }
 
-    console.log('=== 移动验证通过，开始执行移动 ===')
     const capturedPiece = this.getPieceAt(to)
-
-    console.log('执行移动:', piece.type, piece.camp, '从', from, '到', to)
-    if (capturedPiece) {
-      console.log('吃掉棋子:', capturedPiece.type, capturedPiece.camp)
-    }
 
     // 记录移动，包含FEN和UCI信息
     const move: Move = {
@@ -687,21 +663,13 @@ export class ChessGame {
     }
 
     // 全面验证棋盘一致性
-    console.log('=== 准备验证棋盘一致性 ===')
     this.validateBoardConsistency()
-    console.log('=== 棋盘一致性验证完成 ===')
 
     // 切换玩家
-    console.log('=== 准备切换玩家 ===')
-    const oldPlayer = this.state.currentPlayer
     this.state.currentPlayer = this.state.currentPlayer === 'red' ? 'black' : 'red'
-    console.log('玩家切换: ' + oldPlayer + ' -> ' + this.state.currentPlayer)
-    console.log('=== 玩家切换完成 ===')
 
     // 检查游戏状态，获取将军和将死信息
-    console.log('=== 准备更新游戏状态 ===')
     this.updateGameStatus()
-    console.log('=== 游戏状态更新完成 ===')
 
     // 在走法记录中添加将军和将死信息以及FEN
     move.isCheck = this.state.isInCheck
@@ -710,15 +678,12 @@ export class ChessGame {
 
     this.state.moveHistory.push(move)
 
-    console.log('=== 走法已添加到历史记录 ===')
-
     // 播放音效
     this.playMoveSound(move)
 
     // 触发状态更新
     this.triggerStateUpdate()
 
-    console.log('=== makeMove 执行完成，返回 true ===')
     return true
   }
 
@@ -777,7 +742,6 @@ export class ChessGame {
         capturedPiece.alive = true
         capturedPiece.position = { ...lastMove.to }
         this.state.board[lastMove.to.y][lastMove.to.x] = capturedPiece
-        console.log('恢复被吃棋子:', capturedPiece.type, '在位置:', capturedPiece.position)
       } else {
         // 如果在pieces数组中找不到，说明可能被意外删除了，重新添加
         const restoredPiece = { ...lastMove.capturedPiece }
@@ -785,7 +749,6 @@ export class ChessGame {
         restoredPiece.position = { ...lastMove.to }
         this.state.pieces.push(restoredPiece)
         this.state.board[lastMove.to.y][lastMove.to.x] = restoredPiece
-        console.log('重新创建被吃棋子:', restoredPiece.type, '在位置:', restoredPiece.position)
       }
     }
 
@@ -805,37 +768,26 @@ export class ChessGame {
     // 触发状态更新
     this.triggerStateUpdate()
 
-    console.log('悔棋成功，恢复到:', lastMove.from, '从:', lastMove.to)
     return true
   }
 
   // 更新游戏状态
   private updateGameStatus() {
-    console.log('=== updateGameStatus 开始 ===')
     const currentCamp = this.state.currentPlayer // 当前要移动的阵营
-    console.log('当前阵营:', currentCamp)
 
     try {
       this.state.isInCheck = this.isInCheck(currentCamp)
-      console.log('将军检查结果:', this.state.isInCheck)
 
       // 检查是否有合法移动
       const alivePieces = this.state.pieces.filter((p) => p.camp === currentCamp && p.alive)
-      console.log('当前阵营活着的棋子数量:', alivePieces.length)
 
       const hasValidMoves = alivePieces.some((p) => {
         const moves = this.getValidMoves(p)
-        console.log(
-          `棋子 ${p.type} 在 (${p.position.x},${p.position.y}) 有 ${moves.length} 个有效移动`,
-        )
         return moves.length > 0
       })
 
-      console.log('是否有有效移动:', hasValidMoves)
-
       if (!hasValidMoves) {
         this.state.gameStatus = this.state.isInCheck ? 'checkmate' : 'stalemate'
-        console.log('游戏结束，状态:', this.state.gameStatus)
 
         // 注意：将死音效由 playMoveSound 中的 playCheckmateSound 处理
         // 和棋音效在这里播放
@@ -843,31 +795,21 @@ export class ChessGame {
           const isWin = false
           this.soundGenerator?.playGameOverSound(isWin)
         }
-      } else {
-        console.log('游戏继续进行')
       }
     } catch (error) {
       console.error('updateGameStatus 出错:', error)
     }
-
-    console.log('=== updateGameStatus 结束 ===')
   }
 
   // 重置游戏
   reset(): void {
-    console.log('重置游戏')
     this.state = this.initializeGame()
     this.soundGenerator?.playGameStartSound()
     this.triggerStateUpdate()
-    console.log('游戏重置完成')
   }
 
   // 从保存的状态恢复游戏
-  // 从保存的状态恢复游戏
   restoreFromState(savedState: GameState): GameState {
-    console.log('=== 开始恢复游戏状态 ===')
-    console.log('savedState:', savedState)
-
     // 检查savedState的基本有效性
     if (!savedState) {
       console.warn('savedState为空，创建新游戏')
@@ -883,15 +825,9 @@ export class ChessGame {
       return this.initializeGame()
     }
 
-    console.log('深拷贝后的状态:', state)
-    console.log('pieces类型:', typeof state.pieces, 'isArray:', Array.isArray(state.pieces))
-
     // 核心验证：检查pieces数组
     if (!state.pieces || !Array.isArray(state.pieces) || state.pieces.length === 0) {
       console.warn('棋子数组无效或为空，重新创建标准开局')
-      console.log('- pieces存在:', !!state.pieces)
-      console.log('- 是数组:', Array.isArray(state.pieces))
-      console.log('- 数组长度:', state.pieces ? state.pieces.length : 'N/A')
       return this.initializeGame()
     }
 
@@ -937,7 +873,6 @@ export class ChessGame {
     }
 
     // 重建棋盘
-    console.log('=== 重建棋盘 ===')
     state.board = Array(10)
       .fill(null)
       .map(() => Array(9).fill(null))
@@ -973,7 +908,6 @@ export class ChessGame {
 
     // 将存活的棋子放置到棋盘上
     const alivePiecesForBoard = state.pieces.filter((piece: ChessPiece) => piece.alive)
-    console.log('将', alivePiecesForBoard.length, '个存活棋子放置到棋盘上')
 
     alivePiecesForBoard.forEach((piece: ChessPiece) => {
       const { x, y } = piece.position
@@ -982,10 +916,6 @@ export class ChessGame {
       }
       state.board[y][x] = piece
     })
-
-    console.log('=== 游戏状态恢复完成 ===')
-    console.log('最终棋子数量:', state.pieces.length)
-    console.log('存活棋子数量:', alivePiecesForBoard.length)
 
     return state as GameState
   }
@@ -1051,6 +981,5 @@ export class ChessGame {
     // 销毁音效系统
     this.soundGenerator = null
     this.onStateUpdate = undefined
-    console.log('游戏实例已销毁')
   }
 }

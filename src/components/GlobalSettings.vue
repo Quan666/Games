@@ -2,7 +2,8 @@
   <SettingsDialog
     v-model="show"
     title="⚙️ 全局设置"
-    max-width="500px"
+    width="1400px"
+    max-width="90vw"
     :apply-callback="handleApply"
     :cancel-callback="handleCancel"
     :reset-callback="resetToDefault"

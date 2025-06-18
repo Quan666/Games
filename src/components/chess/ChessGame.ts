@@ -623,7 +623,6 @@ export class ChessGame {
   private getValidMovesWithoutCheckValidation(piece: ChessPiece): Position[] {
     const moves: Position[] = []
     const { position, type, camp } = piece
-
     switch (type) {
       case '帥':
       case '將':
@@ -1116,18 +1115,34 @@ export class ChessGame {
    * 检查是否应该AI走棋
    */
   shouldAIMove(): boolean {
+    console.log('shouldAIMove 检查:', {
+      hasAIManager: !!this.aiManager,
+      isAIThinking: this.isAIThinking,
+      gameStatus: this.state.gameStatus,
+      aiReady: this.aiManager?.isReady(),
+      gameMode: this.config.gameMode,
+      aiVsAiRunning: this.aiVsAiRunning,
+      currentPlayer: this.state.currentPlayer,
+    })
+
     // 基础条件检查
     if (!this.aiManager || this.isAIThinking) {
+      console.log('AI基础条件不满足:', {
+        hasAIManager: !!this.aiManager,
+        isAIThinking: this.isAIThinking,
+      })
       return false
     }
 
     // 游戏必须在进行中
     if (this.state.gameStatus !== 'playing') {
+      console.log('游戏状态不是playing:', this.state.gameStatus)
       return false
     }
 
     // AI必须已准备好
     if (!this.aiManager.isReady()) {
+      console.log('AI未准备好')
       return false
     }
 
@@ -1144,8 +1159,10 @@ export class ChessGame {
         return isAITurn
       case 'ai-vs-ai':
         // AI对战：总是让AI走棋，但要检查是否正在运行
+        console.log('AI vs AI模式检查:', { aiVsAiRunning: this.aiVsAiRunning })
         return this.aiVsAiRunning
       default:
+        console.log('未知游戏模式:', this.config.gameMode)
         return false
     }
   }
@@ -1287,6 +1304,14 @@ export class ChessGame {
   }
 
   /**
+   * 更新游戏模式
+   */
+  async updateGameMode(gameMode: 'pvp' | 'pve' | 'ai-vs-ai'): Promise<void> {
+    console.log('更新游戏模式:', gameMode)
+    await this.updateConfig({ gameMode })
+  }
+
+  /**
    * 处理游戏模式变化
    */
   private async handleGameModeChange(oldMode?: string, newMode?: string): Promise<void> {
@@ -1314,11 +1339,40 @@ export class ChessGame {
         }
         break
       case 'ai-vs-ai':
-        if (this.config.aiConfig) {
-          const success = await this.safeEnableAI(this.config.aiConfig)
-          if (!success) {
-            console.warn('AI启用失败，回退到PVP模式')
-            this.config.gameMode = 'pvp'
+        // AI vs AI 模式需要特殊处理，使用默认配置或者从aiConfig中获取基础配置
+        const aiVsAiConfig = this.config.aiConfig || {
+          engine: 'pikafish',
+          thinkingTime: 5,
+          depth: 8,
+          threads: 1,
+          hashSize: 16,
+          skillLevel: 20,
+          multiPV: 1,
+          moveOverhead: 10,
+          repetitionRule: 'AsianRule',
+          drawRule: 'None',
+          sixtyMoveRule: true,
+          maxCheckCount: 0,
+          limitStrength: false,
+          uciElo: 1280,
+          ponder: false,
+        }
+
+        const success = await this.safeEnableAI(aiVsAiConfig)
+        if (!success) {
+          console.warn('AI启用失败，回退到PVP模式')
+          this.config.gameMode = 'pvp'
+        } else {
+          console.log('AI vs AI 模式启用成功，AI Manager 状态:', {
+            hasAIManager: !!this.aiManager,
+            isReady: this.aiManager?.isReady(),
+            status: this.aiManager?.getStatus(),
+          })
+          // 确保AI完全准备好后再尝试启动对战
+          if (this.aiManager?.isReady()) {
+            console.log('AI已准备就绪，可以开始对战')
+          } else {
+            console.log('AI尚未准备就绪，等待初始化完成')
           }
         }
         break
@@ -1329,8 +1383,18 @@ export class ChessGame {
    * 开始AI对AI自动对战
    */
   startAiVsAi(): void {
+    console.log('startAiVsAi 被调用:', {
+      gameMode: this.config.gameMode,
+      hasAIManager: !!this.aiManager,
+      aiReady: this.aiManager?.isReady(),
+      currentAiVsAiRunning: this.aiVsAiRunning,
+    })
+
     if (this.config.gameMode !== 'ai-vs-ai' || !this.aiManager) {
-      console.warn('无法启动AI对AI：模式不正确或AI未初始化')
+      console.warn('无法启动AI对AI：模式不正确或AI未初始化', {
+        gameMode: this.config.gameMode,
+        hasAIManager: !!this.aiManager,
+      })
       return
     }
 
@@ -1340,10 +1404,13 @@ export class ChessGame {
     }
 
     this.aiVsAiRunning = true
-    console.log('启动AI对AI自动对战')
+    console.log('启动AI对AI自动对战，aiVsAiRunning设置为:', this.aiVsAiRunning)
 
     // 立即检查并开始第一步
-    this.checkAndMakeAIMove()
+    setTimeout(() => {
+      console.log('延迟调用 checkAndMakeAIMove')
+      this.checkAndMakeAIMove()
+    }, 100)
   }
 
   /**
@@ -1397,6 +1464,14 @@ export class ChessGame {
     } else {
       this.startAiVsAi()
     }
+  }
+
+  /**
+   * 设置AI对AI运行状态（用于与外部状态同步）
+   */
+  setAiVsAiRunning(running: boolean): void {
+    console.log('设置AI对AI运行状态:', running)
+    this.aiVsAiRunning = running
   }
 
   /**
@@ -1604,14 +1679,21 @@ export class ChessGame {
   }
 
   // 检查是否轮到AI走棋并执行
-  private checkAndMakeAIMove(): void {
-    if (this.shouldAIMove() && !this.isAIThinking) {
-      console.log('检测到需要AI走棋')
+  checkAndMakeAIMove(): void {
+    console.log('checkAndMakeAIMove 被调用')
+    const shouldMove = this.shouldAIMove()
+    console.log('shouldAIMove 返回:', shouldMove, '是否AI思考中:', this.isAIThinking)
+
+    if (shouldMove && !this.isAIThinking) {
+      console.log('检测到需要AI走棋，准备执行')
       setTimeout(() => {
+        console.log('延迟执行 makeAIMove')
         this.makeAIMove().catch((error) => {
           console.error('AI走棋失败:', error)
         })
       }, 500) // 稍微延迟，让界面更新
+    } else {
+      console.log('不需要AI走棋:', { shouldMove, isAIThinking: this.isAIThinking })
     }
   }
 

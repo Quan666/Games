@@ -92,20 +92,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { AIEngineConfig } from './ai'
+import { computed, getCurrentInstance } from 'vue'
+
+// 定义store类型
+interface Store {
+  state: any
+  commit: (type: string, payload?: any) => void
+  getters: any
+}
+
+// 使用store（直接从全局注入）
+const store = getCurrentInstance()?.appContext.config.globalProperties.$store as Store
 
 interface Props {
-  currentPlayer: 'red' | 'black'
-  moveCount: number
-  gameMode: 'pvp' | 'pve' | 'ai-vs-ai'
-  playerCamp?: 'red' | 'black'
-  aiThinking: boolean
+  // 只保留需要从父组件传递的动态数据
+  currentPlayer?: 'red' | 'black'
+  moveCount?: number
   aiStatus?: {
     ready: boolean
     status: string
   }
-  aiConfig?: AIEngineConfig
   gameResult?: string
   isInCheck?: boolean // 新增：是否将军
   isCheckmate?: boolean // 新增：是否将死
@@ -113,17 +119,36 @@ interface Props {
 
 const props = defineProps<Props>()
 
+// 从store获取响应式数据
+const gameMode = computed(() => store.state.chess.settings.gameMode)
+const playerCamp = computed(() => store.state.chess.settings.playerCamp)
+const aiThinking = computed(() => store.state.chess.gameState.aiThinking)
+const aiConfig = computed(() => store.getters['chess/getCurrentAiConfig'])
+
+// 从props获取的动态数据
+const currentPlayer = computed(() => props.currentPlayer || 'red')
+const moveCount = computed(() => props.moveCount || 0)
+// @ts-ignore
+const gameResult = computed(() => props.gameResult)
+const isInCheck = computed(() => props.isInCheck || false)
+const isCheckmate = computed(() => props.isCheckmate || false)
+const aiStatus = computed(() => props.aiStatus)
+
 const currentPlayerText = computed(() => {
-  if (props.gameMode === 'pvp') {
-    return props.currentPlayer === 'red' ? '红方' : '黑方'
-  } else if (props.gameMode === 'pve') {
-    if (props.currentPlayer === props.playerCamp) {
+  const mode = gameMode.value
+  const player = currentPlayer.value
+  const camp = playerCamp.value
+
+  if (mode === 'pvp') {
+    return player === 'red' ? '红方' : '黑方'
+  } else if (mode === 'pve') {
+    if (player === camp) {
       return '玩家'
     } else {
       return 'AI'
     }
   } else {
-    return props.currentPlayer === 'red' ? 'AI红方' : 'AI黑方'
+    return player === 'red' ? 'AI红方' : 'AI黑方'
   }
 })
 

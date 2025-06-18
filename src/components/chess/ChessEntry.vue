@@ -47,11 +47,7 @@
       <ChessGameInfoHeader
         :current-player="currentPlayer"
         :move-count="moveHistory.length"
-        :game-mode="gameConfig.gameMode || 'pvp'"
-        :player-camp="gameConfig.playerCamp"
-        :ai-thinking="aiStatus?.thinking || false"
         :ai-status="aiStatus"
-        :ai-config="gameConfig.aiConfig"
         :game-result="gameResult"
         :is-in-check="gameState.isInCheck"
         :is-checkmate="gameStatus === 'checkmate'"
@@ -68,22 +64,18 @@
             :selectedPiece="selectedPiece"
             :availableMoves="availableMoves"
             :showCoordinates="showCoordinates"
+            :disabled="isBoardDisabled"
             @piece-click="onPieceClick"
             @board-click="onBoardClick"
             @move-click="onMoveClick"
             @update:gameState="onGameStateUpdate"
             @animationComplete="onAnimationComplete"
+            @disabledClick="onBoardDisabledClick"
           />
         </div>
         <div class="flex-1 flex flex-col justify-stretch">
           <!-- 底部控制区 -->
-          <ChessGameControlPanel
-            :can-undo="canUndo"
-            @reset-game="resetGame"
-            @undo-move="undoMove"
-            @toggle-ai-vs-ai="toggleAiVsAi"
-            @test-ai="testAI"
-          />
+          <ChessGameControlPanel @reset-game="resetGame" @undo-move="undoMove" />
         </div>
       </div>
     </div>
@@ -96,24 +88,14 @@
         <ChessGameInfoHeader
           :current-player="currentPlayer"
           :move-count="moveHistory.length"
-          :game-mode="gameConfig.gameMode || 'pvp'"
-          :player-camp="gameConfig.playerCamp"
-          :ai-thinking="aiStatus?.thinking || false"
           :ai-status="aiStatus"
-          :ai-config="gameConfig.aiConfig"
           :game-result="gameResult"
           :is-in-check="gameState.isInCheck"
           :is-checkmate="gameStatus === 'checkmate'"
         />
 
         <!-- 左侧控制面板 -->
-        <ChessGameControlPanel
-          :can-undo="canUndo"
-          @reset-game="resetGame"
-          @undo-move="undoMove"
-          @toggle-ai-vs-ai="toggleAiVsAi"
-          @test-ai="testAI"
-        />
+        <ChessGameControlPanel @reset-game="resetGame" @undo-move="undoMove" />
       </div>
 
       <!-- 中间棋盘 -->
@@ -126,11 +108,13 @@
           :selectedPiece="selectedPiece"
           :availableMoves="availableMoves"
           :showCoordinates="showCoordinates"
+          :disabled="isBoardDisabled"
           @piece-click="onPieceClick"
           @board-click="onBoardClick"
           @move-click="onMoveClick"
           @update:gameState="onGameStateUpdate"
           @animationComplete="onAnimationComplete"
+          @disabledClick="onBoardDisabledClick"
         />
       </div>
     </div>
@@ -149,94 +133,37 @@ import ChessGameControlPanel from './ChessGameControlPanel.vue'
 import ChessGameInfoHeader from './ChessGameInfoHeader.vue'
 import GameSettings from './ChessSettings.vue'
 import ChessAISettings from './ChessAISettings.vue'
-import { ChessGame, type Position, type GameConfig, type ChessPiece } from './ChessGameWrapper'
+import { EnhancedChessGame, type Position, type ChessPiece } from './EnhancedChessGameWrapper'
 
 import { createChessSoundGenerator } from './core/ChessSound'
 
 const store = useStore()
 const chessBoardRef = ref()
 
-// 初始化游戏配置 - 直接使用store中的数据
-function initializeGameConfig(): GameConfig {
-  const storeSettings = store.state.chess?.settings || {}
-  const storeGameConfig = store.state.chess?.gameConfig || {}
-
-  console.log('=== 从store初始化配置 ===')
-
-  // 直接使用store中的配置，确保单一数据源
-  const config: GameConfig = {
-    gameMode: storeSettings.gameMode || 'pvp',
-    playerCamp: storeSettings.playerCamp || 'red',
-    enableAI: (storeSettings.gameMode || 'pvp') !== 'pvp',
-    aiConfig: storeGameConfig.aiConfig || {
-      threads: 1,
-      hashSize: 64,
-      depth: 8,
-      timeLimit: 5,
-      skillLevel: 12,
-      multiPV: 1,
-      moveOverhead: 10,
-      repetitionRule: 'AsianRule',
-      drawRule: 'None',
-      sixtyMoveRule: true,
-      maxCheckCount: 3,
-      limitStrength: false,
-      uciElo: 2800,
-      ponder: false,
-    },
-    aiVsAiConfig: storeGameConfig.aiVsAiConfig || {
-      redAI: {
-        threads: 1,
-        hashSize: 64,
-        depth: 8,
-        timeLimit: 5,
-        skillLevel: 18,
-        multiPV: 1,
-        moveOverhead: 10,
-        repetitionRule: 'AsianRule',
-        drawRule: 'None',
-        sixtyMoveRule: true,
-        maxCheckCount: 3,
-        limitStrength: false,
-        uciElo: 2800,
-        ponder: false,
-      },
-      blackAI: {
-        threads: 1,
-        hashSize: 64,
-        depth: 8,
-        timeLimit: 5,
-        skillLevel: 16,
-        multiPV: 1,
-        moveOverhead: 10,
-        repetitionRule: 'AsianRule',
-        drawRule: 'None',
-        sixtyMoveRule: true,
-        maxCheckCount: 3,
-        limitStrength: false,
-        uciElo: 2800,
-        ponder: false,
-      },
-      gameSpeed: 2000,
-    },
-  }
-
-  console.log('✅ 配置初始化完成:', config)
-  return config
-}
-
-// 初始化游戏 - 根据store中的数据初始化ChessGame
-function initializeGame(): ChessGame {
-  const config = initializeGameConfig()
+// 初始化游戏 - 使用增强版包装器和store配置管理
+function initializeGame(): EnhancedChessGame {
   const savedState = store.state.chess?.gameState?.currentGame
 
-  console.log('=== 游戏初始化 ===')
+  console.log('=== 增强游戏初始化 ===')
   console.log('Saved state:', !!savedState)
 
-  // 创建 ChessGame 实例
-  const game = new ChessGame(savedState, config)
+  // 从store获取完整的游戏配置
+  const gameConfig = store.state.chess?.gameConfig || {}
+  const settings = store.state.chess?.settings || {}
+
+  // 创建增强的 ChessGame 实例，传入store以支持配置管理
+  const game = new EnhancedChessGame(savedState, {
+    enableAI: gameConfig.gameMode !== 'pvp' || settings.gameMode !== 'pvp',
+    gameMode: gameConfig.gameMode || settings.gameMode || 'pvp',
+    playerCamp: gameConfig.playerCamp || settings.playerCamp || 'red',
+    store: store, // 传入store以支持配置监听
+  })
 
   console.log(savedState ? '✅ 恢复保存的游戏状态' : 'ℹ️ 创建新游戏')
+  console.log('游戏配置:', {
+    gameMode: gameConfig.gameMode || settings.gameMode || 'pvp',
+    playerCamp: gameConfig.playerCamp || settings.playerCamp || 'red',
+  })
   return game
 }
 
@@ -266,7 +193,7 @@ const globalSettings = computed(
     },
 )
 
-// 弹窗状态 - 从store获取
+// 弹窗状态 - 直接从store获取，确保响应式
 const showGameSettings = computed({
   get: () => store.state.chess?.ui?.showGameSettings || false,
   set: (value) => store.commit('chess/setShowGameSettings', value),
@@ -277,8 +204,11 @@ const showAISettings = computed({
 })
 const showGameOverDialog = ref(false)
 
-// 从 store 读取走法记录显示状态
-const showMoveHistory = computed(() => store.state.chess?.settings?.showMoveHistory || false)
+// 从 store 读取走法记录显示状态，确保响应式
+const showMoveHistory = computed({
+  get: () => store.state.chess?.settings?.showMoveHistory || false,
+  set: () => store.commit('chess/toggleChessMoveHistory'),
+})
 
 // 使用计算属性从 store 获取设置
 const showCoordinates = computed(() => chessSettings.value.showCoordinates)
@@ -410,9 +340,26 @@ const boardSize = computed(() => {
 // 游戏实例和状态
 const game = initializeGame()
 const gameState = reactive(game.getState())
-const gameStatus = ref<'playing' | 'checkmate' | 'stalemate' | 'draw'>('playing')
-const currentPlayer = ref<'red' | 'black'>('red')
-const moveHistory = ref<any[]>([])
+
+// 直接从store获取游戏状态，确保响应式
+const gameStatus = computed(() => {
+  const storeGameOver = store.state.chess?.gameState?.gameOver || false
+  if (storeGameOver) {
+    return gameState.gameStatus || 'playing'
+  }
+  return gameState.gameStatus || 'playing'
+})
+
+const currentPlayer = computed(() => gameState.currentPlayer || 'red')
+
+// 移动历史直接从store获取，确保响应式
+const moveHistory = computed({
+  get: () => store.state.chess?.gameState?.moveHistory || [],
+  set: (value) => {
+    // 通过游戏逻辑更新，会自动同步到store
+    gameState.moveHistory = value
+  },
+})
 
 // 选中的棋子和可移动位置
 const selectedPiece = ref<ChessPiece | null>(null)
@@ -421,9 +368,41 @@ const availableMoves = ref<Position[]>([])
 // 游戏开始时间
 const gameStartTime = ref(new Date())
 
-// AI相关状态
-const aiStatus = ref<any>(null)
-const aiVsAiRunning = ref(false)
+// AI相关状态 - 直接从store获取，确保响应式
+const aiStatus = computed(() => {
+  const thinking = store.state.chess?.gameState?.aiThinking || false
+  return {
+    thinking,
+    thinkingTime: thinking ? Date.now() - (game.getAIStatus()?.startTime || Date.now()) : 0,
+    ...game.getAIStatus(),
+  }
+})
+
+// aiVsAiRunning 直接使用 store 的状态，确保响应式
+const aiVsAiRunning = computed({
+  get: () => store.state.chess?.gameState?.aiVsAiRunning || false,
+  set: (val: boolean) => store.commit('chess/setAiVsAiRunning', val),
+})
+
+// 棋盘禁用状态计算属性
+const isBoardDisabled = computed(() => {
+  const currentGameMode = game.getConfig().gameMode
+
+  // AI vs AI 模式：当 aiVsAiRunning 为 true 时禁用
+  if (currentGameMode === 'ai-vs-ai') {
+    return aiVsAiRunning.value
+  }
+
+  // 人机对战模式：轮到 AI 走棋且 AI 正在思考时禁用
+  if (currentGameMode === 'pve') {
+    const isAITurn = game.shouldAIMove()
+    const isAIThinking = aiStatus.value?.thinking || false
+    return isAITurn && isAIThinking
+  }
+
+  // PVP 模式：不禁用
+  return false
+})
 
 // 音效管理器
 const chessSound = createChessSoundGenerator(
@@ -431,8 +410,18 @@ const chessSound = createChessSoundGenerator(
   () => voiceEnabled.value,
 )
 
-// 游戏配置 - 从游戏实例获取当前配置
-const gameConfig = computed(() => game.getConfig())
+// 游戏配置 - 从store获取当前配置
+const gameConfig = computed(() => {
+  // 始终用store的gameConfig，避免header信息不同步
+  const config = store.state.chess?.gameConfig || {}
+  return {
+    gameMode: config.gameMode || 'pvp',
+    playerCamp: config.playerCamp || 'red',
+    enableAI: config.gameMode !== 'pvp',
+    aiConfig: config.aiConfig || {},
+    aiVsAiConfig: config.aiVsAiConfig || {},
+  }
+})
 
 // 计算属性
 const gameStatusText = computed(() => {
@@ -472,21 +461,20 @@ const updateGameState = () => {
     moveHistory: [...newState.moveHistory],
   })
 
-  gameStatus.value = newState.gameStatus
-  currentPlayer.value = newState.currentPlayer
-  moveHistory.value = [...newState.moveHistory]
-
-  // 更新AI状态
-  aiStatus.value = game.getAIStatus()
-  aiVsAiRunning.value = game.getAiVsAiStatus()
-
-  // 同步更新store（单向更新）
+  // 直接更新store状态，让计算属性自动响应
   store.commit('chess/updateGameState', {
     moveHistory: [...newState.moveHistory],
     gameOver: newState.gameStatus !== 'playing',
-    aiThinking: aiStatus.value?.thinking || false,
-    aiVsAiRunning: aiVsAiRunning.value,
+    aiThinking: game.getAIStatus()?.thinking || false,
+    aiVsAiRunning: game.isAiVsAiRunning(),
   })
+
+  // 如果游戏结束，确保停止AI对AI模式
+  if (newState.gameStatus !== 'playing' && aiVsAiRunning.value) {
+    console.log('游戏结束，停止AI对AI模式')
+    aiVsAiRunning.value = false
+    store.commit('chess/setAiVsAiRunning', false)
+  }
 
   // 显示游戏结束弹窗
   showGameOverDialog.value = newState.gameStatus !== 'playing'
@@ -494,7 +482,7 @@ const updateGameState = () => {
   // 自动保存游戏状态到store
   try {
     const gameStateForSaving = game.getStateForSaving()
-    store.commit('saveChessGame', gameStateForSaving)
+    store.commit('chess/saveGame', gameStateForSaving)
   } catch (error) {
     console.warn('保存游戏状态失败:', error)
   }
@@ -504,13 +492,39 @@ const updateGameState = () => {
 onMounted(async () => {
   console.log('=== ChessEntry 组件初始化 ===')
 
-  // AI状态监控
+  // 确保settings和gameConfig配置同步
+  const settings = store.state.chess?.settings || {}
+  const gameConfig = store.state.chess?.gameConfig || {}
+
+  // 如果gameConfig中缺少playerCamp，从settings中同步
+  if (!gameConfig.playerCamp && settings.playerCamp) {
+    store.commit('chess/saveGameConfig', {
+      ...gameConfig,
+      playerCamp: settings.playerCamp,
+    })
+  }
+
+  // 如果gameConfig中缺少gameMode，从settings中同步
+  if (!gameConfig.gameMode && settings.gameMode) {
+    store.commit('chess/saveGameConfig', {
+      ...gameConfig,
+      gameMode: settings.gameMode,
+    })
+  }
+
+  // AI状态监控 - 使用更短的轮询间隔以确保及时响应AI思考状态变化
   const aiStatusTimer = setInterval(() => {
     const newAiStatus = game.getAIStatus()
-    if (JSON.stringify(aiStatus.value) !== JSON.stringify(newAiStatus)) {
-      aiStatus.value = newAiStatus
+    const currentThinking = store.state.chess?.gameState?.aiThinking || false
+
+    // 如果AI思考状态发生变化，更新store状态
+    if (newAiStatus.thinking !== currentThinking) {
+      console.log(`AI思考状态变化: ${currentThinking} -> ${newAiStatus.thinking}`)
+      store.commit('chess/setAiThinking', newAiStatus.thinking)
+      store.commit('chess/setAiVsAiRunning', game.isAiVsAiRunning())
+      updateGameState()
     }
-  }, 500)
+  }, 50) // 减少轮询间隔到50ms，提高响应速度
 
   // 组件卸载时清理资源
   onUnmounted(() => {
@@ -528,34 +542,213 @@ onMounted(async () => {
     return chessBoardRef.value?.movePiece(from, to) || false
   })
 
-  // 根据游戏模式初始化AI
-  const currentConfig = game.getConfig()
-  if (currentConfig.enableAI && currentConfig.aiConfig) {
-    console.log('初始化AI引擎...')
-    setTimeout(async () => {
-      try {
-        await game.enableAI(currentConfig.aiConfig!)
-        console.log('AI初始化成功')
-
-        // 人机模式：如果当前是AI回合，进行AI分析下子
-        if (currentConfig.gameMode === 'pve' && game.shouldAIMove()) {
-          setTimeout(() => game.makeAIMove().then((success) => success && updateGameState()), 1000)
-        }
-
-        // AI对AI模式：开始自动对战
-        if (currentConfig.gameMode === 'ai-vs-ai') {
-          console.log('启动AI对AI自动对战')
-          game.startAiVsAi()
-        }
-      } catch (error) {
-        console.warn('AI初始化失败:', error)
-        // 更新store状态
-        store.commit('chess/updateGameMode', 'pvp')
-      }
-      updateGameState()
-    }, 100)
-  }
+  // 页面刷新后的AI对AI模式初始化逻辑
+  await initializeAIAfterRefresh()
 })
+
+// 重写的AI对AI初始化逻辑
+const initializeAIAfterRefresh = async () => {
+  const currentConfig = game.getConfig()
+
+  // 首先判断当前是否是AI对AI模式
+  if (currentConfig.gameMode === 'ai-vs-ai') {
+    console.log('检测到AI对AI模式，开始初始化引擎...')
+
+    try {
+      // 如果是AI对AI模式，初始化引擎
+      await game.enableAI(currentConfig.aiConfig || {})
+      console.log('AI对AI模式引擎初始化成功')
+
+      // 判断是否处于开始状态aiVsAiRunning=true
+      const savedAiVsAiRunning = store.state.chess?.gameState?.aiVsAiRunning || false
+      const gameStatus = gameState.gameStatus || 'playing'
+
+      console.log('AI对AI状态检查:', { savedAiVsAiRunning, gameStatus })
+
+      // 如果游戏还在进行中且应该运行AI对战
+      if (gameStatus === 'playing' && savedAiVsAiRunning) {
+        console.log('恢复AI对AI对战状态，启动自动对战')
+
+        // 启动AI对AI模式
+        game.startAiVsAi()
+
+        // 确保store状态同步
+        store.commit('chess/setAiVsAiRunning', true)
+
+        // 检查是否需要AI走棋，如果需要则开始思考
+        setTimeout(() => {
+          if (game.shouldAIMove()) {
+            console.log('需要AI走棋，启动思考周期')
+            startAIThinkingCycle()
+          }
+        }, 500)
+      } else if (gameStatus === 'playing') {
+        console.log('AI对AI模式游戏进行中，但未标记为运行状态')
+      } else {
+        console.log('游戏已结束，不启动AI对战')
+      }
+    } catch (error) {
+      console.warn('AI对AI引擎初始化失败:', error)
+      store.commit('chess/updateGameMode', 'pvp')
+    }
+  } else if (currentConfig.enableAI && currentConfig.gameMode === 'pve') {
+    // 人机模式的AI初始化
+    console.log('初始化人机模式AI引擎...')
+    try {
+      await game.enableAI(currentConfig.aiConfig || {})
+      console.log('人机模式AI初始化成功')
+
+      // 如果当前是AI回合，需要AI走棋
+      if (game.shouldAIMove()) {
+        console.log('加载页面时发现轮到AI走棋，启动AI思考')
+        setTimeout(() => {
+          updateGameState()
+          startAIThinkingCycle()
+        }, 1000)
+      }
+    } catch (error) {
+      console.warn('人机模式AI初始化失败:', error)
+      store.commit('chess/updateGameMode', 'pvp')
+    }
+  }
+
+  updateGameState()
+}
+
+// AI思考周期管理
+const startAIThinkingCycle = async () => {
+  // 检查是否应该AI走棋
+  if (!game.shouldAIMove()) {
+    console.log('AI思考周期检查失败，停止执行 - AI不应该走棋')
+    return
+  }
+
+  // 获取当前游戏模式
+  const currentGameMode = game.getConfig().gameMode
+
+  // 对于AI对AI模式，需要额外检查aiVsAiRunning状态
+  if (currentGameMode === 'ai-vs-ai' && !aiVsAiRunning.value) {
+    console.log('AI思考周期检查失败，停止执行 - AI对AI模式未运行')
+    return
+  }
+
+  console.log(`开始AI思考周期 - 模式: ${currentGameMode}`)
+
+  try {
+    // 开始AI思考
+    const success = await game.makeAIMove()
+
+    if (success) {
+      console.log('AI思考并下子成功，等待动画完成')
+      // AI下子成功，游戏逻辑会在onAnimationComplete中继续处理
+    } else {
+      console.log('AI思考失败，尝试重新开始思考周期')
+      // 如果AI思考失败，等待一段时间后重试
+      setTimeout(() => {
+        // 根据游戏模式决定重试条件
+        const shouldRetry =
+          currentGameMode === 'ai-vs-ai'
+            ? aiVsAiRunning.value && game.shouldAIMove()
+            : game.shouldAIMove()
+
+        if (shouldRetry) {
+          startAIThinkingCycle()
+        }
+      }, 2000)
+    }
+  } catch (error) {
+    console.error('AI思考周期出错:', error)
+    // 出错时也尝试重新开始
+    setTimeout(() => {
+      // 根据游戏模式决定重试条件
+      const shouldRetry =
+        currentGameMode === 'ai-vs-ai'
+          ? aiVsAiRunning.value && game.shouldAIMove()
+          : game.shouldAIMove()
+
+      if (shouldRetry) {
+        startAIThinkingCycle()
+      }
+    }, 2000)
+  }
+}
+
+// 监听游戏模式变化，确保AI vs AI状态正确同步
+watch(
+  () => game?.getConfig()?.gameMode,
+  (newMode, oldMode) => {
+    if (!game) return // 游戏未初始化时跳过
+
+    console.log('ChessGame模式变化:', oldMode, '->', newMode)
+    if (newMode === 'ai-vs-ai' && store.state.chess?.gameState?.aiVsAiRunning) {
+      console.log('切换到AI对AI模式，且store中已标记为运行状态，确保启动')
+      setTimeout(() => {
+        // 确保AI已初始化完成后再启动
+        if (game && game.getAIStatus().ready) {
+          game.startAiVsAi()
+          // 检查是否需要AI走棋
+          if (game.shouldAIMove()) {
+            startAIThinkingCycle()
+          }
+        } else {
+          console.log('AI尚未准备好，等待初始化完成')
+        }
+      }, 300)
+    } else if (newMode !== 'ai-vs-ai') {
+      // 切换到非AI对AI模式时，停止AI对战并重置状态
+      console.log('切换到非AI对AI模式，停止AI对战')
+      if (game) {
+        game.stopAiVsAi()
+      }
+      store.commit('chess/setAiVsAiRunning', false)
+    }
+  },
+)
+
+// 专门监听 store 中的 aiVsAiRunning 状态变化
+watch(
+  () => store.state.chess?.gameState?.aiVsAiRunning,
+  (running, oldRunning) => {
+    console.log('Store中aiVsAiRunning状态变化:', oldRunning, '->', running)
+    // 确保ChessGame内部状态与store同步
+    if (running !== oldRunning && game) {
+      const currentConfig = game.getConfig()
+      console.log('同步状态到ChessGame:', { running, gameMode: currentConfig.gameMode })
+
+      // 同步内部状态
+      game.setAiVsAiRunning(running)
+
+      if (currentConfig.gameMode === 'ai-vs-ai') {
+        if (running) {
+          console.log('启动AI对AI对战')
+          game.startAiVsAi()
+          // 延迟触发AI走棋，使用新的思考周期管理
+          setTimeout(() => {
+            console.log('触发第一步AI走棋')
+            if (game.shouldAIMove()) {
+              startAIThinkingCycle()
+            }
+          }, 200)
+        } else {
+          console.log('停止AI对AI对战')
+          game.stopAiVsAi()
+        }
+      }
+    }
+  },
+  { immediate: true },
+)
+
+// 监听aiVsAiRunning变化，主要用于兼容性（现在主要逻辑在上面的store监听中）
+watch(
+  () => aiVsAiRunning.value,
+  (running) => {
+    console.log('computed aiVsAiRunning 状态变化:', running)
+    // 主要逻辑已移到store监听中，这里只做简单的状态检查
+    updateGameState()
+  },
+  { immediate: true },
+)
 
 // 监听store设置变化 - 当游戏配置变化时调用ChessGame的相关事件
 watch(
@@ -563,32 +756,58 @@ watch(
   async (newGameMode, oldGameMode) => {
     if (newGameMode && newGameMode !== oldGameMode) {
       console.log('游戏模式变化:', oldGameMode, '->', newGameMode)
-
       try {
-        // 获取完整配置并更新游戏实例
-        const newConfig = {
-          gameMode: newGameMode,
-          enableAI: newGameMode !== 'pvp',
-          playerCamp: chessSettings.value.playerCamp || 'red',
-          aiConfig: store.state.chess?.gameConfig?.aiConfig,
-          aiVsAiConfig: store.state.chess?.gameConfig?.aiVsAiConfig,
+        // 同步settings和gameConfig的gameMode
+        store.commit('chess/updateGameMode', newGameMode)
+        store.commit('chess/updateChessSettings', { gameMode: newGameMode })
+        store.commit('chess/saveGameConfig', { gameMode: newGameMode })
+        await game.updateGameMode(newGameMode)
+        // 切换到非ai-vs-ai模式时，强制停止AI对战并同步store
+        if (newGameMode !== 'ai-vs-ai') {
+          store.commit('chess/setAiVsAiRunning', false)
         }
 
-        await game.updateConfig(newConfig)
-
-        // 保存配置到store
-        store.commit('saveChessGameConfig', newConfig)
-
-        // 根据新模式执行相应逻辑
+        // 如果切换到人机模式，检查是否需要AI走棋
         if (newGameMode === 'pve' && game.shouldAIMove()) {
-          setTimeout(() => game.makeAIMove().then((success) => success && updateGameState()), 1000)
-        } else if (newGameMode === 'ai-vs-ai') {
-          game.startAiVsAi()
+          setTimeout(() => {
+            updateGameState()
+            startAIThinkingCycle()
+          }, 1000)
         }
 
         updateGameState()
       } catch (error) {
         console.error('游戏模式切换失败:', error)
+      }
+    }
+  },
+)
+
+// 监听玩家执棋变化
+watch(
+  () => chessSettings.value.playerCamp,
+  async (newPlayerCamp, oldPlayerCamp) => {
+    if (newPlayerCamp && newPlayerCamp !== oldPlayerCamp) {
+      console.log('玩家执棋变化:', oldPlayerCamp, '->', newPlayerCamp)
+      try {
+        // 同步settings和gameConfig的playerCamp
+        store.commit('chess/updateChessSettings', { playerCamp: newPlayerCamp })
+        store.commit('chess/saveGameConfig', { playerCamp: newPlayerCamp })
+
+        // 更新游戏配置
+        await game.updateConfig({ playerCamp: newPlayerCamp })
+
+        // 如果当前是人机模式，检查是否需要AI走棋
+        if (chessSettings.value.gameMode === 'pve' && game.shouldAIMove()) {
+          setTimeout(() => {
+            updateGameState()
+            startAIThinkingCycle()
+          }, 1000)
+        }
+
+        updateGameState()
+      } catch (error) {
+        console.error('玩家执棋切换失败:', error)
       }
     }
   },
@@ -773,6 +992,47 @@ const onAnimationComplete = (moveData: {
 
     updateGameState()
     console.log('游戏逻辑执行完成')
+
+    // 根据游戏模式处理后续逻辑
+    const currentGameMode = game.getConfig().gameMode
+
+    if (currentGameMode === 'pvp') {
+      // 双人对战模式 - 只移动棋子，无需额外处理
+      console.log('双人对战模式：棋子移动完成')
+    } else if (currentGameMode === 'pve') {
+      // 人机模式 - 棋子移动完成后检查是否需要AI走棋
+      console.log('人机模式：棋子移动完成，检查是否需要AI走棋')
+      if (game.shouldAIMove()) {
+        console.log('轮到AI走棋，启动AI思考')
+        setTimeout(() => {
+          if (game.shouldAIMove() && gameState.gameStatus === 'playing') {
+            startAIThinkingCycle()
+          }
+        }, 500) // 给界面一点时间更新
+      }
+    } else if (currentGameMode === 'ai-vs-ai') {
+      // AI对AI模式 - 棋子移动完成后等待gameSpeed毫秒，然后检查是否继续AI对战
+      if (aiVsAiRunning.value) {
+        const gameSpeed = store.getters?.['chess/getGameSpeed'] || 2000
+        console.log(`AI对AI模式：等待 ${gameSpeed}ms 后执行下一步`)
+
+        setTimeout(() => {
+          // 再次检查游戏是否还在进行中且AI对AI模式仍在运行
+          if (aiVsAiRunning.value && game.shouldAIMove() && gameState.gameStatus === 'playing') {
+            console.log('启动下一轮AI思考')
+            startAIThinkingCycle()
+          } else {
+            console.log('AI对AI模式已停止或游戏已结束')
+            // 确保 aiVsAiRunning 状态被设置为 false
+            if (aiVsAiRunning.value) {
+              console.log('停止AI对AI模式')
+              aiVsAiRunning.value = false
+              store.commit('chess/setAiVsAiRunning', false)
+            }
+          }
+        }, gameSpeed)
+      }
+    }
   } else {
     console.error('移动失败，恢复棋盘状态')
     // 如果移动失败，需要通知棋盘恢复状态
@@ -825,6 +1085,19 @@ const onMoveClick = (pos: Position) => {
   onBoardClick(pos.x, pos.y)
 }
 
+// 棋盘禁用状态下的点击事件
+const onBoardDisabledClick = () => {
+  const currentGameMode = game.getConfig().gameMode
+
+  if (currentGameMode === 'ai-vs-ai' && aiVsAiRunning.value) {
+    console.log('AI对AI正在运行中，无法操作棋盘')
+    // 可以在这里添加用户提示，比如显示一个 toast 消息
+  } else if (currentGameMode === 'pve' && aiStatus.value?.thinking) {
+    console.log('AI正在思考中，请等待...')
+    // 可以在这里添加用户提示
+  }
+}
+
 // 重新开始游戏
 const resetGame = () => {
   console.log('重新开始游戏')
@@ -844,43 +1117,85 @@ const resetGame = () => {
   // 游戏开始音效已由核心游戏类自动播放，无需重复
 
   // 清除保存的游戏状态
-  store.commit('clearChessGame')
+  store.commit('chess/clearGame')
 
   // 根据当前游戏模式重新初始化AI逻辑
   const currentConfig = game.getConfig()
-  if (currentConfig.gameMode === 'pve' && game.shouldAIMove()) {
-    setTimeout(() => game.makeAIMove().then((success) => success && updateGameState()), 1000)
+  console.log('重置后的游戏配置:', currentConfig)
+
+  if (currentConfig.gameMode === 'pve') {
+    // 检查是否需要AI走棋
+    if (game.shouldAIMove()) {
+      console.log('重置后AI需要先走棋')
+      setTimeout(() => {
+        // 通过更新store状态来触发AI状态变化
+        updateGameState()
+        startAIThinkingCycle()
+      }, 1000)
+    } else {
+      console.log('重置后玩家先走棋')
+    }
   } else if (currentConfig.gameMode === 'ai-vs-ai') {
-    setTimeout(() => game.startAiVsAi(), 1000)
+    setTimeout(() => {
+      game.startAiVsAi()
+      // 启动新的思考周期
+      if (game.shouldAIMove()) {
+        startAIThinkingCycle()
+      }
+    }, 1000)
   }
 }
 
 // 悔棋功能
-const undoMove = () => {
+const undoMove = async () => {
   if (canUndo.value) {
     console.log('执行悔棋')
-
-    game.stopAIThinking()
-    const success = game.undoMove()
-
-    if (success) {
-      selectedPiece.value = null
-      availableMoves.value = []
-      updateGameState()
-      // 悔棋音效已由核心游戏类自动播放，无需重复
-      console.log('悔棋成功')
+    if (gameConfig.value.gameMode === 'pve') {
+      // 人机模式悔棋 RET_UNDO_STEPS 步
+      const RET_UNDO_STEPS = 2
+      let step = 0
+      let success = false
+      for (let i = 0; i < RET_UNDO_STEPS; i++) {
+        success = game.undoMove() || success
+        step++
+      }
+      if (success) {
+        selectedPiece.value = null
+        availableMoves.value = []
+        updateGameState()
+        // 如果悔棋后轮到AI，自动让AI走棋
+        if (game.shouldAIMove()) {
+          setTimeout(() => {
+            // 通过更新store状态来触发AI状态变化
+            updateGameState()
+            startAIThinkingCycle()
+          }, 500)
+        }
+        console.log(`人机模式悔棋${RET_UNDO_STEPS}步成功`)
+      } else {
+        console.log('悔棋失败')
+      }
     } else {
-      console.log('悔棋失败')
+      // 其他模式悔棋1步
+      const success = game.undoMove()
+      if (success) {
+        selectedPiece.value = null
+        availableMoves.value = []
+        updateGameState()
+        console.log('悔棋成功')
+      } else {
+        console.log('悔棋失败')
+      }
     }
   }
 }
 
 const openMoveHistory = () => {
-  store.commit('toggleChessMoveHistory')
+  store.commit('chess/toggleChessMoveHistory')
 }
 
 const closeMoveHistory = () => {
-  store.commit('toggleChessMoveHistory')
+  store.commit('chess/toggleChessMoveHistory')
 }
 
 // 弹窗控制
@@ -898,7 +1213,7 @@ const onApplySettings = async (
   console.log('应用游戏设置:', { chessSettings, globalSettings, aiVsAiConfig, aiConfig })
 
   // 更新store中的设置
-  store.commit('updateChessSettings', chessSettings)
+  store.commit('chess/updateChessSettings', chessSettings)
   store.commit('updateGlobalSettings', globalSettings)
 
   if (aiVsAiConfig) {
@@ -908,79 +1223,104 @@ const onApplySettings = async (
     store.commit('chess/updateAiConfig', aiConfig)
   }
 
-  // 如果游戏模式发生变化，更新游戏配置
-  if (chessSettings.gameMode) {
-    const newConfig = {
-      gameMode: chessSettings.gameMode,
-      enableAI: chessSettings.gameMode !== 'pvp',
-      playerCamp: chessSettings.playerCamp || 'red',
-      aiConfig: aiConfig
-        ? { ...store.state.chess?.gameConfig?.aiConfig, ...aiConfig }
-        : store.state.chess?.gameConfig?.aiConfig,
-      aiVsAiConfig: aiVsAiConfig
-        ? { ...store.state.chess?.gameConfig?.aiVsAiConfig, ...aiVsAiConfig }
-        : store.state.chess?.gameConfig?.aiVsAiConfig,
-    }
+  // 保存完整的游戏配置到gameConfig
+  const newGameConfig = {
+    gameMode: chessSettings.gameMode,
+    playerCamp: chessSettings.playerCamp || 'red',
+    enableAI: chessSettings.gameMode !== 'pvp',
+    aiConfig: aiConfig
+      ? { ...store.state.chess?.gameConfig?.aiConfig, ...aiConfig }
+      : store.state.chess?.gameConfig?.aiConfig,
+    aiVsAiConfig: aiVsAiConfig
+      ? { ...store.state.chess?.gameConfig?.aiVsAiConfig, ...aiVsAiConfig }
+      : store.state.chess?.gameConfig?.aiVsAiConfig,
+  }
 
+  // 保存到gameConfig
+  store.commit('chess/saveGameConfig', newGameConfig)
+
+  // 如果游戏模式或玩家执棋发生变化，更新游戏实例配置
+  if (chessSettings.gameMode || chessSettings.playerCamp) {
     try {
-      await game.updateConfig(newConfig)
-      store.commit('saveChessGameConfig', newConfig)
-      updateGameState()
+      await game.updateConfig(newGameConfig)
+
+      // 如果切换到人机模式且当前轮到AI，让AI走棋
+      if (chessSettings.gameMode === 'pve' && game.shouldAIMove()) {
+        setTimeout(() => {
+          updateGameState()
+          startAIThinkingCycle()
+        }, 500)
+      }
+
+      // 如果切换到AI对战模式，启动AI对战
+      if (chessSettings.gameMode === 'ai-vs-ai') {
+        setTimeout(() => {
+          store.commit('chess/setAiVsAiRunning', true)
+        }, 500)
+      }
     } catch (error) {
-      console.error('游戏配置更新失败:', error)
+      console.error('更新游戏配置失败:', error)
     }
   }
 
+  // 即使游戏模式没有变化，也要更新AI配置
+  if (aiConfig && (chessSettings.gameMode === 'pve' || chessSettings.gameMode === 'ai-vs-ai')) {
+    try {
+      console.log('应用AI配置到游戏引擎:', aiConfig)
+      game.updateAIConfig(aiConfig)
+    } catch (error) {
+      console.error('更新AI配置失败:', error)
+    }
+  }
+
+  // 更新AI对战配置
+  if (aiVsAiConfig && chessSettings.gameMode === 'ai-vs-ai') {
+    try {
+      console.log('应用AI对战配置到游戏引擎:', aiVsAiConfig)
+      game.updateAIVsAIConfig(aiVsAiConfig)
+    } catch (error) {
+      console.error('更新AI对战配置失败:', error)
+    }
+  }
+
+  updateGameState()
   showGameSettings.value = false
 }
 
-const onConfigUpdate = async (newConfig: GameConfig) => {
+const onConfigUpdate = async (newConfig: any) => {
   console.log('更新AI配置:', newConfig)
 
-  try {
-    await game.updateConfig(newConfig)
-    store.commit('saveChessGameConfig', newConfig)
-    updateGameState()
-  } catch (error) {
-    console.error('AI配置更新失败:', error)
+  // 配置会自动通过store监听器应用，这里只需要更新store
+  if (newConfig.aiConfig) {
+    store.commit('chess/updateAiConfig', newConfig.aiConfig)
+
+    // 立即应用AI配置到游戏引擎
+    try {
+      console.log('应用新的AI配置到游戏引擎:', newConfig.aiConfig)
+      game.updateAIConfig(newConfig.aiConfig)
+    } catch (error) {
+      console.error('应用AI配置到引擎失败:', error)
+    }
   }
+  if (newConfig.aiVsAiConfig) {
+    store.commit('chess/updateAiVsAiConfig', newConfig.aiVsAiConfig)
+
+    // 应用AI对战配置到游戏引擎
+    try {
+      console.log('应用新的AI对战配置到游戏引擎:', newConfig.aiVsAiConfig)
+      game.updateAIVsAIConfig(newConfig.aiVsAiConfig)
+    } catch (error) {
+      console.error('应用AI对战配置到引擎失败:', error)
+    }
+  }
+
+  updateGameState()
 }
 
 const onStopAI = () => {
   console.log('停止AI思考')
   game.stopAIThinking()
   updateGameState()
-}
-
-// AI对AI模式切换和测试功能
-const toggleAiVsAi = () => {
-  console.log('切换AI对战模式')
-
-  const currentConfig = game.getConfig()
-  if (currentConfig.gameMode === 'ai-vs-ai') {
-    game.toggleAiVsAi()
-    aiVsAiRunning.value = game.getAiVsAiStatus()
-  } else {
-    // 切换到AI对AI模式
-    store.commit('chess/updateGameMode', 'ai-vs-ai')
-  }
-
-  updateGameState()
-}
-
-const testAI = async () => {
-  console.log('手动测试AI走棋')
-  try {
-    const success = await game.makeAIMove()
-    if (success) {
-      updateGameState()
-    } else {
-      alert('AI走棋失败，请检查AI配置')
-    }
-  } catch (error) {
-    console.error('手动AI走棋失败:', error)
-    alert(`AI走棋失败: ${(error as Error).message || error}`)
-  }
 }
 </script>
 

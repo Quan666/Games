@@ -2,8 +2,8 @@
   <SettingsDialog
     v-model="show"
     title="🤖 AI 高级设置"
+    width="1400px"
     max-width="90vw"
-    width="1024px"
     :apply-callback="handleApply"
     :cancel-callback="handleCancel"
     :reset-callback="handleReset"

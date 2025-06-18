@@ -14,22 +14,23 @@ import type { GameState, Move } from '../core'
 
 export interface AIManagerConfig {
   engine: 'pikafish'
-  difficulty: 'easy' | 'medium' | 'hard' | 'expert'
   thinkingTime?: number
   depth?: number
   threads?: number
   hashSize?: number
   // Pikafish特有的UCI选项
+  // 棋力相关
   skillLevel?: number // Skill Level: 0-20
+  limitStrength?: boolean // UCI_LimitStrength
+  uciElo?: number // UCI_Elo: 1280-3133
+  ponder?: boolean // Ponder
+  // 其他UCI选项
   multiPV?: number // MultiPV: 1-128
   moveOverhead?: number // Move Overhead: 0-5000
   repetitionRule?: string // Repetition Rule
   drawRule?: string // Draw Rule
   sixtyMoveRule?: boolean // Sixty Move Rule
   maxCheckCount?: number // MaxCheckCount: 0-1000
-  limitStrength?: boolean // UCI_LimitStrength
-  uciElo?: number // UCI_Elo: 1280-3133
-  ponder?: boolean // Ponder
 }
 
 export class AIManager {
@@ -129,30 +130,23 @@ export class AIManager {
     const engineConfig: AIEngineConfig = {
       threads: this.config.threads,
       hashSize: this.config.hashSize,
-      depth: this.getDifficultyDepth(),
+      depth: this.config.depth || 8,
       timeLimit: this.config.thinkingTime,
+      // 棋力相关配置
+      skillLevel: this.config.skillLevel,
+      limitStrength: this.config.limitStrength,
+      uciElo: this.config.uciElo,
+      ponder: this.config.ponder,
+      // 其他UCI选项
+      multiPV: this.config.multiPV,
+      moveOverhead: this.config.moveOverhead,
+      repetitionRule: this.config.repetitionRule as any,
+      drawRule: this.config.drawRule as any,
+      maxCheckCount: this.config.maxCheckCount,
     }
 
     if (this.engine instanceof ChessAI) {
       this.engine.setConfig(engineConfig)
-    }
-  }
-
-  /**
-   * 根据难度获取搜索深度
-   */
-  private getDifficultyDepth(): number {
-    switch (this.config.difficulty) {
-      case 'easy':
-        return 4
-      case 'medium':
-        return 6
-      case 'hard':
-        return 8
-      case 'expert':
-        return 12
-      default:
-        return 8
     }
   }
 
@@ -168,9 +162,14 @@ export class AIManager {
       console.log('获取AI走法，当前玩家:', gameState.currentPlayer)
 
       if (fenWithMoves) {
-        // 使用提供的FEN+moves格式
+        // 使用提供的FEN+moves格式，
+        // 此时 固定为 fen rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w moves {fenWithMoves}
         console.log('使用FEN+moves格式:', fenWithMoves)
         return await this.getAIMoveFromFENWithMoves(fenWithMoves, gameState)
+        // const FEN_DEF = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w'
+        // const fen = `${FEN_DEF} moves ${fenWithMoves}`
+        // console.log('完整FEN:', fen)
+        // return await this.getAIMoveFromFENWithMoves(fen, gameState)
       } else {
         // 使用传统的gameState转FEN方式
         const fen = gameStateToFEN(gameState)
@@ -185,7 +184,7 @@ export class AIManager {
 
         // 设置棋盘位置并获取AI走法
         const aiMove = await this.engine.think(fen, {
-          depth: this.getDifficultyDepth(),
+          depth: this.config.depth || 8,
           timeLimit: this.config.thinkingTime,
         })
 
@@ -318,19 +317,21 @@ export class AIManager {
       console.log('处理包含走棋历史的FEN:', fenWithMoves)
 
       // 解析FEN和走棋历史
+      //@ts-ignore
       const { positionFEN, moves } = prepareFENForAI(fenWithMoves)
       console.log('解析结果 - FEN:', positionFEN)
       console.log('解析结果 - 走棋历史:', moves)
 
       // 构建完整的FEN字符串（包含走棋历史）
-      let fullFEN = positionFEN
+      // let fullFEN = positionFEN
+      let fullFEN = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w'
       if (moves.length > 0) {
         fullFEN += ` moves ${moves.join(' ')}`
       }
 
       // 使用think方法获取AI走法
       const aiMove = await this.engine.think(fullFEN, {
-        depth: this.getDifficultyDepth(),
+        depth: this.config.depth || 8,
         timeLimit: this.config.thinkingTime,
       })
 
