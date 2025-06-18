@@ -775,6 +775,7 @@ const alivePieces = computed(() => {
 
 // 棋子点击事件
 const onPieceClick = (piece: ChessPieceType) => {
+  console.log('棋子点击:', piece)
   // 只处理活着的棋子点击
   if (piece.alive) {
     emit('pieceClick', piece)

@@ -623,7 +623,6 @@ export class ChessGame {
   private getValidMovesWithoutCheckValidation(piece: ChessPiece): Position[] {
     const moves: Position[] = []
     const { position, type, camp } = piece
-
     switch (type) {
       case '帥':
       case '將':

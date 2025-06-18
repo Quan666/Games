@@ -231,7 +231,6 @@ export class ChessGame {
   // 获取棋子的合法移动位置
   getValidMoves(piece: ChessPiece): Position[] {
     if (!piece.alive) return []
-
     const moves: Position[] = []
     const { position, type, camp } = piece
 
@@ -385,11 +384,17 @@ export class ChessGame {
       if (this.getPieceAt(blockPos)) continue // 马腿被绊
 
       const targetPiece = this.getPieceAt(newPos)
+      let res = (!targetPiece ||
+        targetPiece.camp !==
+        this.state.pieces.find((p) => p.position.x === position.x && p.position.y === position.y)
+          ?.camp
+      )
+      console.log('计算马的移动: %s 在位置: %o ,结果：%o, 新位置: %o', targetPiece?.type, newPos, res, targetPiece);
       if (
         !targetPiece ||
         targetPiece.camp !==
-          this.state.pieces.find((p) => p.position.x === position.x && p.position.y === position.y)
-            ?.camp
+        this.state.pieces.find((p) => p.position.x === position.x && p.position.y === position.y)
+          ?.camp
       ) {
         moves.push(newPos)
       }

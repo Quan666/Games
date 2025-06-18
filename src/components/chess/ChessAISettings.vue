@@ -25,13 +25,13 @@
       </p>
     </div>
 
-    <!-- AI模式选择 -->
+    <!-- AI对战模式设置 -->
     <div
       v-if="localConfig.gameMode === 'ai-vs-ai'"
       class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
     >
       <h4 class="font-semibold text-blue-800 mb-3">AI对战模式设置</h4>
-      <div class="flex gap-4">
+      <div class="flex gap-4 mb-4">
         <label class="flex items-center gap-2">
           <input type="radio" v-model="activeAI" value="red" class="accent-red-500" />
           <span class="text-sm font-semibold text-red-600">红方AI设置</span>
@@ -41,9 +41,26 @@
           <span class="text-sm font-semibold text-gray-700">黑方AI设置</span>
         </label>
       </div>
-      <p class="text-xs text-blue-600 mt-2">
-        选择要配置的AI方，可以为红方和黑方分别设置不同的AI参数
-      </p>
+      
+      <!-- AI对战游戏速度 -->
+      <div class="space-y-2">
+        <label class="block text-sm font-semibold text-gray-700">
+          对战速度: {{ localConfig.aiVsAiConfig?.gameSpeed || 2000 }}ms
+        </label>
+        <input
+          v-model.number="localConfig.aiVsAiConfig!.gameSpeed"
+          type="range"
+          min="500"
+          max="10000"
+          step="100"
+          class="w-full"
+        />
+        <div class="flex justify-between text-xs text-gray-500">
+          <span>500ms (极快)</span>
+          <span>10s (极慢)</span>
+        </div>
+        <p class="text-xs text-blue-600">AI走棋间隔时间，控制对战节奏</p>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -112,10 +129,10 @@
         <!-- 思考时间 -->
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">
-            思考时间: {{ currentAIConfig?.timeLimit }}秒
+            思考时间: {{ currentAIConfig?.thinkingTime || currentAIConfig?.timeLimit }}秒
           </label>
           <input
-            v-model.number="currentAIConfig.timeLimit"
+            v-model.number="currentAIConfig.thinkingTime"
             type="range"
             min="1"
             max="30"
@@ -126,6 +143,26 @@
             <span>1秒</span>
             <span>30秒</span>
           </div>
+        </div>
+
+        <!-- 搜索深度 -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            搜索深度: {{ currentAIConfig?.depth }}
+          </label>
+          <input
+            v-model.number="currentAIConfig.depth"
+            type="range"
+            min="4"
+            max="20"
+            step="1"
+            class="w-full"
+          />
+          <div class="flex justify-between text-xs text-gray-500 mt-1">
+            <span>4 (快)</span>
+            <span>20 (深)</span>
+          </div>
+          <p class="text-xs text-gray-500">搜索层数，影响棋力和思考时间</p>
         </div>
       </div>
 
@@ -397,29 +434,25 @@ interface ExtendedGameConfig extends GameConfig {
 // 创建默认AI配置
 const createDefaultAIConfig = () => ({
   // 基础配置
+  engine: 'pikafish',
   threads: 1,
   hashSize: 16,
   depth: 8,
-  timeLimit: 5,
+  thinkingTime: 5,
+
+  // 棋力相关
+  skillLevel: 20,
+  limitStrength: false,
+  uciElo: 1280,
+  ponder: false,
 
   // Pikafish专用配置
-  ponder: false,
   multiPV: 1,
   moveOverhead: 10,
-  nodestime: 0,
-  skillLevel: 20,
-  mateThreatDepth: 1,
   repetitionRule: 'AsianRule' as const,
   drawRule: 'None' as const,
   sixtyMoveRule: true,
-  rule60MaxPly: 120,
   maxCheckCount: 0,
-  limitStrength: false,
-  uciElo: 1280,
-  uciWDLCentipawn: true,
-  luOutput: true,
-  uciShowWDL: false,
-  evalFile: 'pikafish.nnue',
 })
 
 // 本地配置状态 - 使用响应式ref
@@ -536,6 +569,7 @@ const copyRedToBlack = () => {
     const aiSpecificSettings = [
       'skillLevel',
       'thinkingTime',
+      'depth',
       'multiPV',
       'limitStrength',
       'uciElo',
@@ -559,6 +593,7 @@ const copyBlackToRed = () => {
     const aiSpecificSettings = [
       'skillLevel',
       'thinkingTime',
+      'depth',
       'multiPV',
       'limitStrength',
       'uciElo',
@@ -579,6 +614,7 @@ const copyBlackToRed = () => {
 const randomizeAISettings = () => {
   const randomSkillLevel = () => Math.floor(Math.random() * 21) // 0-20
   const randomTime = () => Math.floor(Math.random() * 30) + 1 // 1-30
+  const randomDepth = () => Math.floor(Math.random() * 17) + 4 // 4-20
   const randomMultiPV = () => Math.floor(Math.random() * 10) + 1 // 1-10
   const randomElo = () => Math.floor(Math.random() * (3133 - 1280 + 1)) + 1280 // 1280-3133
 
@@ -595,7 +631,8 @@ const randomizeAISettings = () => {
   if (!localConfig.value.aiVsAiConfig.redAI)
     localConfig.value.aiVsAiConfig.redAI = createDefaultAIConfig()
   localConfig.value.aiVsAiConfig.redAI.skillLevel = randomSkillLevel()
-  localConfig.value.aiVsAiConfig.redAI.timeLimit = randomTime()
+  localConfig.value.aiVsAiConfig.redAI.thinkingTime = randomTime()
+  localConfig.value.aiVsAiConfig.redAI.depth = randomDepth()
   localConfig.value.aiVsAiConfig.redAI.multiPV = randomMultiPV()
   localConfig.value.aiVsAiConfig.redAI.limitStrength = Math.random() > 0.5
   localConfig.value.aiVsAiConfig.redAI.uciElo = randomElo()
@@ -605,7 +642,8 @@ const randomizeAISettings = () => {
   if (!localConfig.value.aiVsAiConfig.blackAI)
     localConfig.value.aiVsAiConfig.blackAI = createDefaultAIConfig()
   localConfig.value.aiVsAiConfig.blackAI.skillLevel = randomSkillLevel()
-  localConfig.value.aiVsAiConfig.blackAI.timeLimit = randomTime()
+  localConfig.value.aiVsAiConfig.blackAI.thinkingTime = randomTime()
+  localConfig.value.aiVsAiConfig.blackAI.depth = randomDepth()
   localConfig.value.aiVsAiConfig.blackAI.multiPV = randomMultiPV()
   localConfig.value.aiVsAiConfig.blackAI.limitStrength = Math.random() > 0.5
   localConfig.value.aiVsAiConfig.blackAI.uciElo = randomElo()

@@ -14,22 +14,23 @@ import type { GameState, Move } from '../core'
 
 export interface AIManagerConfig {
   engine: 'pikafish'
-  difficulty: 'easy' | 'medium' | 'hard' | 'expert'
   thinkingTime?: number
   depth?: number
   threads?: number
   hashSize?: number
   // Pikafish特有的UCI选项
+  // 棋力相关
   skillLevel?: number // Skill Level: 0-20
+  limitStrength?: boolean // UCI_LimitStrength
+  uciElo?: number // UCI_Elo: 1280-3133
+  ponder?: boolean // Ponder
+  // 其他UCI选项
   multiPV?: number // MultiPV: 1-128
   moveOverhead?: number // Move Overhead: 0-5000
   repetitionRule?: string // Repetition Rule
   drawRule?: string // Draw Rule
   sixtyMoveRule?: boolean // Sixty Move Rule
   maxCheckCount?: number // MaxCheckCount: 0-1000
-  limitStrength?: boolean // UCI_LimitStrength
-  uciElo?: number // UCI_Elo: 1280-3133
-  ponder?: boolean // Ponder
 }
 
 export class AIManager {
@@ -129,30 +130,24 @@ export class AIManager {
     const engineConfig: AIEngineConfig = {
       threads: this.config.threads,
       hashSize: this.config.hashSize,
-      depth: this.getDifficultyDepth(),
+      depth: this.config.depth || 8,
       timeLimit: this.config.thinkingTime,
+      // 棋力相关配置
+      skillLevel: this.config.skillLevel,
+      limitStrength: this.config.limitStrength,
+      uciElo: this.config.uciElo,
+      ponder: this.config.ponder,
+      // 其他UCI选项
+      multiPV: this.config.multiPV,
+      moveOverhead: this.config.moveOverhead,
+      repetitionRule: this.config.repetitionRule,
+      drawRule: this.config.drawRule,
+      sixtyMoveRule: this.config.sixtyMoveRule,
+      maxCheckCount: this.config.maxCheckCount,
     }
 
     if (this.engine instanceof ChessAI) {
       this.engine.setConfig(engineConfig)
-    }
-  }
-
-  /**
-   * 根据难度获取搜索深度
-   */
-  private getDifficultyDepth(): number {
-    switch (this.config.difficulty) {
-      case 'easy':
-        return 4
-      case 'medium':
-        return 6
-      case 'hard':
-        return 8
-      case 'expert':
-        return 12
-      default:
-        return 8
     }
   }
 
@@ -185,7 +180,7 @@ export class AIManager {
 
         // 设置棋盘位置并获取AI走法
         const aiMove = await this.engine.think(fen, {
-          depth: this.getDifficultyDepth(),
+          depth: this.config.depth || 8,
           timeLimit: this.config.thinkingTime,
         })
 
@@ -330,7 +325,7 @@ export class AIManager {
 
       // 使用think方法获取AI走法
       const aiMove = await this.engine.think(fullFEN, {
-        depth: this.getDifficultyDepth(),
+        depth: this.config.depth || 8,
         timeLimit: this.config.thinkingTime,
       })
 

@@ -89,9 +89,9 @@ const store = createStore({
           gameMode: 'pvp',
           playerCamp: 'red',
           enableAI: false,
+          // 公共AI配置 - 所有AI实例共享
           aiConfig: {
             engine: 'pikafish',
-            difficulty: 'medium',
             thinkingTime: 5,
             depth: 8,
             threads: 1,
@@ -110,39 +110,19 @@ const store = createStore({
           },
           // AI对战AI模式的配置
           aiVsAiConfig: {
+            // 红方AI非公共配置（只存储与公共配置不同的部分）
             redAI: {
-              engine: 'pikafish',
-              difficulty: 'medium',
+              skillLevel: 18, // 红方AI棋力
               thinkingTime: 5,
               depth: 8,
-              threads: 1,
-              hashSize: 16,
-              skillLevel: 18, // 红方AI棋力
-              multiPV: 1,
-              moveOverhead: 10,
-              repetitionRule: 'AsianRule',
-              drawRule: 'None',
-              sixtyMoveRule: true,
-              maxCheckCount: 0,
-              limitStrength: false,
               uciElo: 1280,
               ponder: false,
             },
+            // 黑方AI非公共配置（只存储与公共配置不同的部分）
             blackAI: {
-              engine: 'pikafish',
-              difficulty: 'medium',
+              skillLevel: 16, // 黑方AI棋力
               thinkingTime: 5,
               depth: 8,
-              threads: 1,
-              hashSize: 16,
-              skillLevel: 16, // 黑方AI棋力
-              multiPV: 1,
-              moveOverhead: 10,
-              repetitionRule: 'AsianRule',
-              drawRule: 'None',
-              sixtyMoveRule: true,
-              maxCheckCount: 0,
-              limitStrength: false,
               uciElo: 1280,
               ponder: false,
             },
@@ -392,6 +372,33 @@ const store = createStore({
       }
       Object.assign(state.chess.gameConfig.aiConfig, config)
     },
+    // 更新红方AI非公共配置
+    'chess/updateRedAiConfig'(state: any, config: any) {
+      if (!state.chess.gameConfig.aiVsAiConfig) {
+        state.chess.gameConfig.aiVsAiConfig = { redAI: {}, blackAI: {}, gameSpeed: 2000 }
+      }
+      if (!state.chess.gameConfig.aiVsAiConfig.redAI) {
+        state.chess.gameConfig.aiVsAiConfig.redAI = {}
+      }
+      Object.assign(state.chess.gameConfig.aiVsAiConfig.redAI, config)
+    },
+    // 更新黑方AI非公共配置
+    'chess/updateBlackAiConfig'(state: any, config: any) {
+      if (!state.chess.gameConfig.aiVsAiConfig) {
+        state.chess.gameConfig.aiVsAiConfig = { redAI: {}, blackAI: {}, gameSpeed: 2000 }
+      }
+      if (!state.chess.gameConfig.aiVsAiConfig.blackAI) {
+        state.chess.gameConfig.aiVsAiConfig.blackAI = {}
+      }
+      Object.assign(state.chess.gameConfig.aiVsAiConfig.blackAI, config)
+    },
+    // 更新AI对战游戏速度
+    'chess/updateGameSpeed'(state: any, speed: number) {
+      if (!state.chess.gameConfig.aiVsAiConfig) {
+        state.chess.gameConfig.aiVsAiConfig = { redAI: {}, blackAI: {}, gameSpeed: 2000 }
+      }
+      state.chess.gameConfig.aiVsAiConfig.gameSpeed = speed
+    },
     addSavedChessGame(state: any, gameData: any) {
       const savedGame = {
         id: Date.now(),
@@ -417,6 +424,36 @@ const store = createStore({
     },
     setShowChessSaveDialog(state: any, show: boolean) {
       state.chess.ui.showSaveDialog = show
+    },
+  },
+  getters: {
+    // 获取红方AI完整配置（公共配置 + 红方特定配置）
+    'chess/getRedAiFullConfig': (state: any) => {
+      const commonConfig = state.chess.gameConfig.aiConfig || {}
+      const redConfig = state.chess.gameConfig.aiVsAiConfig?.redAI || {}
+      return { ...commonConfig, ...redConfig }
+    },
+    // 获取黑方AI完整配置（公共配置 + 黑方特定配置）
+    'chess/getBlackAiFullConfig': (state: any) => {
+      const commonConfig = state.chess.gameConfig.aiConfig || {}
+      const blackConfig = state.chess.gameConfig.aiVsAiConfig?.blackAI || {}
+      return { ...commonConfig, ...blackConfig }
+    },
+    // 获取当前AI配置（根据游戏模式）
+    'chess/getCurrentAiConfig': (state: any) => {
+      if (state.chess.gameConfig.gameMode === 'ai-vs-ai') {
+        // AI对战模式，返回红方配置作为默认
+        const commonConfig = state.chess.gameConfig.aiConfig || {}
+        const redConfig = state.chess.gameConfig.aiVsAiConfig?.redAI || {}
+        return { ...commonConfig, ...redConfig }
+      } else {
+        // 人机模式，返回公共配置
+        return state.chess.gameConfig.aiConfig || {}
+      }
+    },
+    // 获取AI对战游戏速度
+    'chess/getGameSpeed': (state: any) => {
+      return state.chess.gameConfig.aiVsAiConfig?.gameSpeed || 2000
     },
   },
   actions: {},
