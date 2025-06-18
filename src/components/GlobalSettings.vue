@@ -106,14 +106,6 @@
                 class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </label>
-            <label class="flex items-center justify-between">
-              <span class="text-xs text-gray-600">自动保存</span>
-              <input
-                v-model="chessSettings.autoSave"
-                type="checkbox"
-                class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-              />
-            </label>
           </div>
         </div>
       </div>
@@ -252,7 +244,6 @@ function resetToDefault() {
     soundEnabled: true,
     voiceEnabled: true,
     showMoveHistory: true,
-    autoSave: true,
     animationSpeed: 'normal',
   }
 }

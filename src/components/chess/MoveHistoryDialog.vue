@@ -90,7 +90,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
-import type { Move } from './ChessGame'
+import type { Move } from './core'
 import { useDraggable } from '../../composables/useDraggable'
 
 // Props
@@ -238,7 +238,7 @@ const formatGameDuration = computed(() => {
   if (!firstMove?.timestamp || !lastMove?.timestamp) return '未知'
 
   // 使用当前时间与第一步的时间差来计算游戏总时长
-  const duration = currentTime.value.getTime() - firstMove.timestamp.getTime()
+  const duration = currentTime.value.getTime() - firstMove.timestamp
   const minutes = Math.floor(duration / 60000)
   const seconds = Math.floor((duration % 60000) / 1000)
 
@@ -252,7 +252,7 @@ const formatLastMoveTime = computed(() => {
   const lastMove = props.moveHistory[props.moveHistory.length - 1]
   if (!lastMove?.timestamp) return ''
 
-  const diff = currentTime.value.getTime() - lastMove.timestamp.getTime()
+  const diff = currentTime.value.getTime() - lastMove.timestamp
   const seconds = Math.floor(diff / 1000)
 
   if (seconds < 60) return `${seconds}秒前`
@@ -266,7 +266,14 @@ const formatLastMoveTime = computed(() => {
 const formatMoveTimestamp = (move: Move) => {
   if (!move.timestamp) return ''
 
-  const time = move.timestamp
+  // timestamp 现在是毫秒时间戳，直接创建 Date 对象
+  const time = new Date(move.timestamp)
+
+  // 检查 Date 对象是否有效
+  if (isNaN(time.getTime())) {
+    return ''
+  }
+
   const hours = time.getHours().toString().padStart(2, '0')
   const minutes = time.getMinutes().toString().padStart(2, '0')
   const seconds = time.getSeconds().toString().padStart(2, '0')

@@ -1,119 +1,72 @@
-// 中国象棋游戏逻辑
-import { AIManager, gameStateToFEN, moveToUCI } from './ai'
-import type { AIManagerConfig } from './ai'
+// 中国象棋游戏核心逻辑类
 
-export type PieceType =
-  | '帥'
-  | '將'
-  | '仕'
-  | '士'
-  | '相'
-  | '象'
-  | '馬'
-  | '車'
-  | '炮'
-  | '砲'
-  | '兵'
-  | '卒'
-export type Camp = 'red' | 'black'
-
-export interface Position {
-  x: number
-  y: number
-}
-
-export interface ChessPiece {
-  id: string
-  type: PieceType
-  camp: Camp
-  position: Position
-  alive: boolean
-}
-
-export interface GameState {
-  board: (ChessPiece | null)[][]
-  pieces: ChessPiece[]
-  currentPlayer: Camp
-  gameStatus: 'playing' | 'checkmate' | 'stalemate' | 'draw'
-  moveHistory: Move[]
-  isInCheck: boolean
-}
-
-export interface Move {
-  from: Position
-  to: Position
-  piece: ChessPiece
-  capturedPiece?: ChessPiece
-  timestamp: number // 毫秒时间戳
-  isCheck?: boolean // 是否造成将军
-  isCheckmate?: boolean // 是否造成将死
-}
-
-export interface GameConfig {
-  enableAI?: boolean
-  aiConfig?: AIManagerConfig
-  gameMode?: 'pvp' | 'pve' | 'ai-vs-ai'
-  playerCamp?: Camp // 玩家执棋颜色（PVE模式下）
-  aiVsAiConfig?: {
-    redAI: AIManagerConfig
-    blackAI: AIManagerConfig
-    gameSpeed?: number
-  }
-}
+import type {
+  PieceType,
+  Camp,
+  Position,
+  ChessPiece,
+  Move,
+  GameState,
+  ChessGameSettings,
+  StateUpdateCallback,
+  ChessGameConfig,
+} from './types'
+import { ChessSoundGenerator } from './ChessSound'
+import { gameStateToFEN, moveToUCI, uciToMove } from '../ai/fenUtils'
 
 export class ChessGame {
   private state: GameState
-  private config: GameConfig
-  private aiManager: AIManager | null = null
-  private isAIThinking = false
-  // AI对AI模式控制
-  private aiVsAiRunning = false
-  private aiVsAiTimer: number | null = null
-  // UCI 格式的移动历史，用于与AI引擎通信
-  private uciMoveHistory: string[] = []
-  // 外部移动处理器（例如调用棋盘组件的移动方法）
-  private externalMoveHandler: ((from: Position, to: Position) => boolean) | null = null
+  private settings: ChessGameSettings
+  private soundGenerator: ChessSoundGenerator | null = null
+  private onStateUpdate?: StateUpdateCallback
 
-  constructor(savedState?: GameState, config: GameConfig = {}) {
-    this.config = {
-      enableAI: false,
-      gameMode: 'pvp',
-      playerCamp: 'red',
-      ...config,
+  constructor(config: ChessGameConfig = {}) {
+    // 初始化设置
+    this.settings = {
+      soundEnabled: true,
+      voiceEnabled: true,
+      showValidMoves: true,
+      moveHints: true,
+      highlightLastMove: true,
+      ...config.settings,
     }
 
+    // 初始化状态更新回调
+    this.onStateUpdate = config.onStateUpdate
+
+    // 初始化游戏状态
     try {
-      if (savedState) {
-        console.log('尝试从保存状态恢复游戏')
-        this.state = this.restoreFromState(savedState)
-        // 恢复UCI移动历史
-        this.rebuildUciMoveHistory()
+      if (config.initialState) {
+        console.log('尝试从初始状态恢复游戏')
+        this.state = this.restoreFromState(config.initialState)
       } else {
         console.log('创建新游戏')
         this.state = this.initializeGame()
-        this.uciMoveHistory = []
       }
     } catch (error) {
-      console.error('游戏初始化失败，清除无效状态并创建新游戏:', error)
-      // 清除无效的保存状态
-      ChessGame.clearInvalidSavedState()
+      console.error('游戏初始化失败，创建新游戏:', error)
       this.state = this.initializeGame()
-      this.uciMoveHistory = []
     }
 
-    // 如果启用AI，立即初始化AI管理器
-    if (
-      (this.config.gameMode === 'pve' || this.config.gameMode === 'ai-vs-ai') &&
-      this.config.aiConfig
-    ) {
-      this.initAI()
-        .then(() => {
-          // AI初始化完成后，检查是否需要立即走棋
-          this.checkAndMakeAIMove()
-        })
-        .catch((error) => {
-          console.error('AI初始化失败:', error)
-        })
+    // 初始化音效系统
+    this.initializeSound()
+
+    // 触发初始状态更新
+    this.triggerStateUpdate()
+  }
+
+  // 初始化音效系统
+  private initializeSound(): void {
+    this.soundGenerator = new ChessSoundGenerator(
+      () => this.settings.soundEnabled,
+      () => this.settings.voiceEnabled,
+    )
+  }
+
+  // 触发状态更新回调
+  private triggerStateUpdate(): void {
+    if (this.onStateUpdate) {
+      this.onStateUpdate(this.getState(), this.getSettings())
     }
   }
 
@@ -188,7 +141,7 @@ export class ChessGame {
       }
       pieces.push(piece)
       board[y][x] = piece
-      console.log(`创建红方棋子: ${type} 在 (${x}, ${y})`)
+      //   console.log(`创建红方棋子: ${type} 在 (${x}, ${y})`)
     })
 
     // 添加黑方棋子
@@ -227,19 +180,23 @@ export class ChessGame {
       isInCheck: false,
     }
 
-    // 验证标准开局棋盘
-    // 临时设置state以便验证方法能访问
-    const tempState = this.state
-    this.state = gameState as GameState
-    this.validateStandardSetup()
-    this.state = tempState
-
     return gameState as GameState
   }
 
   // 获取当前游戏状态
   getState(): GameState {
     return { ...this.state }
+  }
+
+  // 获取当前设置
+  getSettings(): ChessGameSettings {
+    return { ...this.settings }
+  }
+
+  // 更新设置
+  updateSettings(newSettings: Partial<ChessGameSettings>): void {
+    this.settings = { ...this.settings, ...newSettings }
+    this.triggerStateUpdate()
   }
 
   // 获取指定位置的棋子
@@ -663,9 +620,14 @@ export class ChessGame {
     const piece = this.getPieceAt(from)
     console.log('起始位置的棋子:', piece)
 
-    if (!piece || piece.camp !== this.state.currentPlayer) {
-      console.log('无效移动：棋子不存在或不是当前玩家的棋子')
-      console.log('当前玩家:', this.state.currentPlayer, '棋子阵营:', piece?.camp)
+    if (!piece) {
+      console.log('无效移动：起始位置没有棋子')
+      return false
+    }
+
+    if (piece.camp !== this.state.currentPlayer) {
+      console.log('无效移动：不是当前玩家的棋子')
+      console.log('当前玩家:', this.state.currentPlayer, '棋子阵营:', piece.camp)
       return false
     }
 
@@ -689,13 +651,14 @@ export class ChessGame {
       console.log('吃掉棋子:', capturedPiece.type, capturedPiece.camp)
     }
 
-    // 记录移动
+    // 记录移动，包含FEN和UCI信息
     const move: Move = {
       from: { ...from },
       to: { ...to },
       piece,
       capturedPiece: capturedPiece || undefined,
       timestamp: Date.now(),
+      uci: moveToUCI(from, to),
     }
 
     // 执行移动
@@ -721,9 +684,6 @@ export class ChessGame {
           }
         }
       }
-
-      // 注意：不要从pieces数组中移除死棋子，保留用于悔棋
-      // this.state.pieces = this.state.pieces.filter(p => p.alive)
     }
 
     // 全面验证棋盘一致性
@@ -743,37 +703,46 @@ export class ChessGame {
     this.updateGameStatus()
     console.log('=== 游戏状态更新完成 ===')
 
-    // 在走法记录中添加将军和将死信息
+    // 在走法记录中添加将军和将死信息以及FEN
     move.isCheck = this.state.isInCheck
     move.isCheckmate = this.state.gameStatus === 'checkmate'
+    move.fen = this.toFEN()
 
     this.state.moveHistory.push(move)
 
-    // 更新UCI移动历史
-    const uciMove = moveToUCI(move.from, move.to)
-    this.uciMoveHistory.push(uciMove)
-    console.log('UCI移动历史已更新:', this.uciMoveHistory)
-
     console.log('=== 走法已添加到历史记录 ===')
 
-    // 如果游戏还在进行，检查是否需要AI走棋
-    if (this.state.gameStatus === 'playing') {
-      if (this.config.gameMode === 'ai-vs-ai' && this.aiVsAiRunning) {
-        // AI对AI模式下，安排下一次走棋
-        this.scheduleNextAiMove()
-      } else if (this.shouldAIMove()) {
-        console.log('满足AI走棋条件，准备启动AI')
-        // 其他模式下的AI走棋，稍微延迟让界面更新
-        setTimeout(() => {
-          this.makeAIMove().catch((error) => {
-            console.error('AI走棋出错:', error)
-          })
-        }, 800)
-      }
-    }
+    // 播放音效
+    this.playMoveSound(move)
+
+    // 触发状态更新
+    this.triggerStateUpdate()
 
     console.log('=== makeMove 执行完成，返回 true ===')
     return true
+  }
+
+  // 播放移动音效
+  private playMoveSound(move: Move): void {
+    if (!this.soundGenerator) return
+
+    if (move.capturedPiece) {
+      this.soundGenerator.playCaptureSound(move.piece.type, move.capturedPiece.type)
+    } else {
+      this.soundGenerator.playMoveSound()
+    }
+
+    // 如果是将死，只播放将死音效；如果只是将军，播放将军音效
+    if (move.isCheckmate) {
+      setTimeout(() => {
+        const winner = move.piece.camp === 'red' ? '红方' : '黑方'
+        this.soundGenerator?.playCheckmateSound(winner, move.capturedPiece?.type)
+      }, 400)
+    } else if (move.isCheck) {
+      setTimeout(() => {
+        this.soundGenerator?.playCheckSound()
+      }, 200)
+    }
   }
 
   // 悔棋
@@ -782,18 +751,11 @@ export class ChessGame {
       return false
     }
 
-    // 停止AI思考
-    this.stopAIThinking()
-
     // 获取最后一步移动
     const lastMove = this.state.moveHistory.pop()
     if (!lastMove) {
       return false
     }
-
-    // 同时移除UCI移动历史中的最后一步
-    this.uciMoveHistory.pop()
-    console.log('悔棋后UCI移动历史:', this.uciMoveHistory)
 
     // 找到实际的棋子对象（通过ID查找）
     const piece = this.state.pieces.find((p) => p.id === lastMove.piece.id)
@@ -837,6 +799,12 @@ export class ChessGame {
     this.state.gameStatus = 'playing' // 悔棋后游戏继续
     this.updateGameStatus()
 
+    // 播放悔棋音效
+    this.soundGenerator?.playUndoSound()
+
+    // 触发状态更新
+    this.triggerStateUpdate()
+
     console.log('悔棋成功，恢复到:', lastMove.from, '从:', lastMove.to)
     return true
   }
@@ -868,6 +836,13 @@ export class ChessGame {
       if (!hasValidMoves) {
         this.state.gameStatus = this.state.isInCheck ? 'checkmate' : 'stalemate'
         console.log('游戏结束，状态:', this.state.gameStatus)
+
+        // 注意：将死音效由 playMoveSound 中的 playCheckmateSound 处理
+        // 和棋音效在这里播放
+        if (this.state.gameStatus === 'stalemate') {
+          const isWin = false
+          this.soundGenerator?.playGameOverSound(isWin)
+        }
       } else {
         console.log('游戏继续进行')
       }
@@ -879,16 +854,17 @@ export class ChessGame {
   }
 
   // 重置游戏
-  reset() {
-    console.log('重置游戏，保留AI配置')
-    const currentConfig = this.config // 保存当前配置
+  reset(): void {
+    console.log('重置游戏')
     this.state = this.initializeGame()
-    this.config = currentConfig // 恢复配置
-    console.log('游戏重置完成，配置:', this.config)
+    this.soundGenerator?.playGameStartSound()
+    this.triggerStateUpdate()
+    console.log('游戏重置完成')
   }
 
   // 从保存的状态恢复游戏
-  private restoreFromState(savedState: GameState): GameState {
+  // 从保存的状态恢复游戏
+  restoreFromState(savedState: GameState): GameState {
     console.log('=== 开始恢复游戏状态 ===')
     console.log('savedState:', savedState)
 
@@ -1038,637 +1014,43 @@ export class ChessGame {
     }
   }
 
-  // AI相关方法
+  // 将游戏状态转换为FEN字符串
+  toFEN(): string {
+    return gameStateToFEN(this.state)
+  }
 
-  /**
-   * 初始化AI管理器
-   */
-  private async initAI(): Promise<void> {
-    if (!this.config.aiConfig) return
+  // 获取UCI格式的移动历史
+  getUCIMoveHistory(): string[] {
+    return this.state.moveHistory.filter((move) => move.uci).map((move) => move.uci!)
+  }
 
+  // 根据UCI走法执行移动
+  makeMoveFromUCI(uci: string): boolean {
     try {
-      this.aiManager = new AIManager(this.config.aiConfig)
-
-      // 使用异步初始化，避免阻塞主线程
-      await new Promise<void>((resolve, reject) => {
-        setTimeout(async () => {
-          try {
-            await this.aiManager!.init()
-            // 配置已在构造函数中应用，无需再次更新
-            resolve()
-          } catch (error) {
-            reject(error)
-          }
-        }, 50) // 延迟50ms开始初始化
-      })
+      const { from, to } = uciToMove(uci)
+      return this.makeMove(from, to)
     } catch (error) {
-      console.error('AI初始化失败:', error)
-      throw error
-    }
-  }
-
-  /**
-   * 启用AI
-   */
-  async enableAI(aiConfig: AIManagerConfig): Promise<void> {
-    console.log('启用AI，配置:', aiConfig)
-    this.config.enableAI = true
-    this.config.aiConfig = aiConfig
-
-    if (this.aiManager) {
-      console.log('销毁现有AI管理器')
-      this.aiManager.destroy()
-    }
-
-    console.log('初始化新的AI管理器')
-    await this.initAI()
-
-    console.log('AI启用完成，状态:', this.getAIStatus())
-  }
-
-  /**
-   * 禁用AI
-   */
-  disableAI(): void {
-    this.config.enableAI = false
-    if (this.aiManager) {
-      this.aiManager.destroy()
-      this.aiManager = null
-    }
-  }
-
-  /**
-   * 销毁游戏实例
-   */
-  destroy(): void {
-    // 停止AI对AI模式
-    this.stopAiVsAi()
-
-    // 销毁AI管理器
-    if (this.aiManager) {
-      this.aiManager.destroy()
-      this.aiManager = null
-    }
-  }
-
-  /**
-   * 检查是否应该AI走棋
-   */
-  shouldAIMove(): boolean {
-    // 基础条件检查
-    if (!this.aiManager || this.isAIThinking) {
-      return false
-    }
-
-    // 游戏必须在进行中
-    if (this.state.gameStatus !== 'playing') {
-      return false
-    }
-
-    // AI必须已准备好
-    if (!this.aiManager.isReady()) {
-      return false
-    }
-
-    switch (this.config.gameMode) {
-      case 'pve':
-        // 人机对战：只有当轮到AI阵营且玩家不能操作AI棋子时
-        const isAITurn = this.state.currentPlayer !== this.config.playerCamp
-        console.log('PVE模式 AI走棋检查:', {
-          currentPlayer: this.state.currentPlayer,
-          playerCamp: this.config.playerCamp,
-          isAITurn,
-          isAIThinking: this.isAIThinking,
-        })
-        return isAITurn
-      case 'ai-vs-ai':
-        // AI对战：总是让AI走棋，但要检查是否正在运行
-        return this.aiVsAiRunning
-      default:
-        return false
-    }
-  }
-
-  /**
-   * 请求AI走棋
-   */
-  async requestAIMove(): Promise<Move | null> {
-    if (!this.shouldAIMove()) {
-      return null
-    }
-
-    try {
-      this.isAIThinking = true
-      console.log('开始请求AI走棋...')
-
-      // 构建包含移动历史的FEN字符串
-      const fenWithMoves = this.getFenWithMoves()
-      console.log('发送给AI的位置信息:', fenWithMoves)
-
-      // 使用新的AI接口
-      const aiMove = await this.aiManager!.getAIMove(this.state, fenWithMoves)
-
-      if (aiMove) {
-        console.log('AI返回移动:', aiMove)
-
-        // AI已经返回了游戏格式的移动，直接使用
-        const { from, to } = aiMove
-
-        // 查找起始位置的棋子
-        const piece = this.state.board[from.y]?.[from.x]
-        if (!piece) {
-          console.error('起始位置没有棋子:', from)
-          return null
-        }
-
-        // 检查是否有被吃的棋子
-        const capturedPiece = this.state.board[to.y]?.[to.x] || undefined
-
-        return {
-          from,
-          to,
-          piece,
-          capturedPiece,
-          timestamp: Date.now(),
-          isCheck: false,
-          isCheckmate: false,
-        }
-      } else {
-        console.warn('AI未返回有效移动')
-        return null
-      }
-    } catch (error) {
-      console.error('AI走棋失败:', error)
-      return null
-    } finally {
-      this.isAIThinking = false
-    }
-  }
-
-  /**
-   * 执行AI走棋
-   */
-  async makeAIMove(): Promise<boolean> {
-    const aiMove = await this.requestAIMove()
-    if (aiMove) {
-      // 如果存在外部移动处理器，优先使用它
-      if (this.externalMoveHandler) {
-        return this.externalMoveHandler(aiMove.from, aiMove.to)
-      } else {
-        return this.makeMove(aiMove.from, aiMove.to)
-      }
-    }
-    return false
-  }
-
-  /**
-   * 停止AI思考
-   */
-  stopAIThinking(): void {
-    if (this.aiManager) {
-      this.aiManager.stopThinking()
-    }
-    this.isAIThinking = false
-  }
-
-  /**
-   * 获取AI状态
-   */
-  getAIStatus() {
-    return {
-      enabled: !!(this.config.gameMode === 'pve' || this.config.gameMode === 'ai-vs-ai'),
-      thinking: this.isAIThinking,
-      ready: this.aiManager?.isReady() || false,
-      status: this.aiManager?.getStatus() || 'idle',
-      stats: this.aiManager?.getStats() || null,
-      canPlayerMove: this.canPlayerMove(),
-      aiVsAiRunning: this.aiVsAiRunning,
-    }
-  }
-
-  /**
-   * 更新AI配置
-   */
-  updateAIConfig(newConfig: Partial<AIManagerConfig>): void {
-    if (this.aiManager && this.config.aiConfig) {
-      this.config.aiConfig = { ...this.config.aiConfig, ...newConfig }
-      this.aiManager.updateConfig(newConfig)
-    }
-  }
-
-  /**
-   * 设置外部移动处理器（例如棋盘组件的移动方法）
-   */
-  setExternalMoveHandler(handler: ((from: Position, to: Position) => boolean) | null): void {
-    this.externalMoveHandler = handler
-  }
-
-  /**
-   * 获取游戏配置
-   */
-  getConfig(): GameConfig {
-    return { ...this.config }
-  }
-
-  /**
-   * 更新游戏配置
-   */
-  async updateConfig(newConfig: Partial<GameConfig>): Promise<void> {
-    console.log('更新游戏配置:', { old: this.config, new: newConfig })
-
-    const oldConfig = { ...this.config }
-    this.config = { ...this.config, ...newConfig }
-
-    // 如果游戏模式变化，处理AI状态
-    if (oldConfig.gameMode !== this.config.gameMode) {
-      await this.handleGameModeChange(oldConfig.gameMode, this.config.gameMode)
-    }
-  }
-
-  /**
-   * 处理游戏模式变化
-   */
-  private async handleGameModeChange(oldMode?: string, newMode?: string): Promise<void> {
-    console.log('游戏模式变化:', oldMode, '->', newMode)
-
-    // 停止AI对AI自动模式
-    this.stopAiVsAi()
-
-    // 根据新模式调整AI设置
-    switch (newMode) {
-      case 'pvp':
-        this.disableAI()
-        break
-      case 'pve':
-        if (this.config.aiConfig) {
-          const success = await this.safeEnableAI(this.config.aiConfig)
-          if (!success) {
-            console.warn('AI启用失败，回退到PVP模式')
-            this.config.gameMode = 'pvp'
-          } else {
-            // AI启用成功，检查是否需要立即走棋
-            console.log('AI启用成功，检查是否需要立即走棋')
-            this.checkAndMakeAIMove()
-          }
-        }
-        break
-      case 'ai-vs-ai':
-        if (this.config.aiConfig) {
-          const success = await this.safeEnableAI(this.config.aiConfig)
-          if (!success) {
-            console.warn('AI启用失败，回退到PVP模式')
-            this.config.gameMode = 'pvp'
-          }
-        }
-        break
-    }
-  }
-
-  /**
-   * 开始AI对AI自动对战
-   */
-  startAiVsAi(): void {
-    if (this.config.gameMode !== 'ai-vs-ai' || !this.aiManager) {
-      console.warn('无法启动AI对AI：模式不正确或AI未初始化')
-      return
-    }
-
-    if (!this.aiManager.isReady()) {
-      console.warn('AI尚未准备好，无法启动AI对AI')
-      return
-    }
-
-    this.aiVsAiRunning = true
-    console.log('启动AI对AI自动对战')
-
-    // 立即检查并开始第一步
-    this.checkAndMakeAIMove()
-  }
-
-  /**
-   * 停止AI对AI自动对战
-   */
-  stopAiVsAi(): void {
-    this.aiVsAiRunning = false
-    if (this.aiVsAiTimer) {
-      clearTimeout(this.aiVsAiTimer)
-      this.aiVsAiTimer = null
-    }
-    // 停止当前AI思考
-    this.stopAIThinking()
-    console.log('停止AI对AI自动对战')
-  }
-
-  /**
-   * 安排下一次AI走棋
-   */
-  private scheduleNextAiMove(): void {
-    if (!this.aiVsAiRunning || this.state.gameStatus !== 'playing') {
-      return
-    }
-
-    // 设置延迟，让用户能看到走棋过程
-    const delay = this.config.aiVsAiConfig?.gameSpeed || 1500
-
-    this.aiVsAiTimer = setTimeout(() => {
-      if (this.aiVsAiRunning && this.shouldAIMove()) {
-        this.makeAIMove()
-          .then((success) => {
-            if (success && this.aiVsAiRunning) {
-              // 继续下一轮
-              this.scheduleNextAiMove()
-            }
-          })
-          .catch((error) => {
-            console.error('AI对AI走棋失败:', error)
-            this.stopAiVsAi()
-          })
-      }
-    }, delay)
-  }
-
-  /**
-   * 切换AI对AI模式开关
-   */
-  toggleAiVsAi(): void {
-    if (this.aiVsAiRunning) {
-      this.stopAiVsAi()
-    } else {
-      this.startAiVsAi()
-    }
-  }
-
-  /**
-   * 获取AI对AI运行状态
-   */
-  getAiVsAiStatus(): boolean {
-    return this.aiVsAiRunning
-  }
-
-  /**
-   * 验证标准开局棋盘是否正确初始化
-   */
-  private validateStandardSetup(): boolean {
-    console.log('=== 验证标准开局棋盘 ===')
-
-    // 期望的棋子数量
-    const expectedCounts = {
-      red: { 車: 2, 馬: 2, 相: 2, 仕: 2, 帥: 1, 炮: 2, 兵: 5 },
-      black: { 車: 2, 馬: 2, 象: 2, 士: 2, 將: 1, 砲: 2, 卒: 5 },
-    }
-
-    // 统计实际棋子数量
-    const actualCounts = {
-      red: {} as Record<string, number>,
-      black: {} as Record<string, number>,
-    }
-
-    this.state.pieces.forEach((piece) => {
-      if (piece.alive) {
-        const camp = piece.camp
-        const type = piece.type
-        actualCounts[camp][type] = (actualCounts[camp][type] || 0) + 1
-      }
-    })
-
-    // 验证红方棋子
-    let isValid = true
-    for (const [type, expectedCount] of Object.entries(expectedCounts.red)) {
-      const actualCount = actualCounts.red[type] || 0
-      if (actualCount !== expectedCount) {
-        console.error(`红方 ${type} 数量错误: 期望 ${expectedCount}, 实际 ${actualCount}`)
-        isValid = false
-      }
-    }
-
-    // 验证黑方棋子
-    for (const [type, expectedCount] of Object.entries(expectedCounts.black)) {
-      const actualCount = actualCounts.black[type] || 0
-      if (actualCount !== expectedCount) {
-        console.error(`黑方 ${type} 数量错误: 期望 ${expectedCount}, 实际 ${actualCount}`)
-        isValid = false
-      }
-    }
-
-    // 验证重要位置的棋子
-    const keyPositions = [
-      // 红方
-      { x: 4, y: 9, expected: '帥', camp: 'red' },
-      { x: 0, y: 9, expected: '車', camp: 'red' },
-      { x: 8, y: 9, expected: '車', camp: 'red' },
-      // 黑方
-      { x: 4, y: 0, expected: '將', camp: 'black' },
-      { x: 0, y: 0, expected: '車', camp: 'black' },
-      { x: 8, y: 0, expected: '車', camp: 'black' },
-    ]
-
-    keyPositions.forEach(({ x, y, expected, camp }) => {
-      const piece = this.state.board[y][x]
-      if (!piece || piece.type !== expected || piece.camp !== camp) {
-        console.error(
-          `位置 (${x}, ${y}) 错误: 期望 ${camp} ${expected}, 实际 ${piece ? `${piece.camp} ${piece.type}` : '空'}`,
-        )
-        isValid = false
-      }
-    })
-
-    if (isValid) {
-      console.log('✓ 标准开局棋盘验证通过')
-    } else {
-      console.error('✗ 标准开局棋盘验证失败')
-    }
-
-    return isValid
-  }
-
-  /**
-   * 强制重新初始化为标准开局
-   */
-  forceStandardSetup(): void {
-    console.log('=== 强制重新初始化为标准开局 ===')
-
-    // 停止AI思考
-    if (this.aiManager) {
-      this.aiManager.stopThinking()
-    }
-
-    // 重新初始化游戏状态
-    this.state = this.initializeGame()
-
-    console.log('=== 标准开局初始化完成 ===')
-  }
-
-  /**
-   * 清除无效的保存状态
-   */
-  static clearInvalidSavedState(): void {
-    console.log('=== 清除无效的保存状态 ===')
-
-    // 如果在浏览器环境中且有store可用
-    if (typeof window !== 'undefined' && (window as any).store) {
-      try {
-        const store = (window as any).store
-        if (store.state?.chess?.gameState) {
-          store.state.chess.gameState.currentGame = null
-          console.log('已清除store中的无效游戏状态')
-        }
-      } catch (error) {
-        console.error('清除store状态失败:', error)
-      }
-    }
-
-    // 清除localStorage中的相关数据
-    try {
-      const keys = ['chess_game_state', 'vuex', 'chess_current_game']
-      keys.forEach((key) => {
-        if (localStorage.getItem(key)) {
-          localStorage.removeItem(key)
-          console.log(`已清除localStorage中的 ${key}`)
-        }
-      })
-    } catch (error) {
-      console.error('清除localStorage失败:', error)
-    }
-  }
-
-  /**
-   * 安全地启用AI（带错误处理）
-   */
-  async safeEnableAI(aiConfig: AIManagerConfig): Promise<boolean> {
-    try {
-      await this.enableAI(aiConfig)
-      return true
-    } catch (error) {
-      console.error('启用AI失败:', error)
+      console.error('UCI走法解析失败:', uci, error)
       return false
     }
   }
 
-  /**
-   * 安全地执行AI走棋（带错误处理）
-   */
-  async safeMakeAIMove(): Promise<boolean> {
-    try {
-      return await this.makeAIMove()
-    } catch (error) {
-      console.error('AI走棋失败:', error)
-      // 在AI失败时停止AI对AI模式
-      if (this.config.gameMode === 'ai-vs-ai') {
-        this.stopAiVsAi()
-      }
-      return false
-    }
-  }
-
-  // 重建UCI移动历史
-  private rebuildUciMoveHistory(): void {
-    this.uciMoveHistory = []
-    this.state.moveHistory.forEach((move) => {
-      const uciMove = moveToUCI(move.from, move.to)
-      this.uciMoveHistory.push(uciMove)
-    })
-    console.log('重建UCI移动历史:', this.uciMoveHistory)
-  }
-
-  // 在makeMove中需要更新，将原来的uciMove计算替换为新函数
-  // 这个方法现在已经不需要了，因为我们使用了fenUtils中的moveToUCI
-
-  // 这个方法现在已经不需要了，因为我们使用了fenUtils中的uciToPosition
-
-  /**
-   * 获取UCI格式的移动历史
-   */
-  getUciMoveHistory(): string[] {
-    return [...this.uciMoveHistory]
-  }
-
-  /**
-   * 获取当前FEN字符串（包含移动历史）
-   */
+  // 获取当前FEN字符串（包含移动历史）
   getCurrentFenWithMoves(): string {
-    return this.getFenWithMoves()
-  }
+    const fen = this.toFEN()
+    const moves = this.getUCIMoveHistory()
 
-  // 获取当前FEN字符串包含移动历史
-  private getFenWithMoves(): string {
-    // 使用gameStateToFEN获取当前棋盘状态
-    const fen = gameStateToFEN(this.state)
-
-    if (this.uciMoveHistory.length === 0) {
+    if (moves.length === 0) {
       return fen
     }
-    return fen + ' moves ' + this.uciMoveHistory.join(' ')
+    return fen + ' moves ' + moves.join(' ')
   }
 
-  // 检查是否轮到AI走棋并执行
-  private checkAndMakeAIMove(): void {
-    if (this.shouldAIMove() && !this.isAIThinking) {
-      console.log('检测到需要AI走棋')
-      setTimeout(() => {
-        this.makeAIMove().catch((error) => {
-          console.error('AI走棋失败:', error)
-        })
-      }, 500) // 稍微延迟，让界面更新
-    }
-  }
-
-  /**
-   * 检查玩家是否可以移动指定棋子
-   * 在AI思考期间，玩家不能移动AI阵营的棋子
-   */
-  canPlayerMovePiece(piece: ChessPiece): boolean {
-    // 游戏不在进行中
-    if (this.state.gameStatus !== 'playing') {
-      return false
-    }
-
-    // 不是该棋子阵营的回合
-    if (piece.camp !== this.state.currentPlayer) {
-      return false
-    }
-
-    switch (this.config.gameMode) {
-      case 'pvp':
-        // 玩家对战模式，玩家可以移动任何阵营的棋子
-        return true
-      case 'pve':
-        // 人机对战模式
-        if (this.isAIThinking && piece.camp !== this.config.playerCamp) {
-          // AI思考期间，玩家不能移动AI阵营的棋子
-          return false
-        }
-        // 玩家只能移动自己阵营的棋子
-        return piece.camp === this.config.playerCamp
-      case 'ai-vs-ai':
-        // AI对AI模式，玩家不能移动任何棋子
-        return false
-      default:
-        return false
-    }
-  }
-
-  /**
-   * 检查玩家是否可以进行移动操作
-   */
-  canPlayerMove(): boolean {
-    if (this.state.gameStatus !== 'playing') {
-      return false
-    }
-
-    switch (this.config.gameMode) {
-      case 'pvp':
-        return true
-      case 'pve':
-        // 人机对战：如果AI正在思考，玩家不能操作
-        if (this.isAIThinking) {
-          return false
-        }
-        // 只有轮到玩家时才能操作
-        return this.state.currentPlayer === this.config.playerCamp
-      case 'ai-vs-ai':
-        return false
-      default:
-        return false
-    }
+  // 销毁游戏实例
+  destroy(): void {
+    // 销毁音效系统
+    this.soundGenerator = null
+    this.onStateUpdate = undefined
+    console.log('游戏实例已销毁')
   }
 }

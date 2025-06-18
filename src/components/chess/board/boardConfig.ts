@@ -38,6 +38,13 @@ export const BOARD_CONFIG = {
   // ===== 间距和偏移 =====
   COORD_OFFSET: 35, // 坐标与棋盘边缘的距离 (实际使用 30 * scale)
   CELL_CLICK_SIZE: 35, // 点击区域大小 (实际使用 30 * scale)
+
+  // ===== 动画配置 =====
+  ANIMATION_BASE_DURATION: 300, // 基础动画时长（毫秒）
+  ANIMATION_DISTANCE_FACTOR: 50, // 距离因子：每个格子增加的时长（毫秒）
+  ANIMATION_MIN_DURATION: 200, // 最小动画时长（毫秒）
+  ANIMATION_MAX_DURATION: 800, // 最大动画时长（毫秒）
+  ANIMATION_EASING_POWER: 3, // 缓动函数的幂次 (1=线性, 2=二次, 3=三次)
 } as const
 
 // 导出计算函数
@@ -51,6 +58,31 @@ export const getBoardDimensions = (scale: number = 1) => ({
   marginX: (BOARD_CONFIG.BOARD_WIDTH * scale - 8 * BOARD_CONFIG.CELL_SIZE * scale) / 2,
   marginY: (BOARD_CONFIG.BOARD_HEIGHT * scale - 9 * BOARD_CONFIG.CELL_SIZE * scale) / 2,
 })
+
+// 计算动画时长的函数
+export const calculateAnimationDuration = (
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+) => {
+  // 计算曼哈顿距离（象棋中棋子移动更接近这种距离）
+  const distance = Math.abs(to.x - from.x) + Math.abs(to.y - from.y)
+
+  // 基于距离计算时长
+  const calculatedDuration =
+    BOARD_CONFIG.ANIMATION_BASE_DURATION + distance * BOARD_CONFIG.ANIMATION_DISTANCE_FACTOR
+
+  // 限制在最小和最大时长之间
+  return Math.max(
+    BOARD_CONFIG.ANIMATION_MIN_DURATION,
+    Math.min(calculatedDuration, BOARD_CONFIG.ANIMATION_MAX_DURATION),
+  )
+}
+
+// 动画缓动函数
+export const getAnimationEasing = (progress: number) => {
+  // 使用配置的幂次进行缓动计算
+  return 1 - Math.pow(1 - progress, BOARD_CONFIG.ANIMATION_EASING_POWER)
+}
 
 // 导出预设配置
 export const PRESET_CONFIGS = {

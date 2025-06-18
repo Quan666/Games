@@ -1,7 +1,7 @@
 // AI管理器 - 统一管理象棋AI引擎
 
-import { PikafishAI } from './PikafishAI'
-import { gameStateToFEN, uciToMove } from './fenUtils'
+import { ChessAI } from './ChessAI'
+import { gameStateToFEN, uciToMove, prepareFENForAI } from './fenUtils'
 import type {
   AIEngine,
   AIEngineConfig,
@@ -10,7 +10,7 @@ import type {
   AIEngineStatus,
   AIEngineEvent,
 } from './types'
-import type { GameState, Move } from '../ChessGame'
+import type { GameState, Move } from '../core'
 
 export interface AIManagerConfig {
   engine: 'pikafish'
@@ -52,7 +52,7 @@ export class AIManager {
    */
   addEventListener(listener: (event: AIEngineEvent) => void): void {
     this.eventListeners.push(listener)
-    if (this.engine instanceof PikafishAI) {
+    if (this.engine instanceof ChessAI) {
       this.engine.addEventListener(listener)
     }
   }
@@ -65,9 +65,10 @@ export class AIManager {
     if (index > -1) {
       this.eventListeners.splice(index, 1)
     }
-    if (this.engine instanceof PikafishAI) {
-      this.engine.removeEventListener(listener)
-    }
+    // 注意：由于类型问题，暂时不调用engine的removeEventListener
+    // if (this.engine instanceof ChessAI) {
+    //   this.engine.removeEventListener(listener)
+    // }
   }
 
   /**
@@ -78,23 +79,45 @@ export class AIManager {
       return
     }
 
-    switch (this.config.engine) {
-      case 'pikafish':
-        this.engine = new PikafishAI()
-        break
-      default:
-        throw new Error(`不支持的引擎: ${this.config.engine}`)
-    }
-
-    // 添加已有的事件监听器
-    this.eventListeners.forEach((listener) => {
-      if (this.engine instanceof PikafishAI) {
-        this.engine.addEventListener(listener)
+    try {
+      switch (this.config.engine) {
+        case 'pikafish':
+          this.engine = new ChessAI()
+          break
+        default:
+          throw new Error(`不支持的引擎: ${this.config.engine}`)
       }
-    })
 
-    await this.engine.init()
-    this.applyConfig()
+      // 添加已有的事件监听器
+      this.eventListeners.forEach((listener) => {
+        if (this.engine instanceof ChessAI) {
+          this.engine.addEventListener(listener)
+        }
+      })
+
+      console.log('开始初始化AI引擎...')
+
+      // 使用Promise包装，确保异步执行
+      await new Promise<void>((resolve, reject) => {
+        setTimeout(async () => {
+          try {
+            await this.engine!.init()
+            console.log('AI引擎初始化成功')
+            this.applyConfig()
+            resolve()
+          } catch (error) {
+            reject(error)
+          }
+        }, 10)
+      })
+    } catch (error) {
+      console.error('AI引擎初始化失败:', error)
+      if (this.engine) {
+        this.engine.destroy()
+        this.engine = null
+      }
+      throw error
+    }
   }
 
   /**
@@ -110,7 +133,9 @@ export class AIManager {
       timeLimit: this.config.thinkingTime,
     }
 
-    this.engine.setConfig(engineConfig)
+    if (this.engine instanceof ChessAI) {
+      this.engine.setConfig(engineConfig)
+    }
   }
 
   /**
@@ -134,26 +159,48 @@ export class AIManager {
   /**
    * 获取AI走法
    */
-  async getAIMove(gameState: GameState): Promise<Move | null> {
-    if (!this.engine || !this.engine.isReady()) {
+  async getAIMove(gameState: GameState, fenWithMoves?: string): Promise<Move | null> {
+    if (!this.engine || !(this.engine instanceof ChessAI) || !this.engine.isReady()) {
       throw new Error('AI引擎未就绪')
     }
 
     try {
-      // 转换为FEN格式
-      const fen = gameStateToFEN(gameState)
+      console.log('获取AI走法，当前玩家:', gameState.currentPlayer)
 
-      // 设置棋盘位置
-      await this.engine.setPosition(fen)
+      if (fenWithMoves) {
+        // 使用提供的FEN+moves格式
+        console.log('使用FEN+moves格式:', fenWithMoves)
+        return await this.getAIMoveFromFENWithMoves(fenWithMoves, gameState)
+      } else {
+        // 使用传统的gameState转FEN方式
+        const fen = gameStateToFEN(gameState)
+        console.log('棋盘FEN:', fen)
+        console.log('当前棋盘状态:')
+        for (let y = 0; y < 10; y++) {
+          const row = gameState.board[y]
+            .map((piece) => (piece ? `${piece.type}${piece.camp[0]}` : '--'))
+            .join(' ')
+          console.log(`Y${y}: ${row}`)
+        }
 
-      // 获取AI走法
-      const aiMove = await this.engine.go({
-        depth: this.getDifficultyDepth(),
-        time: this.config.thinkingTime,
-      })
+        // 设置棋盘位置并获取AI走法
+        const aiMove = await this.engine.think(fen, {
+          depth: this.getDifficultyDepth(),
+          timeLimit: this.config.thinkingTime,
+        })
 
-      // 转换为游戏内部格式
-      return this.convertAIMoveToGameMove(aiMove, gameState)
+        console.log('AI返回的走法:', aiMove)
+
+        // 转换为游戏内部格式
+        if (aiMove) {
+          const gameMove = this.convertAIMoveToGameMove(aiMove, gameState)
+          console.log('转换后的游戏走法:', gameMove)
+          return gameMove
+        } else {
+          console.log('AI没有找到有效走法')
+          return null
+        }
+      }
     } catch (error) {
       console.error('获取AI走法失败:', error)
       return null
@@ -165,24 +212,32 @@ export class AIManager {
    */
   private convertAIMoveToGameMove(aiMove: AIMove, gameState: GameState): Move | null {
     try {
+      console.log('转换AI走法:', aiMove)
+
       const { from, to } = uciToMove(`${aiMove.from}${aiMove.to}`)
+      console.log('转换后的坐标:', { from, to })
 
       // 查找起始位置的棋子
       const piece = gameState.board[from.y]?.[from.x]
       if (!piece) {
-        console.error('起始位置没有棋子:', from)
+        console.error('起始位置没有棋子:', from, '棋盘状态:', gameState.board[from.y])
         return null
       }
 
+      console.log('找到棋子:', piece.type, piece.camp, '在位置:', from)
+
       // 检查是否有被吃的棋子
       const capturedPiece = gameState.board[to.y]?.[to.x] || undefined
+      if (capturedPiece) {
+        console.log('目标位置有棋子:', capturedPiece.type, capturedPiece.camp)
+      }
 
       return {
         from,
         to,
         piece,
         capturedPiece,
-        timestamp: new Date(),
+        timestamp: Date.now(),
         isCheck: false, // 将在makeMove中更新
         isCheckmate: false, // 将在makeMove中更新
       }
@@ -213,24 +268,27 @@ export class AIManager {
    * 获取引擎状态
    */
   getStatus(): AIEngineStatus {
-    if (this.engine instanceof PikafishAI) {
-      return this.engine.getStatus()
-    }
-    return 'idle'
+    return this.engine?.status || 'idle'
   }
 
   /**
    * 获取引擎统计信息
    */
   getStats(): AIEngineStats | null {
-    return this.engine?.getStats() || null
+    if (this.engine instanceof ChessAI) {
+      return this.engine.getStats()
+    }
+    return null
   }
 
   /**
    * 检查是否就绪
    */
   isReady(): boolean {
-    return this.engine?.isReady() || false
+    if (this.engine instanceof ChessAI) {
+      return this.engine.isReady()
+    }
+    return false
   }
 
   /**
@@ -242,5 +300,54 @@ export class AIManager {
       this.engine = null
     }
     this.eventListeners = []
+  }
+
+  /**
+   * 使用包含走棋历史的FEN字符串获取AI走法
+   * 格式：fen [moves move1 move2 ...]
+   */
+  async getAIMoveFromFENWithMoves(
+    fenWithMoves: string,
+    gameState: GameState,
+  ): Promise<Move | null> {
+    if (!this.engine || !(this.engine instanceof ChessAI) || !this.engine.isReady()) {
+      throw new Error('AI引擎未就绪')
+    }
+
+    try {
+      console.log('处理包含走棋历史的FEN:', fenWithMoves)
+
+      // 解析FEN和走棋历史
+      const { positionFEN, moves } = prepareFENForAI(fenWithMoves)
+      console.log('解析结果 - FEN:', positionFEN)
+      console.log('解析结果 - 走棋历史:', moves)
+
+      // 构建完整的FEN字符串（包含走棋历史）
+      let fullFEN = positionFEN
+      if (moves.length > 0) {
+        fullFEN += ` moves ${moves.join(' ')}`
+      }
+
+      // 使用think方法获取AI走法
+      const aiMove = await this.engine.think(fullFEN, {
+        depth: this.getDifficultyDepth(),
+        timeLimit: this.config.thinkingTime,
+      })
+
+      console.log('AI返回的走法:', aiMove)
+
+      // 转换为游戏内部格式
+      if (aiMove) {
+        const gameMove = this.convertAIMoveToGameMove(aiMove, gameState)
+        console.log('转换后的游戏走法:', gameMove)
+        return gameMove
+      } else {
+        console.log('AI没有找到有效走法')
+        return null
+      }
+    } catch (error) {
+      console.error('从FEN获取AI走法失败:', error)
+      return null
+    }
   }
 }

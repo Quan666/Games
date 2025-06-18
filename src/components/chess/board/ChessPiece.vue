@@ -5,7 +5,8 @@
       'black-piece': isBlack,
       'red-piece': !isBlack,
       selected: isSelected,
-      'hover-effect': true,
+      'hover-effect': !isAnimating,
+      animating: isAnimating,
     }"
     :style="{
       left: marginX + x * cellSize - pieceRadius + 'px',
@@ -40,6 +41,7 @@ interface Props {
   y: number
   isBlack: boolean
   isSelected?: boolean
+  isAnimating?: boolean
   cellSize: number
   marginX: number
   marginY: number
@@ -59,7 +61,7 @@ const pieceDiameter = computed(() => pieceRadius.value * 2)
 const pieceFontSize = computed(() => pieceRadius.value * BOARD_CONFIG.PIECE_FONT_RATIO)
 
 // 解构 props 以便在模板中使用
-const { piece, x, y, isBlack, isSelected, cellSize, marginX, marginY, scale, zIndex } =
+const { piece, x, y, isBlack, isSelected, isAnimating, cellSize, marginX, marginY, scale, zIndex } =
   toRefs(props)
 </script>
 
@@ -202,5 +204,28 @@ const { piece, x, y, isBlack, isSelected, cellSize, marginX, marginY, scale, zIn
   opacity: 1.2;
   transform: scale(1.2);
   transition: all 0.3s ease;
+}
+
+/* 正在移动的棋子样式 */
+.chess-piece.animating {
+  transition: none !important;
+  z-index: 1000 !important;
+  pointer-events: none;
+}
+
+.chess-piece.animating .piece-shadow {
+  transform: translateY(v-bind('BOARD_CONFIG.PIECE_SHADOW_OFFSET + "px"')) scale(1.2);
+  filter: blur(v-bind('(BOARD_CONFIG.PIECE_SHADOW_BLUR + 2) + "px"'));
+  opacity: 0.6;
+}
+
+.chess-piece.animating .piece-circle {
+  transform: scale(1.1);
+  box-shadow:
+    0 0 0 3px rgba(255, 215, 0, 0.8),
+    0 0 0 6px rgba(255, 215, 0, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+    0 8px 25px rgba(0, 0, 0, 0.6);
 }
 </style>

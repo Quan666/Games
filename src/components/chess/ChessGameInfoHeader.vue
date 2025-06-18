@@ -27,18 +27,46 @@
         </div>
       </div>
 
-      <!-- 回合信息和AI思考状态在一行 -->
+      <!-- 回合信息和AI状态在一行 -->
       <div class="flex items-center justify-center gap-4 mb-2 text-sm min-h-[24px]">
         <span class="font-semibold">回合: {{ moveCount }}</span>
-        <div v-if="aiThinking" class="flex items-center gap-2 text-blue-600">
+
+        <!-- AI状态指示器 -->
+        <div v-if="gameMode !== 'pvp'" class="flex items-center gap-2">
+          <!-- AI初始化中 -->
           <div
-            class="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"
-          ></div>
-          <span class="font-medium">{{
-            aiStatus?.status === 'initializing' ? 'AI初始化中...' : 'AI思考中...'
-          }}</span>
+            v-if="aiStatus?.status === 'initializing'"
+            class="flex items-center gap-2 text-orange-600"
+          >
+            <div
+              class="w-3 h-3 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"
+            ></div>
+            <span class="font-medium">AI初始化中...</span>
+          </div>
+
+          <!-- AI思考中 -->
+          <div v-else-if="aiThinking" class="flex items-center gap-2 text-blue-600">
+            <div
+              class="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"
+            ></div>
+            <span class="font-medium">AI思考中...</span>
+          </div>
+
+          <!-- AI就绪 -->
+          <div v-else-if="aiStatus?.ready" class="flex items-center gap-1 text-green-600">
+            <div class="w-3 h-3 bg-green-600 rounded-full"></div>
+            <span class="font-medium">AI就绪</span>
+          </div>
+
+          <!-- AI错误 -->
+          <div
+            v-else-if="aiStatus?.status === 'error'"
+            class="flex items-center gap-1 text-red-600"
+          >
+            <div class="w-3 h-3 bg-red-600 rounded-full"></div>
+            <span class="font-medium">AI错误</span>
+          </div>
         </div>
-        <div v-else-if="aiStatus?.ready && gameMode !== 'pvp'" class="text-green-600">AI就绪</div>
       </div>
 
       <!-- 游戏模式详细信息 -->
@@ -65,6 +93,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { AIEngineConfig } from './ai'
 
 interface Props {
   currentPlayer: 'red' | 'black'
@@ -76,13 +105,7 @@ interface Props {
     ready: boolean
     status: string
   }
-  aiConfig?: {
-    engine: string
-    difficulty: string
-    skillLevel?: number
-    thinkingTime?: number
-    depth?: number
-  }
+  aiConfig?: AIEngineConfig
   gameResult?: string
   isInCheck?: boolean // 新增：是否将军
   isCheckmate?: boolean // 新增：是否将死

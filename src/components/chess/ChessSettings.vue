@@ -291,23 +291,6 @@
       </div>
     </div>
 
-    <!-- 游戏设置 -->
-    <div class="space-y-4 mb-6">
-      <h4 class="font-semibold text-gray-700 border-b pb-1">💾 游戏设置</h4>
-      <div class="space-y-3">
-        <label class="flex items-center justify-between">
-          <span class="text-sm font-medium">自动保存游戏</span>
-          <div class="relative">
-            <input v-model="localSettings.autoSave" type="checkbox" class="sr-only peer" />
-            <div
-              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
-            ></div>
-          </div>
-        </label>
-        <p class="text-xs text-gray-500">开启后，游戏状态会自动保存，刷新页面后可以继续游戏</p>
-      </div>
-    </div>
-
     <!-- 音效设置 -->
     <div class="space-y-4 mb-6">
       <h4 class="font-semibold text-gray-700 border-b pb-1">🔊 音效设置</h4>
@@ -361,12 +344,18 @@
             <input
               v-model="localSettings.enableVoice"
               type="checkbox"
-              :disabled="!localGlobalSettings.soundEnabled || !localGlobalSettings.voiceEnabled"
+              :disabled="
+                !localGlobalSettings.soundEnabled ||
+                !localGlobalSettings.voiceEnabled ||
+                !localSettings.enableSound
+              "
               class="sr-only peer disabled:cursor-not-allowed"
             />
             <div
               :class="
-                !localGlobalSettings.soundEnabled || !localGlobalSettings.voiceEnabled
+                !localGlobalSettings.soundEnabled ||
+                !localGlobalSettings.voiceEnabled ||
+                !localSettings.enableSound
                   ? 'opacity-50 cursor-not-allowed'
                   : ''
               "
@@ -376,7 +365,7 @@
         </label>
 
         <p class="text-xs text-gray-500">
-          全局开关控制所有游戏的音效，关闭后各游戏的音效也会被禁用。象棋语音播报需要同时开启全局音效和全局语音播报。
+          全局开关控制所有游戏的音效，关闭后各游戏的音效和语音也会被禁用。象棋语音播报需要同时开启全局音效、全局语音播报和象棋音效。
         </p>
       </div>
     </div>
@@ -398,7 +387,6 @@ interface ChessSettings {
   showMoveHistory: boolean
   enableSound: boolean
   enableVoice: boolean
-  autoSave: boolean
 }
 
 interface AIConfig {
@@ -463,7 +451,6 @@ const localSettings = ref<ChessSettings>({
   showMoveHistory: true,
   enableSound: true,
   enableVoice: true,
-  autoSave: true,
 })
 const localGlobalSettings = ref<GlobalSettings>({
   soundEnabled: true,
@@ -482,7 +469,6 @@ const currentSettings = computed(
       showMoveHistory: false,
       enableSound: true,
       enableVoice: false,
-      autoSave: true,
     },
 )
 
@@ -597,6 +583,41 @@ watch(
     if (newShow) {
       // 弹窗打开时，重新同步最新的 store 状态
       resetLocalSettings()
+    }
+  },
+)
+
+// 监听全局音效开关，关闭时自动关闭所有音效和语音播报
+watch(
+  () => localGlobalSettings.value.soundEnabled,
+  (newSoundEnabled) => {
+    if (!newSoundEnabled) {
+      // 全局音效关闭时，自动关闭象棋音效、全局语音播报和象棋语音播报
+      localSettings.value.enableSound = false
+      localGlobalSettings.value.voiceEnabled = false
+      localSettings.value.enableVoice = false
+    }
+  },
+)
+
+// 监听全局语音播报开关，关闭时自动关闭象棋语音播报
+watch(
+  () => localGlobalSettings.value.voiceEnabled,
+  (newVoiceEnabled) => {
+    if (!newVoiceEnabled) {
+      // 全局语音播报关闭时，自动关闭象棋语音播报
+      localSettings.value.enableVoice = false
+    }
+  },
+)
+
+// 监听象棋音效开关，关闭时自动关闭象棋语音播报
+watch(
+  () => localSettings.value.enableSound,
+  (newSoundEnabled) => {
+    if (!newSoundEnabled) {
+      // 象棋音效关闭时，自动关闭象棋语音播报
+      localSettings.value.enableVoice = false
     }
   },
 )

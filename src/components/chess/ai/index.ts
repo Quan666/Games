@@ -1,22 +1,7 @@
 // AI相关模块的统一导出
 
-export { PikafishAI } from './PikafishAI'
+export { ChessAI } from './ChessAI'
 export { AIManager } from './AIManager'
-export type {
-  AIEngine,
-  AIEngineConfig,
-  AIMove,
-  AIEngineStats,
-  AIEngineStatus,
-  AIEngineEvent,
-  PikafishEngine,
-} from './types'
 export type { AIManagerConfig } from './AIManager'
-export {
-  gameStateToFEN,
-  fenToGameState,
-  positionToUCI,
-  uciToPosition,
-  moveToUCI,
-  uciToMove,
-} from './fenUtils'
+export type { AIEngineConfig, AIMove, AIEngineStats, AIEngineStatus, PikafishEngine } from './types'
+export { gameStateToFEN, positionToUCI, uciToPosition, moveToUCI, uciToMove } from './fenUtils'

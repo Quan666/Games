@@ -29,6 +29,15 @@
         >
           {{ aiVsAiRunning ? '⏸️ 暂停' : '▶️ 开始' }}
         </button>
+        <!-- AI调试按钮 - 在PVE模式下显示 -->
+        <button
+          @click="$emit('test-ai')"
+          v-if="gameMode === 'pve'"
+          :disabled="aiThinking"
+          class="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-102"
+        >
+          🔧 测试AI
+        </button>
       </div>
 
       <!-- 游戏模式切换按钮 -->

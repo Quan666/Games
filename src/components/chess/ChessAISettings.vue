@@ -112,10 +112,10 @@
         <!-- 思考时间 -->
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">
-            思考时间: {{ currentAIConfig?.thinkingTime }}秒
+            思考时间: {{ currentAIConfig?.timeLimit }}秒
           </label>
           <input
-            v-model.number="currentAIConfig.thinkingTime"
+            v-model.number="currentAIConfig.timeLimit"
             type="range"
             min="1"
             max="30"
@@ -351,8 +351,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import type { GameConfig } from './ChessGame'
-import type { AIManagerConfig } from './ai'
+import type { GameConfig } from './ChessGameWrapper'
+import type { AIEngineConfig } from './ai'
 import SettingsDialog from '../SettingsDialog.vue'
 
 interface Props {
@@ -388,30 +388,38 @@ const activeAI = ref<'red' | 'black'>('red')
 // 扩展配置以支持双AI设置 - 与store数据结构保持一致
 interface ExtendedGameConfig extends GameConfig {
   aiVsAiConfig?: {
-    redAI: AIManagerConfig
-    blackAI: AIManagerConfig
+    redAI: AIEngineConfig
+    blackAI: AIEngineConfig
     gameSpeed?: number
   }
 }
 
 // 创建默认AI配置
 const createDefaultAIConfig = () => ({
-  engine: 'pikafish' as const,
-  difficulty: 'medium' as const,
-  thinkingTime: 5,
-  depth: 8,
+  // 基础配置
   threads: 1,
   hashSize: 16,
-  skillLevel: 20,
+  depth: 8,
+  timeLimit: 5,
+
+  // Pikafish专用配置
+  ponder: false,
   multiPV: 1,
   moveOverhead: 10,
-  repetitionRule: 'AsianRule',
-  drawRule: 'None',
+  nodestime: 0,
+  skillLevel: 20,
+  mateThreatDepth: 1,
+  repetitionRule: 'AsianRule' as const,
+  drawRule: 'None' as const,
   sixtyMoveRule: true,
+  rule60MaxPly: 120,
   maxCheckCount: 0,
   limitStrength: false,
   uciElo: 1280,
-  ponder: false,
+  uciWDLCentipawn: true,
+  luOutput: true,
+  uciShowWDL: false,
+  evalFile: 'pikafish.nnue',
 })
 
 // 本地配置状态 - 使用响应式ref
@@ -587,7 +595,7 @@ const randomizeAISettings = () => {
   if (!localConfig.value.aiVsAiConfig.redAI)
     localConfig.value.aiVsAiConfig.redAI = createDefaultAIConfig()
   localConfig.value.aiVsAiConfig.redAI.skillLevel = randomSkillLevel()
-  localConfig.value.aiVsAiConfig.redAI.thinkingTime = randomTime()
+  localConfig.value.aiVsAiConfig.redAI.timeLimit = randomTime()
   localConfig.value.aiVsAiConfig.redAI.multiPV = randomMultiPV()
   localConfig.value.aiVsAiConfig.redAI.limitStrength = Math.random() > 0.5
   localConfig.value.aiVsAiConfig.redAI.uciElo = randomElo()
@@ -597,7 +605,7 @@ const randomizeAISettings = () => {
   if (!localConfig.value.aiVsAiConfig.blackAI)
     localConfig.value.aiVsAiConfig.blackAI = createDefaultAIConfig()
   localConfig.value.aiVsAiConfig.blackAI.skillLevel = randomSkillLevel()
-  localConfig.value.aiVsAiConfig.blackAI.thinkingTime = randomTime()
+  localConfig.value.aiVsAiConfig.blackAI.timeLimit = randomTime()
   localConfig.value.aiVsAiConfig.blackAI.multiPV = randomMultiPV()
   localConfig.value.aiVsAiConfig.blackAI.limitStrength = Math.random() > 0.5
   localConfig.value.aiVsAiConfig.blackAI.uciElo = randomElo()

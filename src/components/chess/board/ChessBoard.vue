@@ -513,15 +513,24 @@
             v-if="piece && piece.alive && piece.position"
             :key="`piece-${piece.id}-${piece.position.x}-${piece.position.y}-${piece.alive}-${index}`"
             :piece="piece"
-            :x="piece.position.x"
-            :y="piece.position.y"
+            :x="
+              animatingPiece?.id === piece.id && animationPosition
+                ? animationPosition.x
+                : piece.position.x
+            "
+            :y="
+              animatingPiece?.id === piece.id && animationPosition
+                ? animationPosition.y
+                : piece.position.y
+            "
             :is-black="piece.camp === 'black'"
             :is-selected="isPieceSelected(piece)"
             :cell-size="cellSize"
             :margin-x="marginX"
             :margin-y="marginY"
             :scale="scale"
-            :z-index="50 + index"
+            :z-index="animatingPiece?.id === piece.id ? 1000 : 50 + index"
+            :is-animating="animatingPiece?.id === piece.id"
             @click="onPieceClick(piece)"
           />
         </template>
@@ -624,10 +633,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, reactive, nextTick, watch } from 'vue'
 import ChessPiece from './ChessPiece.vue'
-import { type ChessPiece as ChessPieceType, type Position } from '../ChessGame'
-import { BOARD_CONFIG } from './boardConfig'
+import { type ChessPiece as ChessPieceType, type Position } from '../core'
+import { BOARD_CONFIG, calculateAnimationDuration, getAnimationEasing } from './boardConfig'
 
 // 定义 props
 interface Props {
@@ -645,6 +654,40 @@ const props = withDefaults(defineProps<Props>(), {
   availableMoves: () => [],
   showCoordinates: false,
 })
+
+// 事件发射
+const emit = defineEmits<{
+  pieceClick: [piece: ChessPieceType]
+  boardClick: [x: number, y: number]
+  moveClick: [position: Position]
+  'update:gameState': [gameState: any]
+  animationComplete: [
+    moveData: { from: Position; to: Position; movingPiece: any; targetPiece: any },
+  ]
+}>()
+
+// 动画相关状态
+const animatingPiece = ref<ChessPieceType | null>(null)
+const animationFrom = ref<Position | null>(null)
+const animationTo = ref<Position | null>(null)
+const isAnimating = ref(false)
+const animationPosition = ref<Position | null>(null)
+
+// 创建本地的游戏状态副本，实现双向绑定
+const localGameState = reactive({
+  ...props.gameState,
+})
+
+// 监听父组件状态变化，同步到本地状态
+watch(
+  () => props.gameState,
+  (newState) => {
+    if (newState && !isAnimating.value) {
+      Object.assign(localGameState, newState)
+    }
+  },
+  { deep: true },
+)
 
 // 从配置中提取常用值 (保持向后兼容)
 const STANDARD_WIDTH = BOARD_CONFIG.BOARD_WIDTH
@@ -689,7 +732,7 @@ const pieceRadius = computed(() => STANDARD_PIECE_RADIUS * scale.value)
 const attackablePieces = computed(() => {
   if (!props.selectedPiece) return []
 
-  const pieces = props.gameState?.pieces || []
+  const pieces = localGameState?.pieces || []
   const availableMoves = props.availableMoves || []
 
   return pieces.filter((piece: any) => {
@@ -705,7 +748,7 @@ const attackablePieces = computed(() => {
 // 计算棋子列表用于渲染
 const alivePieces = computed(() => {
   // 确保 pieces 数组存在并且过滤掉所有无效的棋子
-  const pieces = props.gameState?.pieces || []
+  const pieces = localGameState?.pieces || []
   const alive = pieces.filter(
     (piece: any) =>
       piece &&
@@ -729,13 +772,6 @@ const alivePieces = computed(() => {
     return a.id.localeCompare(b.id)
   })
 })
-
-// 事件发射
-const emit = defineEmits<{
-  pieceClick: [piece: ChessPieceType]
-  boardClick: [x: number, y: number]
-  moveClick: [position: Position]
-}>()
 
 // 棋子点击事件
 const onPieceClick = (piece: ChessPieceType) => {
@@ -763,7 +799,7 @@ const isPieceSelected = (piece: ChessPieceType) => {
 // 检查位置是否是攻击位置（有敌方棋子）
 const isAttackPosition = (pos: Position) => {
   // 直接检查这个位置是否有敌方棋子
-  const pieces = props.gameState?.pieces || []
+  const pieces = localGameState?.pieces || []
   const targetPiece = pieces.find(
     (p: any) => p && p.position.x === pos.x && p.position.y === pos.y && p.alive,
   )
@@ -772,9 +808,152 @@ const isAttackPosition = (pos: Position) => {
 
 // 获取攻击位置上的棋子
 const getAttackTargetPiece = (pos: Position) => {
-  const pieces = props.gameState?.pieces || []
+  const pieces = localGameState?.pieces || []
   return pieces.find((p: any) => p && p.position.x === pos.x && p.position.y === pos.y && p.alive)
 }
+
+// 动画执行函数
+const executeMove = async (from: Position, to: Position) => {
+  if (isAnimating.value) return false
+
+  // 查找要移动的棋子
+  const pieces = localGameState?.pieces || []
+  const movingPiece = pieces.find(
+    (p: any) => p && p.alive && p.position.x === from.x && p.position.y === from.y,
+  )
+
+  if (!movingPiece) {
+    console.warn('No piece found at position:', from)
+    return false
+  }
+
+  // 检查目标位置是否有敌方棋子（吃子）
+  const targetPiece = pieces.find(
+    (p: any) => p && p.alive && p.position.x === to.x && p.position.y === to.y,
+  )
+
+  // 设置动画状态
+  isAnimating.value = true
+  animatingPiece.value = movingPiece
+  animationFrom.value = { ...from }
+  animationTo.value = { ...to }
+  animationPosition.value = { ...from } // 初始化动画位置
+
+  // 等待下一帧开始动画
+  await nextTick()
+
+  return new Promise<boolean>((resolve) => {
+    // 开始动画
+    const startTime = Date.now()
+    const duration = calculateAnimationDuration(from, to) // 使用动态计算的时长
+
+    console.log(
+      `开始动画：从 (${from.x},${from.y}) 到 (${to.x},${to.y})，距离：${Math.abs(to.x - from.x) + Math.abs(to.y - from.y)}，时长：${duration}ms`,
+    )
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime
+      const progress = Math.min(elapsed / duration, 1)
+
+      // 使用配置的缓动函数
+      const easeProgress = getAnimationEasing(progress)
+
+      // 计算当前位置
+      const currentX = from.x + (to.x - from.x) * easeProgress
+      const currentY = from.y + (to.y - from.y) * easeProgress
+
+      // 更新动画位置
+      if (animationPosition.value) {
+        animationPosition.value.x = currentX
+        animationPosition.value.y = currentY
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      } else {
+        // 动画完成，恢复棋子到原始位置
+        if (movingPiece && movingPiece.position) {
+          movingPiece.position.x = from.x
+          movingPiece.position.y = from.y
+        }
+
+        // 重置动画状态
+        isAnimating.value = false
+        animatingPiece.value = null
+        animationFrom.value = null
+        animationTo.value = null
+        animationPosition.value = null
+
+        console.log('动画完成')
+
+        // 触发移动事件，让父组件处理真正的游戏逻辑
+        emit('animationComplete', { from, to, movingPiece, targetPiece })
+
+        resolve(true)
+      }
+    }
+
+    animate()
+  })
+}
+
+// 对外暴露的移动方法
+const movePiece = async (from: Position, to: Position) => {
+  // 验证移动的有效性
+  if (
+    !from ||
+    !to ||
+    typeof from.x !== 'number' ||
+    typeof from.y !== 'number' ||
+    typeof to.x !== 'number' ||
+    typeof to.y !== 'number'
+  ) {
+    console.warn('Invalid move positions:', from, to)
+    return false
+  }
+
+  // 执行带动画的移动
+  return await executeMove(from, to)
+}
+
+// 对外暴露的选择棋子方法
+const selectPiece = (position: Position) => {
+  if (!position || typeof position.x !== 'number' || typeof position.y !== 'number') {
+    console.warn('Invalid position for piece selection:', position)
+    return false
+  }
+
+  const pieces = localGameState?.pieces || []
+  const piece = pieces.find(
+    (p: any) => p && p.alive && p.position.x === position.x && p.position.y === position.y,
+  )
+
+  if (!piece) {
+    console.warn('No piece found at position:', position)
+    return false
+  }
+
+  emit('pieceClick', piece)
+  return true
+}
+
+// 对外暴露的点击棋盘方法
+const clickBoard = (position: Position) => {
+  if (!position || typeof position.x !== 'number' || typeof position.y !== 'number') {
+    console.warn('Invalid board click position:', position)
+    return false
+  }
+
+  emit('boardClick', position.x, position.y)
+  return true
+}
+
+// 使用 defineExpose 暴露方法给父组件
+defineExpose({
+  movePiece,
+  selectPiece,
+  clickBoard,
+})
 </script>
 
 <style scoped>

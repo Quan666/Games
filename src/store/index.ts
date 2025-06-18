@@ -84,7 +84,6 @@ const store = createStore({
           showMoveHistory: false, // 显示走法记录开关
           enableSound: true, // 音效开关
           enableVoice: false, // 语音播报开关
-          autoSave: true, // 自动保存游戏状态
         },
         gameConfig: {
           gameMode: 'pvp',
@@ -307,6 +306,9 @@ const store = createStore({
       state.chess.settings.gameMode = mode
     },
     'chess/updateChessSettings'(state: any, payload: any) {
+      Object.assign(state.chess.settings, payload)
+    },
+    'chess/updateSettings'(state: any, payload: any) {
       Object.assign(state.chess.settings, payload)
     },
     'chess/toggleChessSound'(state: any) {
