@@ -803,8 +803,11 @@ export class ChessGame {
 
   // 重置游戏
   reset(): void {
+    const hasMoved = this.state.moveHistory && this.state.moveHistory.length > 0
     this.state = this.initializeGame()
-    this.soundGenerator?.playGameStartSound()
+    if (hasMoved) {
+      this.soundGenerator?.playGameStartSound(true)
+    }
     this.triggerStateUpdate()
   }
 

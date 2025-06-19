@@ -431,7 +431,7 @@ export class ChessSoundGenerator {
   }
 
   // 游戏开始音效 + 语音
-  async playGameStartSound(): Promise<void> {
+  async playGameStartSound(reset: boolean = false): Promise<void> {
     if (!this.isSoundEnabled()) return
     await this.ensureAudioContext()
 
@@ -461,7 +461,7 @@ export class ChessSoundGenerator {
 
     // 播放语音
     if (this.isVoiceEnabled()) {
-      setTimeout(() => this.speak('游戏开始', 0.9, 0.8), 600)
+      setTimeout(() => this.speak(reset ? '重新开始' : '游戏开始', 0.9, 0.8), 600)
     }
   }
 

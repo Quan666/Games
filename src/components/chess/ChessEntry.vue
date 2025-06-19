@@ -1135,7 +1135,7 @@ const resetGame = () => {
     } else {
       console.log('重置后玩家先走棋')
     }
-  } else if (currentConfig.gameMode === 'ai-vs-ai') {
+  } else if (currentConfig.gameMode === 'ai-vs-ai' && aiVsAiRunning.value) {
     setTimeout(() => {
       game.startAiVsAi()
       // 启动新的思考周期
