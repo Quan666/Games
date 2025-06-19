@@ -10,6 +10,7 @@ import type {
   AIEngine,
   AIEngineEvent,
 } from './types'
+import { isSafari } from '../../../utils/browser'
 
 export class ChessAI implements AIEngine {
   private engine: PikafishEngine | null = null
@@ -68,7 +69,13 @@ export class ChessAI implements AIEngine {
 
       const script = document.createElement('script')
       const base = import.meta.env.BASE_URL || '/'
-      script.src = `${base}chess-ai/pikafish.js`
+      
+      // 根据浏览器类型选择合适的AI文件
+      const scriptPath = isSafari() 
+        ? `${base}chess-ai/safari/pikafish.js`
+        : `${base}chess-ai/pikafish.js`
+
+      script.src = scriptPath
 
       const timeout = setTimeout(() => {
         script.remove()
@@ -100,6 +107,7 @@ export class ChessAI implements AIEngine {
    */
   private async createEngine(): Promise<void> {
     const base = import.meta.env.BASE_URL || '/'
+    const useSafari = isSafari()
 
     this.engine = await new Promise<PikafishEngine>((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -108,11 +116,22 @@ export class ChessAI implements AIEngine {
 
       const config = {
         locateFile: (path: string) => {
-          const fullPath = `${base}chess-ai/${path}`
+          // 对于数据文件，始终使用主目录
+          if (path === 'pikafish.data' || path.endsWith('.nnue')) {
+            const fullPath = `${base}chess-ai/${path}`
+            console.log(`定位数据文件: ${path} -> ${fullPath}`)
+            return fullPath
+          }
+          
+          // 根据浏览器类型选择其他文件路径
+          const basePath = useSafari ? `${base}chess-ai/safari/` : `${base}chess-ai/`
+          const fullPath = `${basePath}${path}`
           console.log(`定位文件: ${path} -> ${fullPath}`)
           return fullPath
         },
-        wasmBinaryFile: `${base}chess-ai/pikafish.wasm`,
+        wasmBinaryFile: useSafari 
+          ? `${base}chess-ai/safari/pikafish.wasm`
+          : `${base}chess-ai/pikafish.wasm`,
         onReceiveStdout: (text: string) => {
           console.log('Pikafish引擎输出:', text)
 
