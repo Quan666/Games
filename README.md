@@ -10,8 +10,7 @@
 
 ## 在线预览
 
-> （可选）[点击体验在线 Demo](https://games.shab.fun)  
-> *如未部署可删除本节*
+> [点击体验在线 Demo](https://games.shab.fun)  
 
 ## 项目说明
 
