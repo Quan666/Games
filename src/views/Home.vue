@@ -72,7 +72,7 @@
           <div class="game-icon">♞♜</div>
           <h3 class="game-title">中国象棋</h3>
           <p class="game-description">千年传承的经典棋类，体验传统文化的魅力</p>
-          <div class="game-status coming-soon">开发中</div>
+          <div class="game-status available">可游玩</div>
         </div>
       </div>
 
@@ -87,7 +87,7 @@
           </div>
           <div class="w-px h-8 bg-gray-400"></div>
           <div class="text-center">
-            <div class="text-2xl font-bold text-green-400">1</div>
+            <div class="text-2xl font-bold text-green-400">2</div>
             <div class="text-sm text-gray-300">已完成</div>
           </div>
         </div>
